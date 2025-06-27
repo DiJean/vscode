@@ -143,7 +143,7 @@ $version = time();
                     </div>
                 </div>
                 <div class="welcome-text">
-                    Мы рады видеть вас здесь! <span class="heart">❤️</span>
+                    Мы готовы помочь Вам. <span class="heart">❤️</span>
                 </div>
             `;
             
