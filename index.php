@@ -39,19 +39,7 @@ $version = time();
         }
         localStorage.setItem('appVersion', CURRENT_VERSION);
         
-        function checkScriptLoaded() {
-            const errors = [];
-            if (typeof Telegram === 'undefined') errors.push('Telegram SDK не загружен');
-            if (errors.length > 0) {
-                console.error('Ошибки:', errors.join(', '));
-                showFallbackView();
-                return false;
-            }
-            return true;
-        }
-        
         function initApp() {
-            if (!checkScriptLoaded()) return;
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -61,74 +49,18 @@ $version = time();
             try {
                 tg.ready();
                 if (tg.isExpanded !== true && tg.expand) tg.expand();
-                tg.backgroundColor = '#6a11cb';
-                if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
                 
-                let user = null;
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) user = tg.initDataUnsafe.user;
-                
-                let userHtml = '';
-                if (user) {
-                    const firstName = user.first_name || '';
-                    const lastName = user.last_name || '';
-                    const username = user.username ? `@${user.username}` : 'без username';
-                    const fullName = `${firstName} ${lastName}`.trim();
-                    const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
-                    document.getElementById('greeting').textContent = greeting;
-                    
-                    userHtml += `
-                        <div class="avatar">
-                            ${user.photo_url ? 
-                                `<img src="${user.photo_url}" alt="${fullName}">` : 
-                                `<div>${firstName.charAt(0) || 'Г'}</div>`}
-                        </div>
-                        <div class="user-name">${fullName || 'Аноним'}</div>
-                        <div class="username">${username}</div>
-                    `;
-                } else {
-                    userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
+                // Сохраняем данные авторизации в sessionStorage
+                if (tg.initData) {
+                    sessionStorage.setItem('tgInitData', tg.initData);
+                    sessionStorage.setItem('tgUser', JSON.stringify(tg.initDataUnsafe.user || {}));
                 }
                 
-                userHtml += `
-                    <div class="role-selection">
-                        <div class="role-label">Выберите роль:</div>
-                        <select class="role-select" id="role">
-                            <option value="" disabled selected>Выберите роль...</option>
-                            <option value="client">Клиент</option>
-                            <option value="performer">Исполнитель</option>
-                        </select>
-                        <div class="role-error" id="role-error">Выберите роль!</div>
-                    </div>
-                    <div class="welcome-text">
-                        Мы рады помочь! <span class="heart">❤️</span>
-                    </div>
-                `;
+                // Показываем данные пользователя
+                showUserData(tg);
                 
-                document.getElementById('user-container').innerHTML = userHtml;
-                
-                // Обработчик изменения выбора роли
-                document.getElementById('role').addEventListener('change', function() {
-                    document.getElementById('role-error').style.display = 'none';
-                });
-                
-                if (tg.MainButton) {
-                    tg.MainButton.setText("Продолжить");
-                    tg.MainButton.onClick(function() {
-                        const role = document.getElementById('role').value;
-                        if (!role) {
-                            document.getElementById('role-error').style.display = 'block';
-                            return;
-                        }
-                        
-                        localStorage.setItem('selectedRole', role);
-                        if (role === 'client') {
-                            window.location.href = '/webapp/client/services.php?v=' + CURRENT_VERSION;
-                        } else {
-                            window.location.href = '/webapp/doer/dashboard.php?v=' + CURRENT_VERSION;
-                        }
-                    });
-                    tg.MainButton.show();
-                }
+                // Инициализация кнопки
+                initMainButton(tg);
                 
                 if (tg.isDesktop) {
                     document.getElementById('desktop-warning').style.display = 'block';
@@ -137,6 +69,90 @@ $version = time();
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
                 showFallbackView();
+            }
+        }
+        
+        function showUserData(tg) {
+            let user = null;
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                user = tg.initDataUnsafe.user;
+            } else {
+                // Пробуем восстановить из sessionStorage
+                const savedUser = sessionStorage.getItem('tgUser');
+                if (savedUser) {
+                    try {
+                        user = JSON.parse(savedUser);
+                    } catch (e) {
+                        console.error('Error parsing saved user data', e);
+                    }
+                }
+            }
+            
+            let userHtml = '';
+            if (user) {
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
+                const username = user.username ? `@${user.username}` : 'без username';
+                const fullName = `${firstName} ${lastName}`.trim();
+                const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
+                document.getElementById('greeting').textContent = greeting;
+                
+                userHtml += `
+                    <div class="avatar">
+                        ${user.photo_url ? 
+                            `<img src="${user.photo_url}" alt="${fullName}">` : 
+                            `<div>${firstName.charAt(0) || 'Г'}</div>`}
+                    </div>
+                    <div class="user-name">${fullName || 'Аноним'}</div>
+                    <div class="username">${username}</div>
+                `;
+            } else {
+                userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
+            }
+            
+            userHtml += `
+                <div class="role-selection">
+                    <div class="role-label">Выберите роль:</div>
+                    <select class="role-select" id="role">
+                        <option value="" disabled selected>Выберите роль...</option>
+                        <option value="client">Клиент</option>
+                        <option value="performer">Исполнитель</option>
+                    </select>
+                    <div class="role-error" id="role-error">Выберите роль!</div>
+                </div>
+                <div class="welcome-text">
+                    Мы рады видеть вас здесь! <span class="heart">❤️</span>
+                </div>
+            `;
+            
+            document.getElementById('user-container').innerHTML = userHtml;
+            
+            // Обработчик изменения роли
+            document.getElementById('role').addEventListener('change', function() {
+                document.getElementById('role-error').style.display = 'none';
+            });
+        }
+        
+        function initMainButton(tg) {
+            if (tg.MainButton) {
+                tg.MainButton.setText("Продолжить");
+                tg.MainButton.onClick(function() {
+                    const role = document.getElementById('role').value;
+                    if (!role) {
+                        document.getElementById('role-error').style.display = 'block';
+                        return;
+                    }
+                    
+                    // Передаем параметры авторизации через URL
+                    const tgInitData = sessionStorage.getItem('tgInitData') || '';
+                    
+                    if (role === 'client') {
+                        window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(tgInitData)}&v=${CURRENT_VERSION}`;
+                    } else {
+                        window.location.href = `/webapp/doer/dashboard.php?tgInitData=${encodeURIComponent(tgInitData)}&v=${CURRENT_VERSION}`;
+                    }
+                });
+                tg.MainButton.show();
             }
         }
         
