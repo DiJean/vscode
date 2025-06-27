@@ -39,6 +39,22 @@ $version = time();
         }
         localStorage.setItem('appVersion', CURRENT_VERSION);
         
+        // Проверяем, есть ли сохраненная роль и данные
+        const savedRole = sessionStorage.getItem('selectedRole');
+        const savedInitData = sessionStorage.getItem('tgInitData');
+        const savedUser = sessionStorage.getItem('tgUser');
+        
+        // Если есть сохраненная роль, перенаправляем сразу
+        if (savedRole && savedInitData) {
+            if (savedRole === 'client') {
+                window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(savedInitData)}&v=${CURRENT_VERSION}`;
+            } else {
+                window.location.href = `/webapp/doer/dashboard.php?tgInitData=${encodeURIComponent(savedInitData)}&v=${CURRENT_VERSION}`;
+            }
+            // Останавливаем выполнение скрипта
+            throw new Error("Redirecting to saved role...");
+        }
+        
         function initApp() {
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
@@ -110,6 +126,7 @@ $version = time();
                 userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
             }
             
+            // Добавляем чекбокс "Запомнить выбор"
             userHtml += `
                 <div class="role-selection">
                     <div class="role-label">Выберите роль:</div>
@@ -119,6 +136,11 @@ $version = time();
                         <option value="performer">Исполнитель</option>
                     </select>
                     <div class="role-error" id="role-error">Выберите роль!</div>
+                    
+                    <div class="remember-container">
+                        <input type="checkbox" id="remember-role" checked>
+                        <label for="remember-role">Запомнить мой выбор</label>
+                    </div>
                 </div>
                 <div class="welcome-text">
                     Мы рады видеть вас здесь! <span class="heart">❤️</span>
@@ -143,9 +165,17 @@ $version = time();
                         return;
                     }
                     
-                    // Передаем параметры авторизации через URL
+                    const rememberRole = document.getElementById('remember-role').checked;
                     const tgInitData = sessionStorage.getItem('tgInitData') || '';
                     
+                    // Сохраняем выбранную роль, если нужно
+                    if (rememberRole) {
+                        sessionStorage.setItem('selectedRole', role);
+                    } else {
+                        sessionStorage.removeItem('selectedRole');
+                    }
+                    
+                    // Переходим на страницу роли
                     if (role === 'client') {
                         window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(tgInitData)}&v=${CURRENT_VERSION}`;
                     } else {
@@ -186,5 +216,22 @@ $version = time();
             });
         }
     </script>
+    
+    <style>
+        .remember-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+        }
+        
+        .remember-container input {
+            margin-right: 10px;
+        }
+        
+        .remember-container label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
 </body>
 </html>

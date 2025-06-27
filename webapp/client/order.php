@@ -4,6 +4,7 @@ header('Content-Type: text/html; charset=utf-8');
 $version = $_GET['v'] ?? time();
 $service = $_GET['service'] ?? 'Услуга';
 $price = $_GET['price'] ?? 0;
+$tgInitData = $_GET['tgInitData'] ?? '';
 
 // Обработка отправки формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -49,14 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <div class="greeting">Оформление заказа</div>
+        <div class="greeting" id="greeting">Оформление заказа</div>
         
         <?php if (isset($success)): ?>
             <div class="success-message">
                 <h3>✅ Заказ успешно оформлен!</h3>
                 <p>Номер сделки в Bitrix24: <?= $dealId ?></p>
                 <p>Спасибо за ваш заказ! Мы свяжемся с вами в ближайшее время.</p>
-                <div class="back-button" onclick="window.location.href='/webapp/client/services.php?v=<?=$version?>'">
+                <div class="back-button" onclick="goBack()">
                     Вернуться к услугам
                 </div>
             </div>
@@ -105,21 +106,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // Восстанавливаем данные пользователя
+        const urlParams = new URLSearchParams(window.location.search);
+        const tgInitData = urlParams.get('tgInitData');
+        
+        if (tgInitData) {
+            // Сохраняем для последующих страниц
+            sessionStorage.setItem('tgInitData', tgInitData);
+            
+            // Пробуем распарсить данные пользователя
+            try {
+                const initData = new URLSearchParams(tgInitData);
+                const userStr = initData.get('user');
+                if (userStr) {
+                    const user = JSON.parse(decodeURIComponent(userStr));
+                    
+                    // Автозаполнение данных из Telegram
+                    if (user.first_name && !document.getElementById('first_name').value) {
+                        document.getElementById('first_name').value = user.first_name;
+                    }
+                    if (user.last_name && !document.getElementById('last_name').value) {
+                        document.getElementById('last_name').value = user.last_name;
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing init data', e);
+            }
+        }
+        
         const tg = window.Telegram.WebApp;
         if (tg) {
             tg.expand();
-            tg.setHeaderColor('#6a11cb');
-            tg.MainButton.hide();
             
-            // Автозаполнение данных пользователя Telegram
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const user = tg.initDataUnsafe.user;
-                if (user.first_name && !document.getElementById('first_name').value) {
-                    document.getElementById('first_name').value = user.first_name;
-                }
-                if (user.last_name && !document.getElementById('last_name').value) {
-                    document.getElementById('last_name').value = user.last_name;
-                }
+            // Устанавливаем цвета
+            try {
+                if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
+                if (tg.setBackgroundColor) tg.setBackgroundColor('#6a11cb');
+            } catch (e) {
+                console.log('Color methods not supported');
             }
             
             // Валидация формы
@@ -138,22 +162,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return false;
                 }
                 
-                tg.showPopup({
-                    title: 'Подтверждение',
-                    message: 'Вы уверены, что хотите оформить заказ?',
-                    buttons: [
-                        {id: 'confirm', type: 'ok', text: 'Подтвердить'},
-                        {id: 'cancel', type: 'cancel', text: 'Отмена'}
-                    ]
-                }, function(buttonId) {
-                    if (buttonId === 'confirm') {
-                        e.target.submit();
-                    }
-                });
-                
-                e.preventDefault();
-                return false;
+                if (tg.showPopup) {
+                    tg.showPopup({
+                        title: 'Подтверждение',
+                        message: 'Вы уверены, что хотите оформить заказ?',
+                        buttons: [
+                            {id: 'confirm', type: 'ok', text: 'Подтвердить'},
+                            {id: 'cancel', type: 'cancel', text: 'Отмена'}
+                        ]
+                    }, function(buttonId) {
+                        if (buttonId === 'confirm') {
+                            e.target.submit();
+                        }
+                    });
+                    
+                    e.preventDefault();
+                    return false;
+                }
             });
+        }
+        
+        function goBack() {
+            const tgInitData = sessionStorage.getItem('tgInitData') || '';
+            window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(tgInitData)}&v=<?=$version?>`;
         }
     </script>
     
@@ -243,6 +274,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .success-message h3 {
             margin-bottom: 15px;
             color: #4ade80;
+        }
+        
+        .back-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-align: center;
+            border-radius: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
     </style>
 </body>
