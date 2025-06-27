@@ -11,6 +11,7 @@ async function createServiceRequest(data) {
     const requestData = {
         fields: {
             // Основные поля
+            TITLE: `Запрос на услугу: ${data.service}`,
             NAME: firstName,
             LAST_NAME: lastName,
             PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
@@ -30,11 +31,17 @@ async function createServiceRequest(data) {
         }
     };
     
-    return fetch(`${BITRIX_WEBHOOK}crm.lead.add`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(requestData),
-    });
+    try {
+        const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.add`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(requestData),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при создании заявки:', error);
+        return { error: true, message: error.message };
+    }
 }
 
 // Получение списка заявок пользователя
@@ -46,17 +53,24 @@ async function getUserRequests(email) {
             'UF_CRM_685D295664A8A', 'UF_CRM_685D2956BF4C8',
             'UF_CRM_685D2956C64E0', 'COMMENTS'
         ],
-        order: { "DATE_CREATE": "DESC" } // Сортировка по дате создания (новые сверху)
+        order: { "DATE_CREATE": "DESC" }
     };
     
-    return fetch(`${BITRIX_WEBHOOK}crm.lead.list`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(filter),
-    }).then(response => response.json());
+    try {
+        const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.list`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(filter),
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка при получении заявок:', error);
+        return { error: true, message: error.message };
+    }
 }
 
-// Экспорт функций, если используется как модуль
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = { createServiceRequest, getUserRequests };
-}
+// Экспорт функций для глобального доступа
+window.BitrixCRM = {
+    createServiceRequest,
+    getUserRequests
+};
