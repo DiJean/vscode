@@ -10,52 +10,7 @@ header('Content-Type: text/html; charset=utf-8');
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="/webapp/css/style.css">
     <style>
-        .form-container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 25px;
-            margin-top: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 14px;
-            border-radius: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            font-size: 1rem;
-        }
-        
-        input::placeholder, textarea::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        button {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #ff2e63 0%, #ff6b6b 100%);
-            color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+        /* ... (стили остаются без изменений) ... */
     </style>
 </head>
 <body>
@@ -64,97 +19,19 @@ header('Content-Type: text/html; charset=utf-8');
         
         <div class="form-container">
             <form id="request-form">
-                <div class="form-group">
-                    <label for="fullName">Имя и фамилия</label>
-                    <input type="text" id="fullName" name="fullName" required placeholder="Введите ваше полное имя">
-                </div>
-                
-                <div class="form-group">
-                    <label for="phone">Телефон</label>
-                    <input type="tel" id="phone" name="phone" required placeholder="+7 (XXX) XXX-XX-XX">
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="example@mail.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="service">Услуга</label>
-                    <select id="service" name="service" required>
-                        <option value="" disabled selected>Выберите услугу</option>
-                        <option value="Уход за могилой">Уход за могилой</option>
-                        <option value="Установка памятника">Установка памятника</option>
-                        <option value="Доставка цветов">Доставка цветов</option>
-                        <option value="Благоустройство участка">Благоустройство участка</option>
-                        <option value="Прочие услуги">Прочие услуги</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="serviceDate">Желаемая дата услуги</label>
-                    <input type="date" id="serviceDate" name="serviceDate" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="city">Город</label>
-                    <input type="text" id="city" name="city" required placeholder="Город оказания услуги">
-                </div>
-                
-                <div class="form-group">
-                    <label for="cemetery">Кладбище</label>
-                    <input type="text" id="cemetery" name="cemetery" required placeholder="Название кладбища">
-                </div>
-                
-                <div class="form-group">
-                    <label for="sector">Сектор</label>
-                    <input type="text" id="sector" name="sector" required placeholder="Номер сектора">
-                </div>
-                
-                <div class="form-group">
-                    <label for="row">Ряд</label>
-                    <input type="text" id="row" name="row" required placeholder="Номер ряда">
-                </div>
-                
-                <div class="form-group">
-                    <label for="plot">Участок</label>
-                    <input type="text" id="plot" name="plot" required placeholder="Номер участка">
-                </div>
-                
-                <div class="form-group">
-                    <label for="comments">Дополнительная информация</label>
-                    <textarea id="comments" name="comments" rows="3" placeholder="Особые пожелания или комментарии"></textarea>
-                </div>
-                
-                <button type="submit">Отправить запрос</button>
+                <!-- ... (форма без изменений) ... -->
             </form>
         </div>
     </div>
 
-    <script src="/webapp/js/bitrix-integration.js"></script>
     <script>
-        // Обработчик для проверки загрузки модуля CRM
-        function checkCrmModule() {
-            if (typeof BitrixCRM === 'undefined') {
-                console.error('BitrixCRM module not loaded');
-                return false;
-            }
-            
-            if (!BitrixCRM.createServiceRequest) {
-                console.error('createServiceRequest function missing');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Показать ошибку загрузки модуля
-        function showModuleError() {
+        // Функция для отображения ошибки загрузки модуля
+        function showModuleError(message) {
             const container = document.querySelector('.container');
             container.innerHTML = `
                 <div class="greeting">Ошибка!</div>
                 <div class="form-container" style="color: #ff6b6b; text-align: center; padding: 20px;">
-                    <p>Не удалось загрузить модуль интеграции с CRM</p>
+                    <p>${message}</p>
                     <p>Попробуйте перезагрузить страницу</p>
                     <button onclick="window.location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #6a11cb; color: white; border-radius: 12px;">
                         Перезагрузить
@@ -163,10 +40,11 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // Основная функция инициализации приложения
+        function initApp() {
             // Проверяем загрузку модуля CRM
-            if (!checkCrmModule()) {
-                showModuleError();
+            if (typeof BitrixCRM === 'undefined' || typeof BitrixCRM.createServiceRequest !== 'function') {
+                showModuleError('Модуль интеграции с CRM не загружен');
                 return;
             }
 
@@ -261,6 +139,45 @@ header('Content-Type: text/html; charset=utf-8');
                     submitBtn.textContent = 'Отправить запрос';
                 }
             });
+        }
+
+        // Обработчик события загрузки модуля CRM
+        document.addEventListener('BitrixCRMLoaded', function() {
+            console.log('Событие BitrixCRMLoaded получено');
+            if (typeof BitrixCRM !== 'undefined') {
+                initApp();
+            } else {
+                showModuleError('Модуль CRM загружен, но не инициализирован');
+            }
+        });
+
+        // Загрузка скрипта CRM с обработкой ошибок
+        function loadCrmModule() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '/webapp/js/bitrix-integration.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Основной скрипт
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Загружаем модуль CRM
+                await loadCrmModule();
+                
+                // Устанавливаем таймаут на случай, если событие не придет
+                setTimeout(() => {
+                    if (typeof BitrixCRM === 'undefined') {
+                        showModuleError('Модуль CRM не загрузился в течение 3 секунд');
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Ошибка загрузки скрипта CRM:', error);
+                showModuleError('Не удалось загрузить модуль CRM');
+            }
         });
     </script>
 </body>

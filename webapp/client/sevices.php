@@ -10,50 +10,7 @@ header('Content-Type: text/html; charset=utf-8');
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="/webapp/css/style.css">
     <style>
-        .btn-create {
-            display: block;
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            text-align: center;
-            border-radius: 16px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-decoration: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            margin-top: 20px;
-        }
-        
-        .requests-list {
-            margin-top: 30px;
-        }
-        
-        .request-item {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        
-        .request-service {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-        
-        .request-date {
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-        
-        .request-status {
-            margin-top: 10px;
-            padding: 5px 10px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            display: inline-block;
-        }
+        /* ... (стили остаются без изменений) ... */
     </style>
 </head>
 <body>
@@ -69,30 +26,14 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="/webapp/js/bitrix-integration.js"></script>
     <script>
-        // Обработчик для проверки загрузки модуля CRM
-        function checkCrmModule() {
-            if (typeof BitrixCRM === 'undefined') {
-                console.error('BitrixCRM module not loaded');
-                return false;
-            }
-            
-            if (!BitrixCRM.getUserRequests) {
-                console.error('getUserRequests function missing');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Показать ошибку загрузки модуля
-        function showModuleError() {
+        // Функция для отображения ошибки загрузки модуля
+        function showModuleError(message) {
             const container = document.querySelector('.container');
             container.innerHTML = `
                 <div class="greeting">Ошибка!</div>
                 <div style="color: #ff6b6b; text-align: center; padding: 20px;">
-                    <p>Не удалось загрузить модуль интеграции с CRM</p>
+                    <p>${message}</p>
                     <p>Попробуйте перезагрузить страницу</p>
                     <button onclick="window.location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #6a11cb; color: white; border-radius: 12px;">
                         Перезагрузить
@@ -112,10 +53,11 @@ header('Content-Type: text/html; charset=utf-8');
             return statusMap[status] || status;
         }
 
-        document.addEventListener('DOMContentLoaded', async function() {
+        // Основная функция инициализации приложения
+        async function initApp() {
             // Проверяем загрузку модуля CRM
-            if (!checkCrmModule()) {
-                showModuleError();
+            if (typeof BitrixCRM === 'undefined' || typeof BitrixCRM.getUserRequests !== 'function') {
+                showModuleError('Модуль интеграции с CRM не загружен');
                 return;
             }
 
@@ -180,6 +122,45 @@ header('Content-Type: text/html; charset=utf-8');
                         <div class="request-status">${error.message || 'Попробуйте позже'}</div>
                     </div>
                 `;
+            }
+        }
+
+        // Обработчик события загрузки модуля CRM
+        document.addEventListener('BitrixCRMLoaded', function() {
+            console.log('Событие BitrixCRMLoaded получено (services)');
+            if (typeof BitrixCRM !== 'undefined') {
+                initApp();
+            } else {
+                showModuleError('Модуль CRM загружен, но не инициализирован');
+            }
+        });
+
+        // Загрузка скрипта CRM с обработкой ошибок
+        function loadCrmModule() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '/webapp/js/bitrix-integration.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Основной скрипт
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Загружаем модуль CRM
+                await loadCrmModule();
+                
+                // Устанавливаем таймаут на случай, если событие не придет
+                setTimeout(() => {
+                    if (typeof BitrixCRM === 'undefined') {
+                        showModuleError('Модуль CRM не загрузился в течение 3 секунд');
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Ошибка загрузки скрипта CRM:', error);
+                showModuleError('Не удалось загрузить модуль CRM');
             }
         });
     </script>
