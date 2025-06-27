@@ -1,90 +1,136 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
-header("Cache-Control: no-cache, no-store, must-revalidate");
-header("Pragma: no-cache");
-header("Expires: 0");
-$version = time();
+$version = $_GET['v'] ?? time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Мои запросы</title>
+    <title>Сервисы для клиента</title>
     <script src="https://telegram.org/js/telegram-web-app.js?<?=$version?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?=$version?>">
-    <style>
-        .btn-create {
-            display: block; width: 100%; padding: 16px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white; text-align: center; border-radius: 16px;
-            font-size: 1.2rem; font-weight: bold; text-decoration: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-top: 20px;
-        }
-        .requests-list { margin-top: 30px; }
-        .request-item {
-            background: rgba(255,255,255,0.1); border-radius: 16px;
-            padding: 20px; margin-bottom: 15px; text-align: left;
-        }
-        .request-service { font-weight: bold; font-size: 1.1rem; }
-        .request-date { opacity: 0.9; margin-top: 5px; }
-        .request-status {
-            margin-top: 10px; padding: 5px 10px; border-radius: 12px;
-            background: rgba(255,255,255,0.2); display: inline-block;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <div class="greeting">Мои запросы</div>
-        <a href="/webapp/client/order.php?v=<?=$version?>" class="btn-create">+ Создать новый запрос</a>
-        <div class="requests-list" id="requests-list">
-            <div class="request-item"><div class="request-service">Загрузка...</div></div>
+        <div class="greeting">Доступные сервисы</div>
+        <div class="service-list">
+            <div class="service-card" data-service="Дизайн" data-price="5000">
+                <h3>Дизайн</h3>
+                <p>Логотипы, брендинг, UI/UX</p>
+                <div class="price">5 000 ₽</div>
+            </div>
+            <div class="service-card" data-service="Разработка сайта" data-price="25000">
+                <h3>Разработка</h3>
+                <p>Сайты, приложения, боты</p>
+                <div class="price">25 000 ₽</div>
+            </div>
+            <div class="service-card" data-service="Маркетинг" data-price="15000">
+                <h3>Маркетинг</h3>
+                <p>SMM, SEO, реклама</p>
+                <div class="price">15 000 ₽</div>
+            </div>
+            <div class="service-card" data-service="Консультация" data-price="3000">
+                <h3>Консультации</h3>
+                <p>Экспертные советы</p>
+                <div class="price">3 000 ₽</div>
+            </div>
+        </div>
+        <div class="back-button" onclick="window.location.href='/index.php?v=<?=$version?>'">
+            Назад к выбору роли
         </div>
     </div>
 
-    <script src="/webapp/js/bitrix-integration.js?<?=$version?>"></script>
     <script>
-        const email = localStorage.getItem('userEmail');
-        if (!email) {
-            document.getElementById('requests-list').innerHTML = `
-                <div class="request-item">
-                    <div class="request-service">Вы еще не создавали заявок</div>
-                </div>
-            `;
-        } else {
-            BitrixCRM.getUserRequests(email)
-                .then(response => {
-                    const leads = response.result || [];
-                    let html = '';
-                    if (leads.length === 0) {
-                        html = `<div class="request-item"><div class="request-service">У вас пока нет заявок</div></div>`;
-                    } else {
-                        leads.forEach(lead => {
-                            const date = new Date(lead.DATE_CREATE).toLocaleDateString('ru-RU');
-                            const service = lead.UF_CRM_685D2956C64E0 || 'Услуга не указана';
-                            html += `
-                                <div class="request-item">
-                                    <div class="request-service">${service}</div>
-                                    <div class="request-date">Создано: ${date}</div>
-                                    <div class="request-status">Статус: ${lead.STATUS_ID || 'Новый'}</div>
-                                </div>
-                            `;
+        const tg = window.Telegram.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.setHeaderColor('#6a11cb');
+            tg.MainButton.hide();
+            
+            // Обработчики карточек сервисов
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const service = card.getAttribute('data-service');
+                    const price = card.getAttribute('data-price');
+                    
+                    if (tg.showPopup) {
+                        tg.showPopup({
+                            title: 'Подтверждение',
+                            message: `Вы выбрали: ${service}\nСтоимость: ${parseInt(price).toLocaleString('ru-RU')} ₽`,
+                            buttons: [
+                                {id: 'confirm', type: 'ok', text: 'Оформить заказ'},
+                                {id: 'cancel', type: 'cancel', text: 'Отмена'}
+                            ]
+                        }, (buttonId) => {
+                            if (buttonId === 'confirm') {
+                                window.location.href = `/webapp/client/order.php?service=${encodeURIComponent(service)}&price=${price}&v=<?=$version?>`;
+                            }
                         });
+                    } else {
+                        window.location.href = `/webapp/client/order.php?service=${encodeURIComponent(service)}&price=${price}&v=<?=$version?>`;
                     }
-                    document.getElementById('requests-list').innerHTML = html;
-                })
-                .catch(error => {
-                    document.getElementById('requests-list').innerHTML = `
-                        <div class="request-item">
-                            <div class="request-service">Ошибка загрузки данных</div>
-                        </div>
-                    `;
                 });
+            });
         }
     </script>
+    
+    <style>
+        .service-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .service-card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .service-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+        
+        .service-card p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .price {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        
+        .back-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-align: center;
+            border-radius: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
 </body>
 </html>

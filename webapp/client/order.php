@@ -1,170 +1,249 @@
 <?php
+require '../../lib/bitrix24.php';
 header('Content-Type: text/html; charset=utf-8');
-header("Cache-Control: no-cache, no-store, must-revalidate");
-header("Pragma: no-cache");
-header("Expires: 0");
-$version = time();
+$version = $_GET['v'] ?? time();
+$service = $_GET['service'] ?? 'Услуга';
+$price = $_GET['price'] ?? 0;
+
+// Обработка отправки формы
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $bitrix = new Bitrix24();
+    $formData = $_POST;
+    
+    // Поиск существующего контакта
+    $contact = $bitrix->findContact($formData['phone'], $formData['email']);
+    
+    if (!$contact) {
+        // Создаем новый контакт
+        $contactResponse = $bitrix->createContact($formData);
+        $contactId = $contactResponse['result'] ?? null;
+    } else {
+        $contactId = $contact['ID'];
+    }
+    
+    if ($contactId) {
+        // Создаем сделку
+        $formData['service'] = $service;
+        $formData['price'] = $price;
+        $dealResponse = $bitrix->createDeal($contactId, $formData);
+        
+        if ($dealResponse['result']) {
+            $success = true;
+            $dealId = $dealResponse['result'];
+        } else {
+            $error = 'Ошибка при создании сделки: ' . json_encode($dealResponse);
+        }
+    } else {
+        $error = 'Ошибка при создании контакта: ' . json_encode($contactResponse);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Создать запрос</title>
+    <title>Оформление заказа</title>
     <script src="https://telegram.org/js/telegram-web-app.js?<?=$version?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?=$version?>">
-    <style>
-        .form-container {
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
-            border-radius: 24px; padding: 25px; margin-top: 20px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 500; }
-        input, select, textarea {
-            width: 100%; padding: 14px; border-radius: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.15); color: white; font-size: 1rem;
-        }
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.7); }
-        button {
-            width: 100%; padding: 16px;
-            background: linear-gradient(135deg, #ff2e63 0%, #ff6b6b 100%);
-            color: white; border: none; border-radius: 16px; font-size: 1.2rem;
-            font-weight: bold; cursor: pointer; margin-top: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <div class="greeting">Новый запрос</div>
-        <div class="form-container">
-            <form id="request-form">
-                <div class="form-group">
-                    <label for="fullName">Имя и фамилия</label>
-                    <input type="text" id="fullName" name="fullName" required placeholder="Введите полное имя">
+        <div class="greeting">Оформление заказа</div>
+        
+        <?php if (isset($success)): ?>
+            <div class="success-message">
+                <h3>✅ Заказ успешно оформлен!</h3>
+                <p>Номер сделки в Bitrix24: <?= $dealId ?></p>
+                <p>Спасибо за ваш заказ! Мы свяжемся с вами в ближайшее время.</p>
+                <div class="back-button" onclick="window.location.href='/webapp/client/services.php?v=<?=$version?>'">
+                    Вернуться к услугам
                 </div>
-                <div class="form-group">
-                    <label for="phone">Телефон</label>
-                    <input type="tel" id="phone" name="phone" required placeholder="+7 (XXX) XXX-XX-XX">
+            </div>
+        <?php else: ?>
+            <form id="order-form" method="POST">
+                <input type="hidden" name="service" value="<?= htmlspecialchars($service) ?>">
+                <input type="hidden" name="price" value="<?= htmlspecialchars($price) ?>">
+                
+                <div class="service-info">
+                    <h3><?= htmlspecialchars($service) ?></h3>
+                    <p>Стоимость: <?= number_format($price, 0, '', ' ') ?> ₽</p>
                 </div>
+                
+                <div class="form-group">
+                    <label for="first_name">Имя *</label>
+                    <input type="text" id="first_name" name="first_name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="last_name">Фамилия</label>
+                    <input type="text" id="last_name" name="last_name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Телефон *</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+                
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="example@mail.com">
+                    <input type="email" id="email" name="email">
                 </div>
+                
                 <div class="form-group">
-                    <label for="service">Услуга</label>
-                    <select id="service" name="service" required>
-                        <option value="" disabled selected>Выберите услугу</option>
-                        <option value="Уход за могилой">Уход за могилой</option>
-                        <option value="Установка памятника">Установка памятника</option>
-                        <option value="Доставка цветов">Доставка цветов</option>
-                        <option value="Благоустройство участка">Благоустройство участка</option>
-                        <option value="Прочие услуги">Прочие услуги</option>
-                    </select>
+                    <label for="comment">Комментарий к заказу</label>
+                    <textarea id="comment" name="comment" rows="3"></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="serviceDate">Желаемая дата услуги</label>
-                    <input type="date" id="serviceDate" name="serviceDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="city">Город</label>
-                    <input type="text" id="city" name="city" required placeholder="Город оказания услуги">
-                </div>
-                <div class="form-group">
-                    <label for="cemetery">Кладбище</label>
-                    <input type="text" id="cemetery" name="cemetery" required placeholder="Название кладбища">
-                </div>
-                <div class="form-group">
-                    <label for="sector">Сектор</label>
-                    <input type="text" id="sector" name="sector" required placeholder="Номер сектора">
-                </div>
-                <div class="form-group">
-                    <label for="row">Ряд</label>
-                    <input type="text" id="row" name="row" required placeholder="Номер ряда">
-                </div>
-                <div class="form-group">
-                    <label for="plot">Участок</label>
-                    <input type="text" id="plot" name="plot" required placeholder="Номер участка">
-                </div>
-                <div class="form-group">
-                    <label for="comments">Дополнительная информация</label>
-                    <textarea id="comments" name="comments" rows="3" placeholder="Особые пожелания"></textarea>
-                </div>
-                <button type="submit">Отправить запрос</button>
+                
+                <?php if (isset($error)): ?>
+                    <div class="error-message"><?= $error ?></div>
+                <?php endif; ?>
+                
+                <button type="submit" class="submit-button">Оформить заказ</button>
             </form>
-        </div>
+        <?php endif; ?>
     </div>
 
-    <script src="/webapp/js/bitrix-integration.js?<?=$version?>"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('request-form');
-            const tg = window.Telegram && Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.setHeaderColor('#6a11cb');
+            tg.MainButton.hide();
             
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            // Автозаполнение данных пользователя Telegram
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const user = tg.initDataUnsafe.user;
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                if (firstName || lastName) {
-                    document.getElementById('fullName').value = `${firstName} ${lastName}`.trim();
+                if (user.first_name && !document.getElementById('first_name').value) {
+                    document.getElementById('first_name').value = user.first_name;
+                }
+                if (user.last_name && !document.getElementById('last_name').value) {
+                    document.getElementById('last_name').value = user.last_name;
                 }
             }
             
-            document.getElementById('serviceDate').min = new Date().toISOString().split('T')[0];
-            
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const submitBtn = form.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Отправка...';
-                
-                const formData = {
-                    fullName: document.getElementById('fullName').value,
-                    phone: document.getElementById('phone').value,
-                    email: document.getElementById('email').value,
-                    service: document.getElementById('service').value,
-                    serviceDate: document.getElementById('serviceDate').value,
-                    city: document.getElementById('city').value,
-                    cemetery: document.getElementById('cemetery').value,
-                    sector: document.getElementById('sector').value,
-                    row: document.getElementById('row').value,
-                    plot: document.getElementById('plot').value,
-                    comments: document.getElementById('comments').value
-                };
-                
-                try {
-                    const result = await BitrixCRM.createServiceRequest(formData);
-                    if (result.result) {
-                        localStorage.setItem('userEmail', formData.email);
-                        if (tg && tg.showAlert) {
-                            tg.showAlert('✅ Запрос успешно создан!');
-                        } else {
-                            alert('✅ Запрос успешно создан!');
-                        }
-                        setTimeout(() => {
-                            window.location.href = '/webapp/client/services.php?v=<?=$version?>';
-                        }, 1500);
-                    } else {
-                        const errorMsg = `❌ Ошибка: ${result.error_description || 'Неизвестная ошибка'}`;
-                        if (tg && tg.showAlert) tg.showAlert(errorMsg);
-                        else alert(errorMsg);
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Отправить запрос';
-                    }
-                } catch (error) {
-                    const errorMsg = '🚫 Ошибка сети или сервера';
-                    if (tg && tg.showAlert) tg.showAlert(errorMsg);
-                    else alert(errorMsg);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Отправить запрос';
+            // Валидация формы
+            document.getElementById('order-form').addEventListener('submit', function(e) {
+                const phone = document.getElementById('phone').value;
+                if (!phone.match(/^(\+7|8)[0-9]{10}$/)) {
+                    e.preventDefault();
+                    alert('Введите корректный номер телефона в формате +7XXXXXXXXXX');
+                    return false;
                 }
+                
+                const email = document.getElementById('email').value;
+                if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                    e.preventDefault();
+                    alert('Введите корректный email адрес');
+                    return false;
+                }
+                
+                tg.showPopup({
+                    title: 'Подтверждение',
+                    message: 'Вы уверены, что хотите оформить заказ?',
+                    buttons: [
+                        {id: 'confirm', type: 'ok', text: 'Подтвердить'},
+                        {id: 'cancel', type: 'cancel', text: 'Отмена'}
+                    ]
+                }, function(buttonId) {
+                    if (buttonId === 'confirm') {
+                        e.target.submit();
+                    }
+                });
+                
+                e.preventDefault();
+                return false;
             });
-        });
+        }
     </script>
+    
+    <style>
+        .service-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .service-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+        
+        .service-info p {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            text-align: left;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .submit-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 107, 107, 0.1);
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .success-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+        
+        .success-message h3 {
+            margin-bottom: 15px;
+            color: #4ade80;
+        }
+    </style>
 </body>
 </html>

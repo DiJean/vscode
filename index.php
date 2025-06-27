@@ -24,7 +24,6 @@ $version = time();
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
-    <script src="/webapp/js/telegram-api.js?<?=$version?>"></script>
     <script>
         const CURRENT_VERSION = "<?=$version?>";
         const storedVersion = localStorage.getItem('appVersion');
@@ -43,7 +42,6 @@ $version = time();
         function checkScriptLoaded() {
             const errors = [];
             if (typeof Telegram === 'undefined') errors.push('Telegram SDK не загружен');
-            if (typeof initTelegramApp === 'undefined') errors.push('telegram-api.js не загружен');
             if (errors.length > 0) {
                 console.error('Ошибки:', errors.join(', '));
                 showFallbackView();
@@ -82,8 +80,7 @@ $version = time();
                         <div class="avatar">
                             ${user.photo_url ? 
                                 `<img src="${user.photo_url}" alt="${fullName}">` : 
-                                `<div>${firstName.charAt(0) || 'Г'}</div>`
-                            }
+                                `<div>${firstName.charAt(0) || 'Г'}</div>`}
                         </div>
                         <div class="user-name">${fullName || 'Аноним'}</div>
                         <div class="username">${username}</div>
@@ -103,11 +100,16 @@ $version = time();
                         <div class="role-error" id="role-error">Выберите роль!</div>
                     </div>
                     <div class="welcome-text">
-                        Мы рады видеть вас здесь! <span class="heart">❤️</span>
+                        Мы рады помочь! <span class="heart">❤️</span>
                     </div>
                 `;
                 
                 document.getElementById('user-container').innerHTML = userHtml;
+                
+                // Обработчик изменения выбора роли
+                document.getElementById('role').addEventListener('change', function() {
+                    document.getElementById('role-error').style.display = 'none';
+                });
                 
                 if (tg.MainButton) {
                     tg.MainButton.setText("Продолжить");
