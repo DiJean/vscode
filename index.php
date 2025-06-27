@@ -8,7 +8,7 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор роли</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/webapp/css/style.css">
 </head>
 <body>
     <div class="container">
@@ -20,11 +20,11 @@ header('Content-Type: text/html; charset=utf-8');
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
-    <script src="js/telegram-api.js"></script>
-    <script src="js/bitrix-integration.js"></script>
+    <script src="/webapp/js/telegram-api.js"></script>
     <script>
         // Основная функция инициализации приложения
         function initApp() {
+            // Проверка доступности Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -33,12 +33,15 @@ header('Content-Type: text/html; charset=utf-8');
             const tg = Telegram.WebApp;
             
             try {
+                // Инициализация WebApp
                 tg.ready();
                 
+                // Пытаемся раскрыть на весь экран
                 if (tg.isExpanded !== true && tg.expand) {
                     tg.expand();
                 }
                 
+                // Установка цвета фона
                 tg.backgroundColor = '#6a11cb';
                 if (tg.setHeaderColor) {
                     tg.setHeaderColor('#6a11cb');
@@ -54,14 +57,17 @@ header('Content-Type: text/html; charset=utf-8');
                 let userHtml = '';
                 
                 if (user) {
+                    // Если есть данные пользователя
                     const firstName = user.first_name || '';
                     const lastName = user.last_name || '';
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
                     
+                    // Формируем приветствие
                     const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
                     document.getElementById('greeting').textContent = greeting;
                     
+                    // Формируем аватар
                     userHtml += `
                         <div class="avatar">
                             ${user.photo_url ? 
@@ -73,6 +79,7 @@ header('Content-Type: text/html; charset=utf-8');
                         <div class="username">${username}</div>
                     `;
                 } else {
+                    // Если данные пользователя недоступны
                     userHtml = `
                         <div class="avatar">Г</div>
                         <div class="user-name">Гость</div>
@@ -95,6 +102,7 @@ header('Content-Type: text/html; charset=utf-8');
                     </div>
                 `;
                 
+                // Отображаем информацию о пользователе
                 document.getElementById('user-container').innerHTML = userHtml;
                 
                 // Настройка кнопки
@@ -102,67 +110,26 @@ header('Content-Type: text/html; charset=utf-8');
                     tg.MainButton.setText("Продолжить");
                     
                     // Обработчик для кнопки
-                    tg.MainButton.onClick(async function() {
+                    tg.MainButton.onClick(function() {
                         const role = document.getElementById('role').value;
                         if (!role) {
                             document.getElementById('role-error').style.display = 'block';
                             return;
                         }
                         
-                        try {
-                            // Для клиента создаем контакт и сделку
-                            if (role === 'client') {
-                                if (!user) {
-                                    throw new Error('Данные пользователя недоступны');
-                                }
-                                
-                                // Показываем индикатор загрузки
-                                if (tg.showProgress) tg.showProgress();
-                                
-                                // Создаем контакт
-                                const contactResponse = await createBitrixContact(user);
-                                if (!contactResponse.result) {
-                                    throw new Error('Ошибка создания контакта');
-                                }
-                                
-                                // Создаем сделку
-                                const title = `Заявка от ${user.first_name || 'клиента'}`;
-                                const dealResponse = await createBitrixDeal(contactResponse.result, title);
-                                if (!dealResponse.result) {
-                                    throw new Error('Ошибка создания сделки');
-                                }
-                                
-                                // Сохраняем ID
-                                localStorage.setItem('bitrixContactId', contactResponse.result);
-                                localStorage.setItem('bitrixDealId', dealResponse.result);
-                                
-                                // Скрываем индикатор
-                                if (tg.hideProgress) tg.hideProgress();
-                            }
-                            
-                            // Сохраняем роль и перенаправляем
-                            localStorage.setItem('selectedRole', role);
-                            
-                            if (role === 'client') {
-                                window.location.href = 'client/client-form.php';
-                            } else {
-                                window.location.href = 'performer/dashboard.php';
-                            }
-                            
-                        } catch (error) {
-                            console.error('Ошибка:', error);
-                            
-                            // Скрываем индикатор
-                            if (tg.hideProgress) tg.hideProgress();
-                            
-                            tg.showPopup({
-                                title: 'Ошибка',
-                                message: 'Не удалось создать заявку. Попробуйте позже.',
-                                buttons: [{id: 'ok', type: 'ok'}]
-                            });
+                        // Сохраняем роль
+                        localStorage.setItem('selectedRole', role);
+                        
+                        // Перенаправляем в зависимости от роли
+                        if (role === 'client') {
+                            window.location.href = '/webapp/client/services.php';
+                        } else {
+                            // Для исполнителя другая страница
+                            window.location.href = '/webapp/doer/dashboard.php';
                         }
                     });
                     
+                    // Показываем кнопку
                     tg.MainButton.show();
                 }
                 
@@ -177,6 +144,7 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
+        // Функция для отображения запасного вида
         function showFallbackView() {
             document.getElementById('greeting').textContent = 'Привет, Гость!';
             document.getElementById('user-container').innerHTML = `
@@ -186,6 +154,7 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }
         
+        // Инициализация при загрузке
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
