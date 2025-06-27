@@ -22,8 +22,34 @@ header('Content-Type: text/html; charset=utf-8');
 
     <script src="/webapp/js/telegram-api.js"></script>
     <script>
+        // Проверка загрузки всех скриптов
+        function checkScriptLoaded() {
+            const errors = [];
+            
+            if (typeof Telegram === 'undefined') {
+                errors.push('Telegram WebApp SDK не загружен');
+            }
+            
+            if (typeof initTelegramApp === 'undefined') {
+                errors.push('Модуль telegram-api.js не загружен');
+            }
+            
+            if (errors.length > 0) {
+                console.error('Ошибки загрузки скриптов:', errors.join(', '));
+                showFallbackView();
+                return false;
+            }
+            
+            return true;
+        }
+        
         // Основная функция инициализации приложения
         function initApp() {
+            // Проверка загрузки скриптов
+            if (!checkScriptLoaded()) {
+                return;
+            }
+            
             // Проверка доступности Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
@@ -151,6 +177,18 @@ header('Content-Type: text/html; charset=utf-8');
                 <div class="welcome-text">
                     Добро пожаловать в наше приложение!
                 </div>
+                <div style="margin-top: 20px; color: #ff6b6b;">
+                    <p>⚠️ Произошла ошибка инициализации</p>
+                    <p>Попробуйте перезагрузить страницу</p>
+                </div>
+                <div class="role-selection" style="margin-top: 30px;">
+                    <a href="/webapp/client/services.php" style="display: block; padding: 15px; background: #6a11cb; color: white; text-align: center; border-radius: 16px; margin-bottom: 15px;">
+                        Войти как клиент
+                    </a>
+                    <a href="/webapp/doer/dashboard.php" style="display: block; padding: 15px; background: #2575fc; color: white; text-align: center; border-radius: 16px;">
+                        Войти как исполнитель
+                    </a>
+                </div>
             `;
         }
         
@@ -158,7 +196,16 @@ header('Content-Type: text/html; charset=utf-8');
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
-            document.addEventListener('DOMContentLoaded', initApp);
+            document.addEventListener('DOMContentLoaded', function() {
+                // Проверяем загрузку Telegram SDK с задержкой
+                setTimeout(function() {
+                    if (typeof Telegram === 'undefined') {
+                        showFallbackView();
+                    } else {
+                        initApp();
+                    }
+                }, 1000);
+            });
         }
     </script>
 </body>
