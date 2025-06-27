@@ -148,6 +148,7 @@ header('Content-Type: text/html; charset=utf-8');
                         
                         // Перенаправляем в зависимости от роли
                         if (role === 'client') {
+                            // Исправлено: переход на services.php вместо client-form.php
                             window.location.href = '/webapp/client/services.php';
                         } else {
                             // Для исполнителя другая страница
