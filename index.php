@@ -16,7 +16,7 @@ $version = time();
 </head>
 <body>
     <div class="container">
-        <div class="greeting" id="greeting">Привет!</div>
+        <div class="greeting" id="greeting">Здравствуйте.</div>
         <div id="user-container"></div>
     </div>
     
@@ -110,7 +110,7 @@ $version = time();
                 const lastName = user.last_name || '';
                 const username = user.username ? `@${user.username}` : 'без username';
                 const fullName = `${firstName} ${lastName}`.trim();
-                const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
+                const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
                 document.getElementById('greeting').textContent = greeting;
                 
                 userHtml += `
@@ -187,7 +187,7 @@ $version = time();
         }
         
         function showFallbackView() {
-            document.getElementById('greeting').textContent = 'Привет, Гость!';
+            document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
             document.getElementById('user-container').innerHTML = `
                 <div class="welcome-text">Добро пожаловать!</div>
                 <div style="margin-top: 20px; color: #ff6b6b;">
