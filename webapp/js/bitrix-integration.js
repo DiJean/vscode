@@ -1,20 +1,15 @@
 (function() {
-    console.log('Bitrix CRM module loading...');
-    
     const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
     
-    // Функция создания заявки
     async function createServiceRequest(data) {
         try {
-            // Разделяем полное имя на компоненты
             const nameParts = (data.fullName || '').split(' ');
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            // Формируем данные для Bitrix24
             const requestData = {
                 fields: {
-                    TITLE: `Запрос на услугу: ${data.service}`,
+                    TITLE: `Запрос: ${data.service}`,
                     NAME: firstName,
                     LAST_NAME: lastName,
                     PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
@@ -38,12 +33,10 @@
             
             return await response.json();
         } catch (error) {
-            console.error('Ошибка при создании заявки:', error);
             return { error: true, message: error.message };
         }
     }
 
-    // Функция получения заявок пользователя
     async function getUserRequests(email) {
         try {
             const filter = {
@@ -60,16 +53,9 @@
             
             return await response.json();
         } catch (error) {
-            console.error('Ошибка при получении заявок:', error);
             return { error: true, message: error.message };
         }
     }
 
-    // Экспорт функций
-    window.BitrixCRM = {
-        createServiceRequest,
-        getUserRequests
-    };
-
-    console.log('Bitrix CRM module loaded successfully!');
+    window.BitrixCRM = { createServiceRequest, getUserRequests };
 })();

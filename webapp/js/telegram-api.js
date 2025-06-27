@@ -1,31 +1,17 @@
-// Функция инициализации Telegram приложения
 function initTelegramApp(callback) {
-    if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-        return false;
-    }
-    
+    if (typeof Telegram === 'undefined' || !Telegram.WebApp) return false;
     const tg = Telegram.WebApp;
-    
     try {
         tg.ready();
-        
-        if (tg.isExpanded !== true && tg.expand) {
-            tg.expand();
-        }
-        
+        if (tg.isExpanded !== true && tg.expand) tg.expand();
         tg.backgroundColor = '#6a11cb';
-        if (tg.setHeaderColor) {
-            tg.setHeaderColor('#6a11cb');
-        }
-        
+        if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
         return callback(tg);
     } catch (e) {
-        console.error('Telegram API error:', e);
         return false;
     }
 }
 
-// Настройка главной кнопки
 function setupMainButton(tg, onClickHandler) {
     if (tg.MainButton) {
         tg.MainButton.setText("Продолжить");
@@ -36,10 +22,7 @@ function setupMainButton(tg, onClickHandler) {
     return false;
 }
 
-// Получение данных пользователя
 function getUserData(tg) {
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        return tg.initDataUnsafe.user;
-    }
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
     return null;
 }
