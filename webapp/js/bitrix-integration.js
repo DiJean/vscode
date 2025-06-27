@@ -1,11 +1,10 @@
 (function() {
-    console.log('[BitrixCRM] Начало загрузки модуля CRM');
+    console.log('Bitrix CRM module loading...');
     
     const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
     
     // Функция создания заявки
     async function createServiceRequest(data) {
-        console.log('[BitrixCRM] Создание заявки', data);
         try {
             // Разделяем полное имя на компоненты
             const nameParts = (data.fullName || '').split(' ');
@@ -37,18 +36,15 @@
                 body: JSON.stringify(requestData),
             });
             
-            const result = await response.json();
-            console.log('[BitrixCRM] Результат создания заявки', result);
-            return result;
+            return await response.json();
         } catch (error) {
-            console.error('[BitrixCRM] Ошибка при создании заявки:', error);
+            console.error('Ошибка при создании заявки:', error);
             return { error: true, message: error.message };
         }
     }
 
     // Функция получения заявок пользователя
     async function getUserRequests(email) {
-        console.log('[BitrixCRM] Получение заявок для', email);
         try {
             const filter = {
                 filter: {'EMAIL': email},
@@ -62,11 +58,9 @@
                 body: JSON.stringify(filter),
             });
             
-            const result = await response.json();
-            console.log('[BitrixCRM] Результат получения заявок', result);
-            return result;
+            return await response.json();
         } catch (error) {
-            console.error('[BitrixCRM] Ошибка при получении заявок:', error);
+            console.error('Ошибка при получении заявок:', error);
             return { error: true, message: error.message };
         }
     }
@@ -77,6 +71,5 @@
         getUserRequests
     };
 
-    console.log('[BitrixCRM] Модуль успешно загружен');
-    document.dispatchEvent(new CustomEvent('BitrixCRMLoaded'));
+    console.log('Bitrix CRM module loaded successfully!');
 })();
