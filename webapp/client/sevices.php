@@ -65,9 +65,67 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="requests-list" id="requests-list">
             <!-- Сюда будут загружаться заявки -->
             <div class="request-item">
-                <div class="request-service">У вас пока нет заявок</div>
+                <div class="request-service">Загрузка...</div>
             </div>
         </div>
     </div>
+
+    <script src="/webapp/js/bitrix-integration.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const tg = window.Telegram && Telegram.WebApp;
+            const email = localStorage.getItem('userEmail');
+            
+            if (!email) {
+                document.getElementById('requests-list').innerHTML = `
+                    <div class="request-item">
+                        <div class="request-service">Вы еще не создавали заявок</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                // Используем функцию getUserRequests из bitrix-integration.js
+                const response = await getUserRequests(email);
+                const leads = response.result || [];
+                
+                let requestsHtml = '';
+                
+                if (leads.length === 0) {
+                    requestsHtml = `
+                        <div class="request-item">
+                            <div class="request-service">У вас пока нет заявок</div>
+                        </div>
+                    `;
+                } else {
+                    leads.forEach(lead => {
+                        // Форматируем дату
+                        const date = new Date(lead.DATE_CREATE).toLocaleDateString('ru-RU');
+                        // Получаем услугу (если есть)
+                        const service = lead.UF_CRM_685D2956C64E0 || 'Не указано';
+                        
+                        requestsHtml += `
+                            <div class="request-item">
+                                <div class="request-service">${service}</div>
+                                <div class="request-date">Создано: ${date}</div>
+                                <div class="request-status">Статус: ${lead.STATUS_ID || 'Новый'}</div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('requests-list').innerHTML = requestsHtml;
+                
+            } catch (error) {
+                console.error('Ошибка при загрузке заявок:', error);
+                document.getElementById('requests-list').innerHTML = `
+                    <div class="request-item">
+                        <div class="request-service">Ошибка загрузки данных</div>
+                    </div>
+                `;
+            }
+        });
+    </script>
 </body>
 </html>
