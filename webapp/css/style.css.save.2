@@ -1,0 +1,189 @@
+
+
+;[file name]: style.css
+[file content begin]
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #6a11cb;
+    --primary-light: #8a3cf5;
+    --primary-dark: #4d0aa3;
+    --secondary-color: #2575fc;
+    --accent-color: #ff2e63;
+    --text-color: #ffffff;
+    --background-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    --container-bg: rgba(255, 255, 255, 0.15);
+    --container-border: rgba(255, 255, 255, 0.18);
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --button-bg: rgba(106, 17, 203, 0.7);
+    --button-hover: rgba(106, 17, 203, 0.9);
+    --status-new: rgba(106, 17, 203, 0.5);
+    --status-in-progress: rgba(37, 117, 252, 0.5);
+    --status-completed: rgba(40, 167, 69, 0.5);
+    --status-canceled: rgba(220, 53, 69, 0.5);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--background-gradient);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.container {
+    max-width: 600px;
+    width: 100%;
+    background: var(--container-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 40px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--container-border);
+    margin: 20px 0;
+}
+
+.greeting {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--text-color);
+    margin: 0 auto 15px;
+    background: rgba(255, 255, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-name {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.username {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.welcome-text {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    margin-top: 25px;
+}
+
+.heart {
+    color: var(--accent-color);
+    display: inline-block;
+}
+
+.desktop-warning {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    max-width: 500px;
+}
+
+/* Стили для выбора роли */
+.role-selection {
+    margin: 25px 0;
+    width: 100%;
+}
+
+.role-label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+.role-select {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+    font-size: 1.1rem;
+    appearance: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.role-select option {
+    background: var(--primary-dark);
+    color: var(--text-color);
+    padding: 10px;
+}
+
+.role-error {
+    color: var(--accent-color);
+    margin-top: 10px;
+    font-weight: 500;
+    display: none;
+}
+
+/* Общие стили для кнопок */
+.button-primary {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 25px;
+    background: var(--button-bg);
+    border: none;
+    border-radius: 16px;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: center;
+}
+
+.button-primary:hover {
+    background: var(--button-hover);
+}
+
+@media (max-width: 480px) {
+    .greeting { font-size: 2rem; }
+    .user-name { font-size: 1.5rem; }
+    .username { font-size: 1rem; }
+    .welcome-text { font-size: 1.2rem; }
+    .role-label { font-size: 1.1rem; }
+    .role-select { padding: 12px; font-size: 1rem; }
+}
+[file content end]

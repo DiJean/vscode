@@ -1,0 +1,146 @@
+.services-list {
+    margin-top: 20px;
+    text-align: left;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.services-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.services-table th {
+    background-color: rgba(106, 17, 203, 0.3);
+    color: var(--primary-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 16px 12px;
+    font-size: 0.95rem;
+}
+
+.services-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--container-border);
+    font-size: 0.9rem;
+    vertical-align: top;
+}
+
+.services-table tr:last-child td {
+    border-bottom: none;
+}
+
+.services-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.service-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    min-width: 100px;
+}
+
+.status-new {
+    background: var(--status-new);
+}
+
+.status-in-progress {
+    background: var(--status-in-progress);
+}
+
+.status-completed {
+    background: var(--status-completed);
+}
+
+.status-canceled {
+    background: var(--status-canceled);
+}
+
+.btn-details {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--container-border);
+    color: var(--text-color);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-details:hover {
+    background: var(--primary-light);
+    transform: scale(1.1);
+}
+
+.btn-details svg {
+    width: 18px;
+    height: 18px;
+}
+
+.no-services {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .services-table {
+        display: block;
+    }
+    
+    .services-table thead {
+        display: none;
+    }
+    
+    .services-table tr {
+        display: block;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--container-border);
+        padding: 10px;
+    }
+    
+    .services-table td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .services-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--primary-light);
+        width: 45%;
+    }
+    
+    .services-table td:last-child {
+        border-bottom: none;
+    }
+    
+    .services-table td .service-status {
+        min-width: auto;
+        padding: 4px 10px;
+    }
+}
+

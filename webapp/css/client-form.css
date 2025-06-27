@@ -1,0 +1,79 @@
+[file content begin]
+.form-container {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-input, 
+.form-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-input:focus, 
+.form-textarea:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.required:after {
+    content: " *";
+    color: var(--accent-color);
+}
+
+.form-error {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.services-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.service-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(106, 17, 203, 0.1);
+    transition: background 0.3s;
+}
+
+.service-checkbox:hover {
+    background: rgba(106, 17, 203, 0.2);
+}
+
+.service-checkbox input {
+    margin-right: 8px;
+}
+
+input[type="date"] {
+    min-height: 44px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
