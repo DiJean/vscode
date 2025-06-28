@@ -7,55 +7,86 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Детали заявки</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
-    <link rel="stylesheet" href="/webapp/css/dashboard.css">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <style>
-        .deal-details {
-            text-align: left;
+        .detail-card {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
         }
+        
         .detail-item {
             margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
         .detail-label {
             font-weight: bold;
             opacity: 0.8;
             margin-bottom: 5px;
+            font-size: 0.9rem;
         }
+        
         .detail-value {
             font-size: 1.1rem;
         }
+        
         .back-btn {
             display: block;
             width: 100%;
-            padding: 16px;
+            padding: 12px;
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             text-align: center;
-            border-radius: 16px;
-            margin-top: 20px;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Детали заявки</h1>
-            <div class="user-info" id="user-info"></div>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Детали заявки</h1>
+            <div id="user-info"></div>
         </div>
         
-        <div id="deal-container" class="deal-details">
-            Загрузка деталей заявки...
+        <div class="detail-card" id="deal-container">
+            <div class="text-center py-4">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            </div>
         </div>
         
         <a href="dashboard.php" class="back-btn">← Назад к списку заявок</a>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
@@ -65,7 +96,6 @@ header('Content-Type: text/html; charset=utf-8');
         let contactId = null;
         let performerName = "";
         
-        // Функция для получения параметра из URL
         function getUrlParameter(name) {
             name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
             const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -73,7 +103,6 @@ header('Content-Type: text/html; charset=utf-8');
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
         
-        // Поиск исполнителя по Telegram ID
         async function findPerformerByTgId(tgId) {
             try {
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
@@ -81,7 +110,7 @@ header('Content-Type: text/html; charset=utf-8');
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         filter: {'UF_CRM_1751128872': String(tgId)},
-                        select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
+                        select: ['ID', 'NAME', 'LAST_NAME']
                     })
                 });
                 
@@ -93,7 +122,6 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        // Загрузка деталей сделки
         async function loadDealDetails(dealId) {
             try {
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
@@ -106,7 +134,6 @@ header('Content-Type: text/html; charset=utf-8');
                             'UF_CRM_685D295664A8A', 
                             'UF_CRM_685D2956BF4C8', 
                             'UF_CRM_685D2956C64E0',
-                            'UF_CRM_1751128612',
                             'UF_CRM_685D2956D0916',
                             'UF_CRM_1751022940',
                             'UF_CRM_685D2956D7C70',
@@ -123,10 +150,8 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        // Основная функция инициализации
         async function initApp() {
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                showFallbackView();
                 return;
             }
             
@@ -134,42 +159,13 @@ header('Content-Type: text/html; charset=utf-8');
             
             try {
                 user = tg.initDataUnsafe?.user || {};
-                
-                // Проверяем регистрацию исполнителя
                 const performerContact = await findPerformerByTgId(user.id);
                 
-                if (!performerContact) {
-                    tg.showPopup({
-                        title: 'Требуется регистрация',
-                        message: 'Пройдите регистрацию для доступа к деталям заявки',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                    
-                    setTimeout(() => {
-                        window.location.href = 'performer-form.php';
-                    }, 2000);
-                    return;
+                if (performerContact) {
+                    contactId = performerContact.ID;
+                    performerName = `${performerContact.NAME || ''} ${performerContact.LAST_NAME || ''}`.trim();
                 }
                 
-                contactId = performerContact.ID;
-                performerName = `${performerContact.NAME || ''} ${performerContact.LAST_NAME || ''}`.trim();
-                
-                // Отображаем информацию о пользователе
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const fullName = `${firstName} ${lastName}`.trim();
-                
-                document.getElementById('user-info').innerHTML = `
-                    <div class="avatar">
-                        ${user.photo_url ? 
-                            `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
-                            `<div>${firstName.charAt(0) || 'И'}</div>`
-                        }
-                    </div>
-                    <div class="user-name">${fullName || 'Исполнитель'}</div>
-                `;
-                
-                // Загружаем детали сделки
                 const dealId = getUrlParameter('id');
                 if (!dealId) {
                     throw new Error('Не указан ID заявки');
@@ -184,17 +180,19 @@ header('Content-Type: text/html; charset=utf-8');
                 
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
-                document.getElementById('deal-container').innerHTML = `<div class="error">${e.message || 'Ошибка загрузки'}</div>`;
+                document.getElementById('deal-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        ${e.message || 'Ошибка загрузки данных'}
+                    </div>
+                `;
             }
         }
         
-        // Отображение деталей сделки
         function renderDealDetails(deal) {
             const createdDate = new Date(deal.DATE_CREATE).toLocaleString();
             const serviceDate = deal.UF_CRM_685D295664A8A ? 
                 new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-';
             
-            // Обработка услуг
             let serviceNames = '-';
             const serviceField = deal.UF_CRM_685D2956C64E0;
             if (serviceField) {
@@ -215,7 +213,6 @@ header('Content-Type: text/html; charset=utf-8');
                 }).join(', ');
             }
             
-            // Статус
             let statusText = deal.STAGE_ID || 'Неизвестно';
             if (statusText === 'NEW') statusText = 'Новая';
             else if (statusText === 'PROCESSING') statusText = 'В работе';
@@ -253,7 +250,7 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
-                    <div class="detail-value">${performerName}</div>
+                    <div class="detail-value">${performerName || '-'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Кладбище</div>
@@ -274,14 +271,6 @@ header('Content-Type: text/html; charset=utf-8');
                 <div class="detail-item">
                     <div class="detail-label">Комментарий</div>
                     <div class="detail-value">${deal.COMMENTS || '-'}</div>
-                </div>
-            `;
-        }
-        
-        function showFallbackView() {
-            document.getElementById('user-info').innerHTML = `
-                <div class="welcome-text">
-                    Для просмотра деталей откройте приложение в Telegram
                 </div>
             `;
         }
