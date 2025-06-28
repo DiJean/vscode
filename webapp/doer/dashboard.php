@@ -338,7 +338,7 @@ header('Content-Type: text/html; charset=utf-8');
                         if (id === '69') return 'Уход';
                         if (id === '71') return 'Цветы';
                         if (id === '73') return 'Ремонт';
-                        if (id === '75') return 'Церковная';
+                        if (id === '75') return 'Церковная служба';
                         return id;
                     }).join(', ');
                 }
