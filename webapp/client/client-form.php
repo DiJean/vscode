@@ -95,10 +95,185 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script type="module">
-        import { initTelegramApp, MainButton } from '../js/telegram-api.js';
-        import { createLead } from '../js/bitrix-integration.js';
-        
+    <script>
+        // Telegram API функции
+        function initTelegramApp() {
+            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+                return null;
+            }
+            
+            const tg = Telegram.WebApp;
+            
+            try {
+                tg.ready();
+                if (tg.isExpanded !== true) {
+                    tg.expand();
+                }
+                tg.backgroundColor = '#6a11cb';
+                if (tg.setHeaderColor) {
+                    tg.setHeaderColor('#6a11cb');
+                }
+                return tg;
+            } catch (e) {
+                console.error('Telegram init error:', e);
+                return null;
+            }
+        }
+
+        function getUserData() {
+            try {
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    return Telegram.WebApp.initDataUnsafe?.user || null;
+                }
+            } catch (e) {
+                console.error('Error getting user data:', e);
+            }
+            return null;
+        }
+
+        const MainButton = {
+            show: function(text, color = '#6a11cb', textColor = '#ffffff') {
+                try {
+                    if (typeof Telegram !== 'undefined' && Telegram.WebApp?.MainButton) {
+                        const mainButton = Telegram.WebApp.MainButton;
+                        mainButton.setText(text);
+                        mainButton.color = color;
+                        mainButton.textColor = textColor;
+                        mainButton.show();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error showing main button:', e);
+                }
+                return false;
+            },
+            hide: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.hide();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error hiding main button:', e);
+                }
+                return false;
+            },
+            onClick: function(handler) {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.onClick(handler);
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error setting main button click:', e);
+                }
+                return false;
+            },
+            enable: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.enable();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error enabling main button:', e);
+                }
+                return false;
+            },
+            disable: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.disable();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error disabling main button:', e);
+                }
+                return false;
+            },
+            showProgress: function() {
+                try {
+                    const tg = Telegram.WebApp;
+                    if (tg?.MainButton) {
+                        tg.MainButton.setText("Отправка...");
+                        tg.MainButton.disable();
+                        if (tg.showProgress) {
+                            tg.showProgress();
+                        }
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error showing progress:', e);
+                }
+                return false;
+            },
+            hideProgress: function() {
+                try {
+                    const tg = Telegram.WebApp;
+                    if (tg?.MainButton) {
+                        tg.MainButton.setText("Отправить заявку");
+                        tg.MainButton.enable();
+                        if (tg.hideProgress) {
+                            tg.hideProgress();
+                        }
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error hiding progress:', e);
+                }
+                return false;
+            }
+        };
+
+        // Bitrix API функции
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+
+        async function bitrixRequest(method, params = {}) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}${method}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Bitrix API error:', error);
+                throw error;
+            }
+        }
+
+        async function createLead(data) {
+            const nameParts = data.fullName.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+            
+            const leadData = {
+                fields: {
+                    TITLE: `Заявка от ${data.fullName}`,
+                    NAME: firstName,
+                    LAST_NAME: lastName,
+                    PHONE: [{ VALUE: data.phone, VALUE_TYPE: 'WORK' }],
+                    EMAIL: [{ VALUE: data.email, VALUE_TYPE: 'WORK' }],
+                    UF_CRM_1749802456: data.serviceDate,
+                    UF_CRM_1749802469: data.city,
+                    UF_CRM_1749802574: data.services.join(', '),
+                    UF_CRM_1749802612: data.cemetery,
+                    UF_CRM_1749802619: data.row,
+                    UF_CRM_1749802630: data.plot,
+                    UF_CRM_1749802631: data.plotNumber,
+                    COMMENTS: `Telegram: @${data.username || 'отсутствует'}\nДополнительно: ${data.additionalInfo || 'не указано'}`
+                }
+            };
+            
+            return bitrixRequest('crm.lead.add', leadData);
+        }
+
+        // Логика страницы
         let tg = null;
         let user = null;
         let phoneMask = null;
@@ -216,7 +391,17 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
+        function showFallbackView() {
+            document.getElementById('greeting').textContent = 'Оформление заявки';
+            document.getElementById('user-container').innerHTML = `
+                <div class="welcome-text">
+                    Для оформления заявки откройте приложение в Telegram
+                </div>
+            `;
+            document.getElementById('form-container').style.display = 'none';
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
             tg = initTelegramApp();
             
             // Получаем данные пользователя из sessionStorage
@@ -233,51 +418,42 @@ header('Content-Type: text/html; charset=utf-8');
                 return;
             }
             
-            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
-            document.getElementById('full-name').value = fullName || '';
+            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Клиент';
+            document.getElementById('full-name').value = fullName;
             
             // Рендерим информацию о пользователе
             document.getElementById('greeting').textContent = 'Оформление заявки';
             
+            // Исправлено: добавлен crossorigin="anonymous" для корректной загрузки аватара
             document.getElementById('user-container').innerHTML = `
                 <div class="avatar">
                     ${user.photo_url ? 
-                        `<img src="${user.photo_url}" alt="${fullName}">` : 
+                        `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
                         `<div class="avatar-letter">${user.first_name?.charAt(0) || 'К'}</div>`
                     }
                 </div>
-                <div class="user-name">${fullName || 'Клиент'}</div>
+                <div class="user-name">${fullName}</div>
             `;
             
             MainButton.show("Отправить заявку");
             MainButton.onClick(submitForm);
             
-            phoneMask = IMask(document.getElementById('phone'), {
+            phoneMask = new IMask(document.getElementById('phone'), {
                 mask: '+{7} (000) 000-00-00'
             });
             
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
+                navigator.geolocation.getCurrentPosition(function(position) {
                     fetch(`https://geocode.xyz/${position.coords.latitude},${position.coords.longitude}?json=1`)
-                        .then(res => res.json())
-                        .then(data => {
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
                             if (data.city) {
                                 document.getElementById('city').value = data.city;
                             }
                         });
-                }, () => {});
+                }, function() {});
             }
         });
-        
-        function showFallbackView() {
-            document.getElementById('greeting').textContent = 'Оформление заявки';
-            document.getElementById('user-container').innerHTML = `
-                <div class="welcome-text">
-                    Для оформления заявки откройте приложение в Telegram
-                </div>
-            `;
-            document.getElementById('form-container').style.display = 'none';
-        }
     </script>
 </body>
 </html>

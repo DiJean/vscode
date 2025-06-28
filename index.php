@@ -156,6 +156,7 @@ header('Content-Type: text/html; charset=utf-8');
             
             greetingEl.textContent = fullName ? `Привет, ${firstName}!` : 'Привет!';
             
+            // Исправлено: добавлен crossorigin="anonymous" для корректной загрузки аватара
             userContainer.innerHTML = `
                 <div class="avatar">
                     ${user.photo_url ? 
