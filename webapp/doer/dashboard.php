@@ -74,6 +74,7 @@ header('Content-Type: text/html; charset=utf-8');
         let currentPage = 1;
         const pageSize = 10;
         let contactId = null;
+        let performerName = ""; // Будем хранить имя исполнителя
         let performerCity = null;
 
         // Поиск исполнителя по Telegram ID
@@ -84,7 +85,7 @@ header('Content-Type: text/html; charset=utf-8');
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         filter: {'UF_CRM_1751128872': String(tgId)},
-                        select: ['ID', 'UF_CRM_685D2956061DB']
+                        select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
                     })
                 });
                 
@@ -92,6 +93,36 @@ header('Content-Type: text/html; charset=utf-8');
                 return data.result && data.result.length > 0 ? data.result[0] : null;
             } catch (error) {
                 console.error('Ошибка поиска исполнителя:', error);
+                return null;
+            }
+        }
+
+        // Загрузка деталей сделки
+        async function loadDealDetails(dealId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id: dealId,
+                        select: [
+                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
+                            'UF_CRM_685D295664A8A', 
+                            'UF_CRM_685D2956BF4C8', 
+                            'UF_CRM_685D2956C64E0',
+                            'UF_CRM_1751128612',
+                            'UF_CRM_685D2956D0916', // Кладбище
+                            'UF_CRM_1751022940',     // Сектор
+                            'UF_CRM_685D2956D7C70',  // Ряд
+                            'UF_CRM_685D2956DF40F'   // Участок
+                        ]
+                    })
+                });
+                
+                const data = await response.json();
+                return data.result || null;
+            } catch (error) {
+                console.error('Ошибка загрузки деталей сделки:', error);
                 return null;
             }
         }
@@ -126,6 +157,7 @@ header('Content-Type: text/html; charset=utf-8');
                 }
                 
                 contactId = performerContact.ID;
+                performerName = `${performerContact.NAME || ''} ${performerContact.LAST_NAME || ''}`.trim();
                 performerCity = performerContact.UF_CRM_685D2956061DB || '';
                 
                 // Отображаем информацию о пользователе
@@ -191,8 +223,7 @@ header('Content-Type: text/html; charset=utf-8');
                             'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
                             'UF_CRM_685D295664A8A', 
                             'UF_CRM_685D2956BF4C8', 
-                            'UF_CRM_685D2956C64E0',
-                            'UF_CRM_1751128612'
+                            'UF_CRM_685D2956C64E0'
                         ],
                         order: {'DATE_CREATE': 'DESC'},
                         start: (currentPage - 1) * pageSize
@@ -285,11 +316,6 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
-                // Информация о назначенном исполнителе
-                const performerInfo = deal.UF_CRM_1751128612 ? 
-                    `Исполнитель: ${deal.UF_CRM_1751128612}` : 
-                    'Исполнитель не назначен';
-                
                 dealsList.innerHTML += `
                     <tr>
                         <td>${deal.ID}</td>
@@ -301,7 +327,6 @@ header('Content-Type: text/html; charset=utf-8');
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                         <td>
                             <button class="action-btn view-btn" data-id="${deal.ID}">Просмотр</button>
-                            <div class="debug-info">${performerInfo}</div>
                         </td>
                     </tr>
                 `;
@@ -335,13 +360,85 @@ header('Content-Type: text/html; charset=utf-8');
             loadDeals();
         }
         
-        // Просмотр деталей сделки
-        function viewDealDetails(dealId) {
-            tg.showPopup({
-                title: 'Детали заявки',
-                message: `Загрузка информации о заявке #${dealId}...`,
-                buttons: []
-            });
+        // Просмотр деталей сделки - ОБНОВЛЕННАЯ ФУНКЦИЯ
+        async function viewDealDetails(dealId) {
+            try {
+                // Показываем индикатор загрузки
+                if (tg.showProgress) tg.showProgress();
+                
+                // Загружаем детали сделки
+                const deal = await loadDealDetails(dealId);
+                
+                if (!deal) {
+                    throw new Error('Не удалось загрузить детали сделки');
+                }
+                
+                // Форматируем данные
+                const createdDate = new Date(deal.DATE_CREATE).toLocaleString();
+                const serviceDate = deal.UF_CRM_685D295664A8A ? 
+                    new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-';
+                
+                // Обработка услуг
+                let serviceNames = '-';
+                const serviceField = deal.UF_CRM_685D2956C64E0;
+                if (serviceField) {
+                    let serviceIds = [];
+                    if (Array.isArray(serviceField)) {
+                        serviceIds = serviceField.map(id => String(id));
+                    } else if (typeof serviceField === 'string') {
+                        serviceIds = serviceField.split(',');
+                    } else {
+                        serviceIds = [String(serviceField)];
+                    }
+                    serviceNames = serviceIds.map(id => {
+                        if (id === '69') return 'Уход';
+                        if (id === '71') return 'Цветы';
+                        if (id === '73') return 'Ремонт';
+                        if (id === '75') return 'Церковная служба';
+                        return id;
+                    }).join(', ');
+                }
+                
+                // Статус
+                let statusText = '';
+                if (deal.STAGE_ID === 'NEW') statusText = 'Новая';
+                else if (deal.STAGE_ID === 'PROCESSING') statusText = 'В работе';
+                else if (deal.STAGE_ID === 'CLOSED') statusText = 'Завершена';
+                else statusText = deal.STAGE_ID;
+                
+                // Формируем сообщение для popup
+                let message = `Заявка #${deal.ID}\n\n`;
+                message += `Клиент: ${deal.TITLE.replace('Заявка от ', '')}\n`;
+                message += `Услуги: ${serviceNames}\n`;
+                message += `Дата заявки: ${createdDate}\n`;
+                message += `Желаемая дата: ${serviceDate}\n`;
+                message += `Город: ${deal.UF_CRM_685D2956BF4C8 || '-'}\n`;
+                message += `Статус: ${statusText}\n`;
+                message += `Исполнитель: ${performerName}\n`;
+                
+                // Дополнительные поля
+                if (deal.UF_CRM_685D2956D0916) message += `Кладбище: ${deal.UF_CRM_685D2956D0916}\n`;
+                if (deal.UF_CRM_1751022940) message += `Сектор: ${deal.UF_CRM_1751022940}\n`;
+                if (deal.UF_CRM_685D2956D7C70) message += `Ряд: ${deal.UF_CRM_685D2956D7C70}\n`;
+                if (deal.UF_CRM_685D2956DF40F) message += `Участок: ${deal.UF_CRM_685D2956DF40F}\n`;
+                if (deal.COMMENTS) message += `\nКомментарии:\n${deal.COMMENTS}`;
+                
+                // Показываем детали в popup
+                tg.showPopup({
+                    title: `Детали заявки #${deal.ID}`,
+                    message: message,
+                    buttons: [{id: 'close', type: 'close'}]
+                });
+                
+            } catch (error) {
+                tg.showPopup({
+                    title: 'Ошибка',
+                    message: 'Не удалось загрузить детали заявки: ' + error.message,
+                    buttons: [{id: 'ok', type: 'ok'}]
+                });
+            } finally {
+                if (tg.hideProgress) tg.hideProgress();
+            }
         }
         
         function showFallbackView() {
