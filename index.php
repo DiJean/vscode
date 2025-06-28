@@ -140,9 +140,11 @@ header('Content-Type: text/html; charset=utf-8');
                     card.addEventListener('click', function() {
                         const role = this.getAttribute('data-role');
                         localStorage.setItem('selectedRole', role);
+                        sessionStorage.setItem('selectedRole', role);
                         
+                        // ИЗМЕНЕНА ЛОГИКА ПЕРЕХОДА ДЛЯ КЛИЕНТА
                         if (role === 'client') {
-                            window.location.href = '/webapp/client/client-form.php';
+                            window.location.href = '/webapp/client/my-services.php';
                         } else {
                             window.location.href = '/webapp/doer/dashboard.php';
                         }

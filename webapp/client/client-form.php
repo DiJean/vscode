@@ -38,10 +38,33 @@ header('Content-Type: text/html; charset=utf-8');
         .service-checkbox input {
             margin-right: 10px;
         }
+        
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="my-services.php" class="back-btn">← Назад к моим заявкам</a>
+        </div>
+        
         <div class="greeting text-center mb-4" id="greeting">Оформление заявки</div>
         <div id="user-container" class="text-center mb-4"></div>
         
@@ -245,8 +268,20 @@ header('Content-Type: text/html; charset=utf-8');
                 const response = await processServiceRequest(formData);
                 
                 if (response.success) {
+                    // Сохраняем email для будущих запросов
                     localStorage.setItem('clientEmail', formData.email);
-                    window.location.href = 'my-services.php';
+                    
+                    // Показываем уведомление об успехе
+                    tg.showPopup({
+                        title: 'Успешно!',
+                        message: 'Заявка успешно создана',
+                        buttons: [{id: 'ok', type: 'ok'}]
+                    });
+                    
+                    // Возвращаем на страницу заявок
+                    setTimeout(() => {
+                        window.location.href = 'my-services.php';
+                    }, 1500);
                 } else {
                     tg.showPopup({
                         title: 'Ошибка',
