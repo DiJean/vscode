@@ -1,19 +1,14 @@
 <?php
-require_once 'config.php';
 header('Content-Type: text/html; charset=utf-8');
-$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Выбор роли</title>
-    <script src="https://telegram.org/js/telegram-web-app.js?<?=$version?>"></script>
-    <link rel="stylesheet" href="<?=$css_path?>style.css?<?=$version?>">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/webapp/css/style.css">
 </head>
 <body>
     <div class="container">
@@ -25,69 +20,54 @@ $version = time();
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
+    <script src="/webapp/js/telegram-api.js"></script>
     <script>
-        // Определение путей как глобальных переменных
-        const BASE_PATH = "<?=$base_path?>";
-        const JS_PATH = "<?=$js_path?>";
-        const CLIENT_PATH = "<?=$client_path?>";
-        const DOER_PATH = "<?=$doer_path?>";
-        const SITE_URL = "<?=$site_url?>";
-    </script>
-
-    <script src="<?=$js_path?>telegram-api.js?<?=$version?>"></script>
-    <script>
-        const CURRENT_VERSION = "<?=$version?>";
-        const storedVersion = localStorage.getItem('appVersion');
-        
-        if (storedVersion && storedVersion !== CURRENT_VERSION) {
-            localStorage.clear();
-            sessionStorage.clear();
-            if (typeof caches !== 'undefined') {
-                caches.keys().then(names => {
-                    names.forEach(name => caches.delete(name));
-                });
-            }
-        }
-        localStorage.setItem('appVersion', CURRENT_VERSION);
-        
-        function checkScriptLoaded() {
-            const errors = [];
-            if (typeof Telegram === 'undefined') errors.push('Telegram SDK не загружен');
-            if (typeof initTelegramApp === 'undefined') errors.push('telegram-api.js не загружен');
-            if (errors.length > 0) {
-                console.error('Ошибки:', errors.join(', '));
-                showFallbackView();
-                return false;
-            }
-            return true;
-        }
-        
+        // Основная функция инициализации приложения
         function initApp() {
-            if (!checkScriptLoaded()) return;
+            // Проверка доступности Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
             }
             
             const tg = Telegram.WebApp;
+            
             try {
+                // Инициализация WebApp
                 tg.ready();
-                if (tg.isExpanded !== true && tg.expand) tg.expand();
+                
+                // Пытаемся раскрыть на весь экран
+                if (tg.isExpanded !== true && tg.expand) {
+                    tg.expand();
+                }
+                
+                // Установка цвета фона
                 tg.backgroundColor = '#6a11cb';
-                if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
+                if (tg.setHeaderColor) {
+                    tg.setHeaderColor('#6a11cb');
+                }
                 
+                // Получаем данные пользователя
                 let user = null;
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) user = tg.initDataUnsafe.user;
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    user = tg.initDataUnsafe.user;
+                }
                 
+                // Генерировать HTML для пользователя
                 let userHtml = '';
+                
                 if (user) {
+                    // Если есть данные пользователя
                     const firstName = user.first_name || '';
                     const lastName = user.last_name || '';
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
+                    
+                    // Формируем приветствие
                     const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
                     document.getElementById('greeting').textContent = greeting;
                     
+                    // Формируем аватар
                     userHtml += `
                         <div class="avatar">
                             ${user.photo_url ? 
@@ -95,20 +75,18 @@ $version = time();
                                 `<div>${firstName.charAt(0) || 'Г'}</div>`
                             }
                         </div>
-                        <div class="user-name">${fullName || 'Аноним'}</div>
+                        <div class="user-name">${fullName || 'Анонимный пользователь'}</div>
                         <div class="username">${username}</div>
                     `;
-                    
-                    localStorage.setItem('userData', JSON.stringify({
-                        firstName,
-                        lastName,
-                        username,
-                        photo_url: user.photo_url || ''
-                    }));
                 } else {
-                    userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
+                    // Если данные пользователя недоступны
+                    userHtml = `
+                        <div class="avatar">Г</div>
+                        <div class="user-name">Гость</div>
+                    `;
                 }
                 
+                // Добавляем блок выбора роли
                 userHtml += `
                     <div class="role-selection">
                         <div class="role-label">Выберите роль:</div>
@@ -124,10 +102,14 @@ $version = time();
                     </div>
                 `;
                 
+                // Отображаем информацию о пользователе
                 document.getElementById('user-container').innerHTML = userHtml;
                 
+                // Настройка кнопки
                 if (tg.MainButton) {
                     tg.MainButton.setText("Продолжить");
+                    
+                    // Обработчик для кнопки
                     tg.MainButton.onClick(function() {
                         const role = document.getElementById('role').value;
                         if (!role) {
@@ -135,56 +117,49 @@ $version = time();
                             return;
                         }
                         
-                        sessionStorage.setItem('selectedRole', role);
+                        // Сохраняем роль
                         localStorage.setItem('selectedRole', role);
                         
+                        // Перенаправляем в зависимости от роли
                         if (role === 'client') {
-                            window.location.assign(SITE_URL + CLIENT_PATH + 'services.php?v=' + CURRENT_VERSION);
+                            window.location.assign('/webapp/client/client-form.php');
+                            window.location.href = '/webapp/client/client-form.php';
                         } else {
-                            window.location.assign(SITE_URL + DOER_PATH + 'dashboard.php?v=' + CURRENT_VERSION);
+                            // Для исполнителя другая страница
+                            window.location.href = '/webapp/doer/dashboard.php';
                         }
                     });
+                    
+                    // Показываем кнопку
                     tg.MainButton.show();
                 }
                 
+                // Показываем предупреждение для десктопной версии
                 if (tg.isDesktop) {
                     document.getElementById('desktop-warning').style.display = 'block';
                 }
                 
             } catch (e) {
-                console.error('Ошибка инициализации:', e);
+                console.error('Ошибка инициализации Telegram WebApp:', e);
                 showFallbackView();
             }
         }
         
+        // Функция для отображения запасного вида
         function showFallbackView() {
             document.getElementById('greeting').textContent = 'Привет, Гость!';
             document.getElementById('user-container').innerHTML = `
-                <div class="welcome-text">Добро пожаловать!</div>
-                <div style="margin-top: 20px; color: #ff6b6b;">
-                    <p>⚠️ Произошла ошибка</p>
-                    <p>Попробуйте перезагрузить</p>
-                </div>
-                <div class="role-selection" style="margin-top: 30px;">
-                    <a href="${SITE_URL}${CLIENT_PATH}services.php?v=${CURRENT_VERSION}" style="display: block; padding: 15px; background: #6a11cb; color: white; text-align: center; border-radius: 16px; margin-bottom: 15px;">
-                        Войти как клиент
-                    </a>
-                    <a href="${SITE_URL}${DOER_PATH}dashboard.php?v=${CURRENT_VERSION}" style="display: block; padding: 15px; background: #2575fc; color: white; text-align: center; border-radius: 16px;">
-                        Войти как исполнитель
-                    </a>
+                <div class="welcome-text">
+                    Добро пожаловать в наше приложение!
                 </div>
             `;
         }
         
+        // Инициализация при загрузке
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                    if (typeof Telegram === 'undefined') showFallbackView();
-                    else initApp();
-                }, 1000);
-            });
+            document.addEventListener('DOMContentLoaded', initApp);
         }
     </script>
 </body>
