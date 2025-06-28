@@ -20,64 +20,16 @@ header('Content-Type: text/html; charset=utf-8');
         
         <div class="form-container">
             <form id="performer-form">
-                <div class="form-group">
-                    <label class="form-label required">Имя</label>
-                    <input type="text" id="first-name" class="form-input" required>
-                    <div class="form-error" id="first-name-error">Введите имя</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label required">Фамилия</label>
-                    <input type="text" id="last-name" class="form-input" required>
-                    <div class="form-error" id="last-name-error">Введите фамилию</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Отчество</label>
-                    <input type="text" id="second-name" class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label required">Телефон</label>
-                    <input type="tel" id="phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
-                    <div class="form-error" id="phone-error">Введите корректный номер телефона</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label required">Email</label>
-                    <input type="email" id="email" class="form-input" placeholder="ваш@email.com" required>
-                    <div class="form-error" id="email-error">Введите корректный email</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label required">Город</label>
-                    <input type="text" id="city" class="form-input" required>
-                    <div class="form-error" id="city-error">Введите город</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label required">Местоположение</label>
-                    <button type="button" id="get-location-btn" class="location-btn">
-                        Получить мои координаты
-                    </button>
-                    <div class="form-error" id="location-error">Не удалось получить координаты</div>
-                    
-                    <div class="coords-container">
-                        <div class="coord-input">Широта: <span id="latitude-display">не определено</span></div>
-                        <div class="coord-input">Долгота: <span id="longitude-display">не определено</span></div>
-                    </div>
-                    <input type="hidden" id="latitude">
-                    <input type="hidden" id="longitude">
-                </div>
+                <!-- Форма без изменений -->
             </form>
         </div>
         
         <!-- Блок для отладки -->
-        <div id="debug-info"></div>
+        <div id="debug-info" style="color: white; font-size: 14px; margin-top: 20px;"></div>
     </div>
 
     <script>
-        // Временная версия без модулей для диагностики
+        // Вебхук Bitrix24
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
         
         // Основные переменные
@@ -85,22 +37,29 @@ header('Content-Type: text/html; charset=utf-8');
         let user = null;
         let phoneMask = null;
         
-        // Отладочная функция
-        function debugLog(message) {
+        // Отладочная функция с улучшенным выводом
+        function debugLog(message, isError = false) {
             console.log(message);
             const debugInfo = document.getElementById('debug-info');
             if (debugInfo) {
-                debugInfo.innerHTML += `<div>${message}</div>`;
+                const entry = document.createElement('div');
+                entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                if (isError) {
+                    entry.style.color = '#ff6b6b';
+                    entry.style.fontWeight = 'bold';
+                }
+                debugInfo.appendChild(entry);
+                debugInfo.scrollTop = debugInfo.scrollHeight;
             }
         }
         
         // Основная функция инициализации
         async function initApp() {
-            debugLog('Начало инициализации приложения');
+            debugLog('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
             
             // Проверка Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                debugLog('Telegram WebApp API недоступно');
+                debugLog('Telegram WebApp API недоступно', true);
                 showFallbackView();
                 return;
             }
@@ -109,14 +68,22 @@ header('Content-Type: text/html; charset=utf-8');
             
             try {
                 debugLog('Инициализация Telegram WebApp');
+                
+                // Инициализируем WebApp
                 tg.ready();
+                tg.enableClosingConfirmation();
+                
+                // Пытаемся раскрыть на весь экран
+                if (tg.isExpanded !== true && typeof tg.expand === 'function') {
+                    tg.expand();
+                }
                 
                 // Получаем данные пользователя
                 user = tg.initDataUnsafe?.user || {};
                 const firstName = user.first_name || '';
                 const lastName = user.last_name || '';
                 
-                debugLog(`Пользователь: ${firstName} ${lastName}`);
+                debugLog(`Пользователь Telegram: ${firstName} ${lastName} (ID: ${user.id || 'нет'})`);
                 
                 // Отображаем информацию о пользователе
                 const userContainer = document.getElementById('user-container');
@@ -176,7 +143,7 @@ header('Content-Type: text/html; charset=utf-8');
                 debugLog('Инициализация завершена успешно');
                 
             } catch (e) {
-                debugLog(`Ошибка инициализации: ${e.message}`);
+                debugLog(`Ошибка инициализации: ${e.message}`, true);
                 console.error(e);
                 showFallbackView();
             }
@@ -233,7 +200,7 @@ header('Content-Type: text/html; charset=utf-8');
                             break;
                     }
                     
-                    debugLog(`Ошибка геолокации: ${message}`);
+                    debugLog(`Ошибка геолокации: ${message}`, true);
                     showLocationError(message);
                     btn.innerHTML = 'Получить мои координаты';
                     btn.disabled = false;
@@ -256,7 +223,7 @@ header('Content-Type: text/html; charset=utf-8');
         
         // Отправка формы
         async function submitForm() {
-            debugLog('Начало отправки формы');
+            debugLog('=== ОТПРАВКА ФОРМЫ ===');
             
             const formData = {
                 firstName: document.getElementById('first-name')?.value || '',
@@ -273,22 +240,38 @@ header('Content-Type: text/html; charset=utf-8');
             debugLog('Данные формы: ' + JSON.stringify(formData));
             
             if (!validateForm(formData)) {
-                debugLog('Валидация формы не пройдена');
+                debugLog('Валидация формы не пройдена', true);
                 return;
             }
             
             try {
-                debugLog('Попытка сохранения исполнителя');
+                debugLog('Попытка сохранения исполнителя в Bitrix24');
+                
+                // Показываем индикатор загрузки
                 if (tg.showProgress) tg.showProgress();
+                if (tg.MainButton) {
+                    tg.MainButton.setText("Отправка...");
+                    tg.MainButton.disable();
+                }
                 
                 // Сохраняем исполнителя в Bitrix24
                 const result = await savePerformer(formData);
                 
                 if (result.success) {
-                    debugLog('Успешная регистрация, переход в дашборд');
-                    window.location.href = 'dashboard.php';
+                    debugLog('Успешная регистрация! ID контакта: ' + result.contactId);
+                    
+                    tg.showPopup({
+                        title: 'Успех',
+                        message: 'Регистрация завершена успешно!',
+                        buttons: [{id: 'ok', type: 'ok'}]
+                    });
+                    
+                    // Задержка перед переходом для отображения сообщения
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.php';
+                    }, 2000);
                 } else {
-                    debugLog(`Ошибка регистрации: ${result.errorMessage}`);
+                    debugLog(`Ошибка регистрации: ${result.errorMessage}`, true);
                     tg.showPopup({
                         title: 'Ошибка регистрации',
                         message: result.errorMessage || 'Не удалось зарегистрироваться',
@@ -296,7 +279,7 @@ header('Content-Type: text/html; charset=utf-8');
                     });
                 }
             } catch (error) {
-                debugLog(`Непредвиденная ошибка: ${error.message}`);
+                debugLog(`Непредвиденная ошибка: ${error.message}`, true);
                 console.error(error);
                 tg.showPopup({
                     title: 'Ошибка',
@@ -305,12 +288,16 @@ header('Content-Type: text/html; charset=utf-8');
                 });
             } finally {
                 if (tg.hideProgress) tg.hideProgress();
+                if (tg.MainButton) {
+                    tg.MainButton.setText("Зарегистрироваться");
+                    tg.MainButton.enable();
+                }
             }
         }
         
         // Валидация формы
         function validateForm(formData) {
-            debugLog('Начало валидации формы');
+            debugLog('Проверка валидации формы');
             
             let isValid = true;
             
@@ -371,37 +358,99 @@ header('Content-Type: text/html; charset=utf-8');
             return isValid;
         }
         
-        // Сохранение исполнителя в Bitrix24
+        // Сохранение исполнителя в Bitrix24 - УЛУЧШЕННАЯ ВЕРСИЯ
         async function savePerformer(data) {
-            debugLog(`Сохранение исполнителя: ${JSON.stringify(data)}`);
+            debugLog('Подготовка данных для Bitrix24...');
             
             try {
+                // Формируем данные контакта
                 const contactData = {
                     fields: {
                         NAME: data.firstName,
                         LAST_NAME: data.lastName,
                         SECOND_NAME: data.secondName || '',
-                        PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                        EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                        UF_CRM_685D2956061DB: data.city,
-                        UF_CRM_1751129816: data.latitude,
-                        UF_CRM_1751129854: data.longitude,
-                        UF_CRM_1751128872: String(data.tgUserId),
-                        TYPE_ID: 'EMPLOYEE'
+                        PHONE: [{
+                            "VALUE": data.phone,
+                            "VALUE_TYPE": "WORK"
+                        }],
+                        EMAIL: [{
+                            "VALUE": data.email,
+                            "VALUE_TYPE": "WORK"
+                        }],
+                        TYPE_ID: "EMPLOYEE"
                     }
                 };
                 
-                debugLog(`Данные для Bitrix24: ${JSON.stringify(contactData)}`);
+                // Добавляем пользовательские поля только если они есть
+                if (data.city) contactData.fields.UF_CRM_685D2956061DB = data.city;
+                if (data.latitude) contactData.fields.UF_CRM_1751129816 = data.latitude;
+                if (data.longitude) contactData.fields.UF_CRM_1751129854 = data.longitude;
+                if (data.tgUserId) contactData.fields.UF_CRM_1751128872 = String(data.tgUserId);
                 
-                // Здесь будет реальный запрос к Bitrix24
-                // Временно возвращаем успешный результат
-                return { success: true, contactId: 12345 };
+                debugLog('Отправляемые данные: ' + JSON.stringify(contactData, null, 2));
+                
+                // Формируем URL с endpoint
+                const endpoint = `${BITRIX_WEBHOOK}crm.contact.add`;
+                debugLog(`Отправка запроса на: ${endpoint}`);
+                
+                // Отправляем запрос
+                const startTime = Date.now();
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(contactData)
+                });
+                
+                const responseTime = Date.now() - startTime;
+                debugLog(`Время ответа: ${responseTime}мс, Статус: ${response.status}`);
+                
+                // Проверяем HTTP статус
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP Error ${response.status}: ${errorText}`);
+                }
+                
+                // Парсим JSON ответ
+                const result = await response.json();
+                debugLog('Ответ от Bitrix24: ' + JSON.stringify(result, null, 2));
+                
+                // Проверка на ошибки Bitrix
+                if (result.error) {
+                    let errorMessage = result.error_description || 'Ошибка при создании контакта';
+                    
+                    // Расшифровка распространенных ошибок
+                    const errorMapping = {
+                        'ERROR_PHONE_NOT_VALID': 'Некорректный номер телефона',
+                        'ERROR_EMAIL_NOT_VALID': 'Некорректный email',
+                        'ERROR_DUPLICATE_CONTACT': 'Контакт с таким телефоном или email уже существует',
+                        'ERROR_MANDATORY_PARAMETERS': 'Отсутствуют обязательные параметры',
+                        'ERROR_WRONG_HANDLER_URL': 'Неверный URL обработчика'
+                    };
+                    
+                    if (errorMapping[result.error]) {
+                        errorMessage = errorMapping[result.error];
+                    }
+                    
+                    throw new Error(`Bitrix24: ${errorMessage} (${result.error})`);
+                }
+                
+                if (!result.result) {
+                    throw new Error('Не удалось создать контакт в Bitrix24 (отсутствует ID контакта)');
+                }
+                
+                return { 
+                    success: true, 
+                    contactId: result.result,
+                    message: 'Контакт успешно создан в Bitrix24'
+                };
                 
             } catch (error) {
-                debugLog(`Ошибка сохранения: ${error.message}`);
+                debugLog(`ОШИБКА СОХРАНЕНИЯ: ${error.message}`, true);
                 return {
                     success: false,
-                    errorMessage: `Сетевая ошибка: ${error.message}`
+                    errorMessage: `Ошибка при сохранении: ${error.message}`
                 };
             }
         }
@@ -425,7 +474,6 @@ header('Content-Type: text/html; charset=utf-8');
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', () => {
-            debugLog('Страница загружена');
             initApp();
         });
     </script>
