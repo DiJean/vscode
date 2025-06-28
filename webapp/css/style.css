@@ -15,6 +15,7 @@ body {
     padding: 20px;
     text-align: center;
     color: white;
+    line-height: 1.5;
 }
 
 .container {
@@ -27,6 +28,12 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.18);
     margin: 20px 0;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .greeting {
@@ -56,6 +63,11 @@ body {
     object-fit: cover;
 }
 
+.avatar-letter {
+    font-weight: bold;
+    font-size: 2.5rem;
+}
+
 .user-name {
     font-size: 1.8rem;
     margin-bottom: 8px;
@@ -72,6 +84,7 @@ body {
     font-size: 1.5rem;
     line-height: 1.4;
     margin-top: 25px;
+    padding: 0 15px;
 }
 
 .heart {
@@ -88,7 +101,6 @@ body {
     max-width: 500px;
 }
 
-/* Стили для выбора роли */
 .role-selection {
     margin: 25px 0;
     width: 100%;
@@ -134,107 +146,117 @@ body {
     display: none;
 }
 
-@media (max-width: 480px) {
-    .greeting { font-size: 2rem; }
-    .user-name { font-size: 1.5rem; }
-    .username { font-size: 1rem; }
-    .welcome-text { font-size: 1.2rem; }
-    .role-label { font-size: 1.1rem; }
-    .role-select { padding: 12px; font-size: 1rem; }
-}
-
-/* Добавить в конец файла */
-
-/* Стили для формы заказа */
-.service-info {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 15px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.service-info h3 {
-    font-size: 1.4rem;
-    margin-bottom: 5px;
-}
-
-.service-info p {
-    font-size: 1.2rem;
-    font-weight: bold;
+.form-container {
+    text-align: left;
+    margin-top: 20px;
 }
 
 .form-group {
-    margin-bottom: 15px;
-    width: 100%;
+    margin-bottom: 20px;
 }
 
-.form-group label {
+.form-label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     font-weight: 500;
-    text-align: left;
+    font-size: 1.1rem;
 }
 
-.form-group input,
-.form-group textarea {
+.form-label.required::after {
+    content: " *";
+    color: #ff2e63;
+}
+
+.form-input, .form-textarea {
     width: 100%;
-    padding: 12px 15px;
+    padding: 14px 18px;
     border-radius: 16px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     background: rgba(255, 255, 255, 0.15);
     color: white;
     font-size: 1rem;
+    transition: all 0.3s ease;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-input:focus, .form-textarea:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.7);
     background: rgba(255, 255, 255, 0.25);
 }
 
-.submit-button {
-    width: 100%;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.25);
-    color: white;
-    border: none;
-    border-radius: 16px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 10px;
+.form-input::placeholder, .form-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.7);
 }
 
-.submit-button:hover {
-    background: rgba(255, 255, 255, 0.35);
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
 }
 
-.error-message {
-    color: #ff6b6b;
+.form-error {
+    color: #ff2e63;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: none;
+}
+
+.services-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.service-checkbox {
+    display: flex;
+    align-items: center;
     padding: 10px;
-    border-radius: 8px;
-    background: rgba(255, 107, 107, 0.1);
-    margin: 15px 0;
-    text-align: center;
-}
-
-.success-message {
-    text-align: center;
-    padding: 20px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
-.success-message h3 {
-    margin-bottom: 15px;
-    color: #4ade80;
+.service-checkbox:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
-.price {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #4ade80;
+.service-checkbox input {
+    margin-right: 8px;
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 30px 15px;
+    }
+    
+    .greeting {
+        font-size: 2rem;
+    }
+    
+    .user-name {
+        font-size: 1.5rem;
+    }
+    
+    .username {
+        font-size: 1rem;
+    }
+    
+    .welcome-text {
+        font-size: 1.2rem;
+    }
+    
+    .role-label {
+        font-size: 1.1rem;
+    }
+    
+    .role-select {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .services-container {
+        grid-template-columns: 1fr;
+    }
 }

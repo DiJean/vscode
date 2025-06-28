@@ -1,28 +1,72 @@
-function initTelegramApp(callback) {
-    if (typeof Telegram === 'undefined' || !Telegram.WebApp) return false;
+export function initTelegramApp() {
+    if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+        return null;
+    }
+    
     const tg = Telegram.WebApp;
+    
     try {
         tg.ready();
-        if (tg.isExpanded !== true && tg.expand) tg.expand();
+        if (tg.isExpanded !== true) {
+            tg.expand();
+        }
         tg.backgroundColor = '#6a11cb';
-        if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
-        return callback(tg);
+        if (tg.setHeaderColor) {
+            tg.setHeaderColor('#6a11cb');
+        }
+        return tg;
     } catch (e) {
-        return false;
+        console.error('Telegram init error:', e);
+        return null;
     }
 }
 
-function setupMainButton(tg, onClickHandler) {
-    if (tg.MainButton) {
-        tg.MainButton.setText("Продолжить");
-        tg.MainButton.onClick(onClickHandler);
+export function getUserData() {
+    const tg = Telegram.WebApp;
+    return tg?.initDataUnsafe?.user || null;
+}
+
+export function isMobile() {
+    const tg = Telegram.WebApp;
+    return tg?.isMobile || false;
+}
+
+export const MainButton = {
+    show: (text, color = '#6a11cb', textColor = '#ffffff') => {
+        const tg = Telegram.WebApp;
+        if (!tg?.MainButton) return;
+        
+        tg.MainButton.setText(text);
+        tg.MainButton.color = color;
+        tg.MainButton.textColor = textColor;
         tg.MainButton.show();
-        return true;
+    },
+    hide: () => {
+        Telegram.WebApp.MainButton.hide();
+    },
+    onClick: (handler) => {
+        Telegram.WebApp.MainButton.onClick(handler);
+    },
+    enable: () => {
+        Telegram.WebApp.MainButton.enable();
+    },
+    disable: () => {
+        Telegram.WebApp.MainButton.disable();
+    },
+    showProgress: () => {
+        const tg = Telegram.WebApp;
+        if (!tg.MainButton) return;
+        
+        tg.MainButton.setText("Отправка...");
+        tg.MainButton.disable();
+        if (tg.showProgress) tg.showProgress();
+    },
+    hideProgress: () => {
+        const tg = Telegram.WebApp;
+        if (!tg.MainButton) return;
+        
+        tg.MainButton.setText("Отправить заявку");
+        tg.MainButton.enable();
+        if (tg.hideProgress) tg.hideProgress();
     }
-    return false;
-}
-
-function getUserData(tg) {
-    if (tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
-    return null;
-}
+};

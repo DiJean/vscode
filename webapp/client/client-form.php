@@ -8,6 +8,7 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма заявки</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <link rel="stylesheet" href="/webapp/css/style.css">
     <link rel="stylesheet" href="/webapp/css/client-form.css">
 </head>
@@ -16,7 +17,7 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="greeting" id="greeting">Оформление заявки</div>
         <div id="user-container"></div>
         
-        <div class="form-container" id="form-container" style="display: none;">
+        <div class="form-container" id="form-container">
             <form id="service-form">
                 <div class="form-group">
                     <label class="form-label required">Имя и фамилия</label>
@@ -26,44 +27,44 @@ header('Content-Type: text/html; charset=utf-8');
                 <div class="form-group">
                     <label class="form-label required">Телефон</label>
                     <input type="tel" id="phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
-                    <div class="form-error" id="phone-error">Введите корректный номер телефона</div>
+                    <div class="form-error" id="phone-error"></div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label required">Email</label>
                     <input type="email" id="email" class="form-input" placeholder="ваш@email.com" required>
-                    <div class="form-error" id="email-error">Введите корректный email</div>
+                    <div class="form-error" id="email-error"></div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label required">Услуги</label>
                     <div class="services-container">
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="69" data-name="Уход"> Уход
+                            <input type="checkbox" name="services" value="Уборка"> Уборка
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="71" data-name="Цветы"> Цветы
+                            <input type="checkbox" name="services" value="Ремонт"> Ремонт
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="73" data-name="Ремонт"> Ремонт
+                            <input type="checkbox" name="services" value="Цветы"> Цветы
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="75" data-name="Церковная служба"> Церковная служба
+                            <input type="checkbox" name="services" value="Церковная служба"> Церковная служба
                         </label>
                     </div>
-                    <div class="form-error" id="services-error">Выберите хотя бы одну услугу</div>
+                    <div class="form-error" id="services-error"></div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label required">Город</label>
                     <input type="text" id="city" class="form-input" required>
-                    <div class="form-error" id="city-error">Введите город</div>
+                    <div class="form-error" id="city-error"></div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label required">Желаемая дата услуги</label>
                     <input type="date" id="service-date" class="form-input" required>
-                    <div class="form-error" id="date-error">Выберите дату</div>
+                    <div class="form-error" id="date-error"></div>
                 </div>
                 
                 <div class="form-group">
@@ -94,231 +95,74 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <!-- Загрузка скриптов с обработкой ошибок -->
-    <script src="/webapp/js/telegram-api.js"></script>
-    <script src="/webapp/js/bitrix-integration.js" 
-            onload="console.log('Bitrix integration loaded')"
-            onerror="console.error('Failed to load Bitrix integration')"></script>
-    
-    <script>
+    <script type="module">
+        import { initTelegramApp, MainButton } from '../js/telegram-api.js';
+        import { createLead } from '../js/bitrix-integration.js';
+        
         let tg = null;
         let user = null;
-        let bitrixLoaded = false;
-
-        // Проверка загрузки модуля Bitrix
-        function checkBitrixIntegration() {
-            if (window.bitrixFunctions && typeof window.bitrixFunctions.createContact === 'function') {
-                bitrixLoaded = true;
-                return true;
-            }
-            return false;
-        }
-
-        // Основная функция инициализации
-        async function initApp() {
-            try {
-                // Проверка доступности Telegram WebApp API
-                if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                    showFallbackView();
-                    return;
-                }
-                
-                tg = Telegram.WebApp;
-                
-                // Получаем данные пользователя
-                user = tg.initDataUnsafe?.user || {};
-                
-                // Отображаем информацию о пользователе
-                document.getElementById('greeting').textContent = 'Оформление заявки';
-                
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const fullName = firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Клиент';
-                
-                document.getElementById('user-container').innerHTML = `
-                    <div class="avatar">
-                        ${user.photo_url ? 
-                            `<img src="${user.photo_url}" alt="${fullName}">` : 
-                            `<div>${firstName.charAt(0) || 'К'}</div>`
-                        }
-                    </div>
-                    <div class="user-name">${fullName}</div>
-                `;
-                
-                // Предзаполняем имя
-                document.getElementById('full-name').value = fullName;
-                
-                // Показываем форму
-                document.getElementById('form-container').style.display = 'block';
-                
-                // Настраиваем кнопку
-                if (tg.MainButton) {
-                    tg.MainButton.setText("Отправить заявку");
-                    tg.MainButton.onClick(submitForm);
-                    tg.MainButton.show();
-                }
-                
-                // Проверяем интеграцию с Bitrix
-                bitrixLoaded = checkBitrixIntegration();
-                if (!bitrixLoaded) {
-                    console.warn('Bitrix integration module not loaded');
-                }
-                
-            } catch (e) {
-                console.error('Ошибка инициализации:', e);
-                showFallbackView();
-            }
+        let phoneMask = null;
+        
+        function showError(fieldId, message) {
+            const errorEl = document.getElementById(fieldId);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
         
-        // Отправка формы
-        async function submitForm() {
-            // Собираем данные формы
-            const formData = {
-                firstName: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                services: Array.from(document.querySelectorAll('input[name="services"]:checked'))
-                    .map(checkbox => checkbox.value),
-                city: document.getElementById('city').value,
-                serviceDate: document.getElementById('service-date').value,
-                cemetery: document.getElementById('cemetery').value,
-                plot: document.getElementById('plot').value,
-                row: document.getElementById('row').value,
-                plotNumber: document.getElementById('plot-number').value,
-                additionalInfo: document.getElementById('additional-info').value,
-                username: user?.username || 'отсутствует'
-            };
-            
-            // Валидация
-            if (!validateForm(formData)) {
-                return;
-            }
-            
-            try {
-                // Проверка загрузки модуля Bitrix
-                if (!bitrixLoaded) {
-                    throw new Error('Модуль интеграции с CRM не загружен');
-                }
-                
-                // Показываем индикатор загрузки
-                if (tg.showProgress) tg.showProgress();
-                
-                // 1. Создаем контакт
-                const contactResponse = await window.bitrixFunctions.createContact({
-                    first_name: formData.firstName.split(' ')[0] || 'Клиент',
-                    last_name: formData.firstName.split(' ').slice(1).join(' ') || 'Без фамилии',
-                    phone: formData.phone,
-                    email: formData.email
-                });
-                
-                // Проверяем результат создания контакта
-                if (contactResponse.error || !contactResponse.result) {
-                    const errorMsg = contactResponse.error_description || 'Ошибка создания контакта';
-                    throw new Error(errorMsg);
-                }
-                
-                // 2. Создаем сделку
-                const title = `Заявка от ${formData.firstName}`;
-                const dealResponse = await window.bitrixFunctions.createDeal(contactResponse.result, title);
-                
-                // Проверяем результат создания сделки
-                if (dealResponse.error || !dealResponse.result) {
-                    const errorMsg = dealResponse.error_description || 'Ошибка создания сделки';
-                    throw new Error(errorMsg);
-                }
-                
-                // 3. Обновляем сделку деталями заказа
-                const updateResponse = await window.bitrixFunctions.updateDeal(dealResponse.result, formData);
-                
-                // Проверяем результат обновления сделки
-                if (updateResponse.error || !updateResponse.result) {
-                    const errorMsg = updateResponse.error_description || 'Ошибка обновления сделки';
-                    throw new Error(errorMsg);
-                }
-                
-                // Сохраняем email для последующего поиска заказов
-                localStorage.setItem('clientEmail', formData.email);
-                
-                // Переходим на страницу "Мои услуги"
-                window.location.href = 'my-services.php';
-                
-            } catch (error) {
-                console.error('Ошибка при создании заявки:', error);
-                
-                // Формируем понятное сообщение об ошибке
-                let errorMessage = 'Не удалось создать заявку. Попробуйте позже.';
-                
-                if (error.message.includes('CONTACT_ID')) {
-                    errorMessage = 'Ошибка привязки к контакту. Повторите попытку.';
-                } else if (error.message.includes('UF_CRM')) {
-                    errorMessage = 'Ошибка в данных заявки. Проверьте введенные значения.';
-                }
-                
-                if (tg.showPopup) {
-                    tg.showPopup({
-                        title: 'Ошибка',
-                        message: error.message || errorMessage,
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                } else {
-                    alert(error.message || errorMessage);
-                }
-            } finally {
-                // Скрываем индикатор загрузки
-                if (tg.hideProgress) tg.hideProgress();
-            }
+        function hideError(fieldId) {
+            const errorEl = document.getElementById(fieldId);
+            errorEl.style.display = 'none';
         }
         
-        // Валидация формы
-        function validateForm(formData) {
+        function hideAllErrors() {
+            const errors = document.querySelectorAll('.form-error');
+            errors.forEach(el => el.style.display = 'none');
+        }
+        
+        function validateForm() {
             let isValid = true;
+            hideAllErrors();
             
-            // Скрываем все ошибки
-            document.querySelectorAll('.form-error').forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Валидация телефона
-            const phoneRegex = /^(\+7|8)\d{10}$/;
-            if (!phoneRegex.test(formData.phone.replace(/[\s\-()]/g, ''))) {
-                document.getElementById('phone-error').style.display = 'block';
+            // Phone validation
+            const phoneValue = phoneMask.unmaskedValue;
+            if (!phoneValue || phoneValue.length !== 11) {
+                showError('phone-error', 'Введите корректный номер телефона');
                 isValid = false;
             }
             
-            // Валидация email
+            // Email validation
+            const email = document.getElementById('email').value;
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(formData.email)) {
-                document.getElementById('email-error').style.display = 'block';
+            if (!emailRegex.test(email)) {
+                showError('email-error', 'Введите корректный email');
                 isValid = false;
             }
             
-            // Проверка выбора услуг
-            if (formData.services.length === 0) {
-                document.getElementById('services-error').style.display = 'block';
+            // Services validation
+            const services = document.querySelectorAll('input[name="services"]:checked');
+            if (services.length === 0) {
+                showError('services-error', 'Выберите хотя бы одну услугу');
                 isValid = false;
             }
             
-            // Проверка города
-            if (!formData.city.trim()) {
-                document.getElementById('city-error').style.display = 'block';
+            // City validation
+            const city = document.getElementById('city').value.trim();
+            if (!city) {
+                showError('city-error', 'Введите город');
                 isValid = false;
             }
             
-            // Проверка даты
-            if (!formData.serviceDate) {
-                document.getElementById('date-error').textContent = 'Выберите дату';
-                document.getElementById('date-error').style.display = 'block';
+            // Date validation
+            const serviceDate = document.getElementById('service-date').value;
+            if (!serviceDate) {
+                showError('date-error', 'Выберите дату');
                 isValid = false;
-            }
-            // Проверка на будущую дату
-            else {
-                const selectedDate = new Date(formData.serviceDate);
+            } else {
+                const selectedDate = new Date(serviceDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                
                 if (selectedDate < today) {
-                    document.getElementById('date-error').textContent = 'Выберите дату в будущем';
-                    document.getElementById('date-error').style.display = 'block';
+                    showError('date-error', 'Выберите дату в будущем');
                     isValid = false;
                 }
             }
@@ -326,7 +170,105 @@ header('Content-Type: text/html; charset=utf-8');
             return isValid;
         }
         
-        // Показать запасной вид
+        async function submitForm() {
+            if (!validateForm()) return;
+            
+            const formData = {
+                fullName: document.getElementById('full-name').value,
+                phone: phoneMask.unmaskedValue,
+                email: document.getElementById('email').value,
+                services: Array.from(document.querySelectorAll('input[name="services"]:checked'))
+                    .map(checkbox => checkbox.value),
+                city: document.getElementById('city').value.trim(),
+                serviceDate: document.getElementById('service-date').value,
+                cemetery: document.getElementById('cemetery').value.trim(),
+                plot: document.getElementById('plot').value.trim(),
+                row: document.getElementById('row').value.trim(),
+                plotNumber: document.getElementById('plot-number').value.trim(),
+                additionalInfo: document.getElementById('additional-info').value.trim(),
+                username: user?.username || null
+            };
+            
+            MainButton.showProgress();
+            
+            try {
+                const response = await createLead(formData);
+                
+                if (response && response.result) {
+                    localStorage.setItem('clientEmail', formData.email);
+                    window.location.href = 'my-services.php';
+                } else {
+                    tg.showPopup({
+                        title: 'Ошибка',
+                        message: 'Не удалось отправить заявку. Попробуйте позже.',
+                        buttons: [{ id: 'ok', type: 'ok' }]
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при отправке:', error);
+                tg.showPopup({
+                    title: 'Ошибка',
+                    message: 'Произошла ошибка при отправке данных.',
+                    buttons: [{ id: 'ok', type: 'ok' }]
+                });
+            } finally {
+                MainButton.hideProgress();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            tg = initTelegramApp();
+            
+            // Получаем данные пользователя из sessionStorage
+            const storedUser = sessionStorage.getItem('telegramUser');
+            if (storedUser) {
+                user = JSON.parse(storedUser);
+            } else if (tg) {
+                // Если нет в sessionStorage, пробуем получить из Telegram API
+                user = tg.initDataUnsafe?.user || null;
+            }
+            
+            if (!user) {
+                showFallbackView();
+                return;
+            }
+            
+            const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+            document.getElementById('full-name').value = fullName || '';
+            
+            // Рендерим информацию о пользователе
+            document.getElementById('greeting').textContent = 'Оформление заявки';
+            
+            document.getElementById('user-container').innerHTML = `
+                <div class="avatar">
+                    ${user.photo_url ? 
+                        `<img src="${user.photo_url}" alt="${fullName}">` : 
+                        `<div class="avatar-letter">${user.first_name?.charAt(0) || 'К'}</div>`
+                    }
+                </div>
+                <div class="user-name">${fullName || 'Клиент'}</div>
+            `;
+            
+            MainButton.show("Отправить заявку");
+            MainButton.onClick(submitForm);
+            
+            phoneMask = IMask(document.getElementById('phone'), {
+                mask: '+{7} (000) 000-00-00'
+            });
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    fetch(`https://geocode.xyz/${position.coords.latitude},${position.coords.longitude}?json=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.city) {
+                                document.getElementById('city').value = data.city;
+                            }
+                        });
+                }, () => {});
+            }
+        });
+        
         function showFallbackView() {
             document.getElementById('greeting').textContent = 'Оформление заявки';
             document.getElementById('user-container').innerHTML = `
@@ -334,10 +276,8 @@ header('Content-Type: text/html; charset=utf-8');
                     Для оформления заявки откройте приложение в Telegram
                 </div>
             `;
+            document.getElementById('form-container').style.display = 'none';
         }
-        
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
