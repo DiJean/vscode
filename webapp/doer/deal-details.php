@@ -225,7 +225,7 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="detail-value">#${deal.ID}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Клиент</div>
+                    <div class="detail-label">Заказ</div>
                     <div class="detail-value">${deal.TITLE.replace('Заявка от ', '')}</div>
                 </div>
                 <div class="detail-item">
