@@ -18,14 +18,62 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="greeting" id="greeting">Регистрация исполнителя</div>
         <div id="user-container"></div>
         
-        <div class="form-container">
+        <div class="form-container" id="form-container">
             <form id="performer-form">
-                <!-- Форма без изменений -->
+                <div class="form-group">
+                    <label class="form-label required">Имя</label>
+                    <input type="text" id="first-name" class="form-input" required>
+                    <div class="form-error" id="first-name-error">Введите имя</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Фамилия</label>
+                    <input type="text" id="last-name" class="form-input" required>
+                    <div class="form-error" id="last-name-error">Введите фамилию</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Отчество</label>
+                    <input type="text" id="second-name" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Телефон</label>
+                    <input type="tel" id="phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
+                    <div class="form-error" id="phone-error">Введите корректный номер телефона</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="ваш@email.com" required>
+                    <div class="form-error" id="email-error">Введите корректный email</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Город</label>
+                    <input type="text" id="city" class="form-input" required>
+                    <div class="form-error" id="city-error">Введите город</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Местоположение</label>
+                    <button type="button" id="get-location-btn" class="location-btn">
+                        Получить мои координаты
+                    </button>
+                    <div class="form-error" id="location-error">Не удалось получить координаты</div>
+                    
+                    <div class="coords-container">
+                        <div class="coord-input">Широта: <span id="latitude-display">не определено</span></div>
+                        <div class="coord-input">Долгота: <span id="longitude-display">не определено</span></div>
+                    </div>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                </div>
             </form>
         </div>
         
         <!-- Блок для отладки -->
-        <div id="debug-info" style="color: white; font-size: 14px; margin-top: 20px;"></div>
+        <div id="debug-info"></div>
     </div>
 
     <script>
@@ -139,6 +187,9 @@ header('Content-Type: text/html; charset=utf-8');
                     tg.MainButton.show();
                     debugLog('Кнопка Telegram инициализирована');
                 }
+                
+                // Гарантируем отображение формы
+                document.getElementById('form-container').style.display = 'block';
                 
                 debugLog('Инициализация завершена успешно');
                 
@@ -474,6 +525,10 @@ header('Content-Type: text/html; charset=utf-8');
         
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', () => {
+            // Гарантированное отображение формы
+            const formContainer = document.getElementById('form-container');
+            if (formContainer) formContainer.style.display = 'block';
+            
             initApp();
         });
     </script>
