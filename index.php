@@ -12,7 +12,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body>
     <div class="container">
-        <div class="greeting" id="greeting">Привет!</div>
+        <div class="greeting" id="greeting">Здравствуйте.</div>
         <div id="user-container"></div>
     </div>
     
@@ -89,11 +89,11 @@ header('Content-Type: text/html; charset=utf-8');
                 // Добавляем блок выбора роли
                 userHtml += `
                     <div class="role-selection">
-                        <div class="role-label">Выберите действие:</div>
+                        <div class="role-label">Выберите роль:</div>
                         <select class="role-select" id="role">
-                            <option value="" disabled selected>Выберите действие...</option>
-                            <option value="client">Отправить запрос</option>
-                            <option value="performer">Выполнить заказ</option>
+                            <option value="" disabled selected>Выберите роль...</option>
+                            <option value="client">Клиент</option>
+                            <option value="performer">Исполнитель</option>
                         </select>
                         <div class="role-error" id="role-error">Выберите действие.</div>
                     </div>
@@ -147,7 +147,7 @@ header('Content-Type: text/html; charset=utf-8');
         
         // Функция для отображения запасного вида
         function showFallbackView() {
-            document.getElementById('greeting').textContent = 'Привет, Гость!';
+            document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
             document.getElementById('user-container').innerHTML = `
                 <div class="welcome-text">
                     Добро пожаловать в наше приложение.
