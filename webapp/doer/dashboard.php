@@ -60,259 +60,263 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="../js/telegram-api.js"></script>
-    <script src="../js/bitrix-integration.js"></script>
-    <script>
-        let tg = null;
-        let user = null;
-        let currentPage = 1;
-        const pageSize = 10;
-        let contactId = null;
+    <script type="module">
+        import { initTelegramApp, getUserData } from '../js/telegram-api.js';
+        import { BITRIX_WEBHOOK, findPerformerByTgId } from '../js/bitrix-integration.js';
+        
+        // Основной модуль приложения
+        const DashboardApp = (() => {
+            // Приватные переменные
+            let tg = null;
+            let user = null;
+            let currentPage = 1;
+            const pageSize = 10;
+            let contactId = null;
 
-        // Поиск исполнителя по Telegram ID
-        async function findPerformerByTgId(tgId) {
-            try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        filter: {'UF_CRM_1751128872': tgId},
-                        select: ['ID']
-                    })
-                });
-                const data = await response.json();
-                return data.result && data.result.length > 0 ? data.result[0] : null;
-            } catch (error) {
-                console.error('Ошибка поиска исполнителя:', error);
-                return null;
-            }
-        }
-
-        // Основная функция инициализации
-        async function initApp() {
-            // Проверка доступности Telegram WebApp API
-            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                showFallbackView();
-                return;
-            }
-            
-            const telegramApp = Telegram.WebApp;
-            tg = telegramApp;
-            
-            try {
-                // Получаем данные пользователя
-                user = telegramApp.initDataUnsafe?.user || {};
+            // Публичные методы
+            return {
+                async init() {
+                    try {
+                        // Инициализация Telegram WebApp
+                        tg = await initTelegramApp();
+                        user = getUserData(tg);
+                        
+                        // Проверка регистрации исполнителя
+                        await this.checkPerformerRegistration();
+                        
+                        // Отображение информации о пользователе
+                        this.renderUserInfo();
+                        
+                        // Загрузка сделок
+                        await this.loadDeals();
+                        
+                        // Настройка обработчиков событий
+                        this.setupEventListeners();
+                        
+                    } catch (error) {
+                        console.error('Ошибка инициализации:', error);
+                        this.showFallbackView();
+                    }
+                },
                 
-                // Проверяем, зарегистрирован ли исполнитель
-                const performerContact = await findPerformerByTgId(user.id);
-                if (!performerContact) {
-                    tg.showPopup({
-                        title: 'Требуется регистрация',
-                        message: 'Пройдите регистрацию для доступа к дашборду',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                    setTimeout(() => {
-                        window.location.href = '/webapp/doer/performer-form.php';
-                    }, 2000);
-                    return;
-                }
+                async checkPerformerRegistration() {
+                    const performerContact = await findPerformerByTgId(user.id);
+                    if (!performerContact) {
+                        tg.showPopup({
+                            title: 'Требуется регистрация',
+                            message: 'Пройдите регистрацию для доступа к дашборду',
+                            buttons: [{id: 'ok', type: 'ok'}]
+                        });
+                        setTimeout(() => {
+                            window.location.href = 'performer-form.php';
+                        }, 2000);
+                        throw new Error('Performer not registered');
+                    }
+                    contactId = performerContact.ID;
+                },
                 
-                contactId = performerContact.ID;
+                renderUserInfo() {
+                    const firstName = user.first_name || '';
+                    const lastName = user.last_name || '';
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    
+                    document.getElementById('user-info').innerHTML = `
+                        <div class="avatar">
+                            ${user.photo_url ? 
+                                `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
+                                `<div>${firstName.charAt(0) || 'И'}</div>`
+                            }
+                        </div>
+                        <div class="user-name">${fullName || 'Исполнитель'}</div>
+                    `;
+                },
                 
-                // Отображаем информацию о пользователе
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const fullName = `${firstName} ${lastName}`.trim();
+                async loadDeals() {
+                    try {
+                        // Показать индикатор загрузки
+                        this.showLoading();
+                        
+                        const status = document.getElementById('status-filter').value;
+                        const search = document.getElementById('search').value;
+                        
+                        // Запрос данных
+                        const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                filter: this.buildFilter(status, search),
+                                select: this.getDealFields(),
+                                order: {'DATE_CREATE': 'DESC'},
+                                start: (currentPage - 1) * pageSize
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        this.renderDeals(data.result || []);
+                        this.updatePagination(data.total || 0);
+                        
+                    } catch (error) {
+                        console.error('Ошибка загрузки сделок:', error);
+                        this.showError();
+                    }
+                },
                 
-                document.getElementById('user-info').innerHTML = `
-                    <div class="avatar">
-                        ${user.photo_url ? 
-                            `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
-                            `<div>${firstName.charAt(0) || 'И'}</div>`
+                buildFilter(status, search) {
+                    const filter = {
+                        'UF_CRM_1751128612': contactId
+                    };
+                    
+                    if (status) filter['STAGE_ID'] = status;
+                    if (search) filter['%TITLE'] = search;
+                    
+                    return filter;
+                },
+                
+                getDealFields() {
+                    return [
+                        'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
+                        'UF_CRM_685D295664A8A',
+                        'UF_CRM_685D2956BF4C8',
+                        'UF_CRM_685D2956C64E0'
+                    ];
+                },
+                
+                showLoading() {
+                    document.getElementById('deals-list').innerHTML = `
+                        <tr>
+                            <td colspan="8" class="loading">Загрузка данных...</td>
+                        </tr>
+                    `;
+                },
+                
+                showError() {
+                    document.getElementById('deals-list').innerHTML = `
+                        <tr>
+                            <td colspan="8" class="error">Ошибка загрузки данных</td>
+                        </tr>
+                    `;
+                },
+                
+                renderDeals(deals) {
+                    const dealsList = document.getElementById('deals-list');
+                    
+                    if (deals.length === 0) {
+                        dealsList.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="empty">Заявок не найдено</td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    
+                    dealsList.innerHTML = deals.map(deal => this.createDealRow(deal)).join('');
+                    this.setupDealButtons();
+                },
+                
+                createDealRow(deal) {
+                    const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString();
+                    const serviceDate = deal.UF_CRM_685D295664A8A || '-';
+                    const serviceNames = this.getServiceNames(deal.UF_CRM_685D2956C64E0);
+                    const status = this.getStatusInfo(deal.STAGE_ID);
+                    
+                    return `
+                        <tr>
+                            <td>${deal.ID}</td>
+                            <td>${deal.TITLE.replace('Заявка от ', '')}</td>
+                            <td>${serviceNames}</td>
+                            <td>${createdDate}</td>
+                            <td>${serviceDate}</td>
+                            <td>${deal.UF_CRM_685D2956BF4C8 || '-'}</td>
+                            <td><span class="status ${status.class}">${status.text}</span></td>
+                            <td>
+                                <button class="action-btn view-btn" data-id="${deal.ID}">Просмотр</button>
+                            </td>
+                        </tr>
+                    `;
+                },
+                
+                getServiceNames(serviceIdsString) {
+                    if (!serviceIdsString) return '';
+                    
+                    const serviceIds = serviceIdsString.split(',');
+                    return serviceIds.map(id => {
+                        switch (id) {
+                            case '69': return 'Уход';
+                            case '71': return 'Цветы';
+                            case '73': return 'Ремонт';
+                            case '75': return 'Церковная служба';
+                            default: return id;
                         }
-                    </div>
-                    <div class="user-name">${fullName || 'Исполнитель'}</div>
-                `;
+                    }).join(', ');
+                },
                 
-                // Загружаем сделки
-                loadDeals();
+                getStatusInfo(statusId) {
+                    switch (statusId) {
+                        case 'NEW':
+                            return { text: 'Новая', class: 'status-new' };
+                        case 'PROCESSING':
+                            return { text: 'В работе', class: 'status-processing' };
+                        case 'CLOSED':
+                            return { text: 'Завершена', class: 'status-closed' };
+                        default:
+                            return { text: statusId, class: '' };
+                    }
+                },
                 
-                // Настраиваем обработчики
-                document.getElementById('refresh-btn').addEventListener('click', loadDeals);
-                document.getElementById('prev-page').addEventListener('click', () => changePage(-1));
-                document.getElementById('next-page').addEventListener('click', () => changePage(1));
-                document.getElementById('status-filter').addEventListener('change', loadDeals);
-                document.getElementById('search').addEventListener('input', loadDeals);
+                setupDealButtons() {
+                    document.querySelectorAll('.view-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const dealId = btn.getAttribute('data-id');
+                            this.viewDealDetails(dealId);
+                        });
+                    });
+                },
                 
-            } catch (e) {
-                console.error('Ошибка инициализации:', e);
-                showFallbackView();
-            }
-        }
-        
-        // Загрузка сделок исполнителя
-        async function loadDeals() {
-            try {
-                // Показываем индикатор загрузки
-                document.getElementById('deals-list').innerHTML = `
-                    <tr>
-                        <td colspan="8" class="loading">Загрузка данных...</td>
-                    </tr>
-                `;
+                updatePagination(totalItems) {
+                    const totalPages = Math.ceil(totalItems / pageSize);
+                    const prevBtn = document.getElementById('prev-page');
+                    const nextBtn = document.getElementById('next-page');
+                    const currentPageEl = document.getElementById('current-page');
+                    
+                    currentPageEl.textContent = currentPage;
+                    
+                    prevBtn.disabled = currentPage === 1;
+                    nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+                },
                 
-                const status = document.getElementById('status-filter').value;
-                const search = document.getElementById('search').value;
+                changePage(direction) {
+                    currentPage += direction;
+                    this.loadDeals();
+                },
                 
-                // Формируем фильтр
-                const filter = {
-                    'UF_CRM_1751128612': contactId // Фильтр по ID исполнителя
-                };
+                viewDealDetails(dealId) {
+                    tg.showPopup({
+                        title: 'Детали заявки',
+                        message: `Загрузка информации о заявке #${dealId}...`,
+                        buttons: []
+                    });
+                },
                 
-                if (status) filter['STAGE_ID'] = status;
-                if (search) filter['%TITLE'] = search;
+                setupEventListeners() {
+                    document.getElementById('refresh-btn').addEventListener('click', () => this.loadDeals());
+                    document.getElementById('prev-page').addEventListener('click', () => this.changePage(-1));
+                    document.getElementById('next-page').addEventListener('click', () => this.changePage(1));
+                    document.getElementById('status-filter').addEventListener('change', () => this.loadDeals());
+                    document.getElementById('search').addEventListener('input', () => this.loadDeals());
+                },
                 
-                // Запрашиваем сделки
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        filter: filter,
-                        select: [
-                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
-                            'UF_CRM_685D295664A8A', // Желаемая дата
-                            'UF_CRM_685D2956BF4C8', // Город
-                            'UF_CRM_685D2956C64E0'  // Услуги
-                        ],
-                        order: {'DATE_CREATE': 'DESC'},
-                        start: (currentPage - 1) * pageSize
-                    })
-                });
-                
-                const data = await response.json();
-                renderDeals(data.result || []);
-                updatePagination(data.total || 0);
-                
-            } catch (error) {
-                console.error('Ошибка загрузки сделок:', error);
-                document.getElementById('deals-list').innerHTML = `
-                    <tr>
-                        <td colspan="8" class="error">Ошибка загрузки данных</td>
-                    </tr>
-                `;
-            }
-        }
-        
-        // Отображение сделок в таблице
-        function renderDeals(deals) {
-            const dealsList = document.getElementById('deals-list');
-            
-            if (deals.length === 0) {
-                dealsList.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="empty">Заявок не найдено</td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            dealsList.innerHTML = '';
-            
-            deals.forEach(deal => {
-                const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString();
-                const serviceDate = deal.UF_CRM_685D295664A8A || '-';
-                
-                // Преобразуем ID услуг в названия
-                const serviceIds = deal.UF_CRM_685D2956C64E0 ? 
-                    deal.UF_CRM_685D2956C64E0.split(',') : [];
-                
-                const serviceNames = serviceIds.map(id => {
-                    if (id === '69') return 'Уход';
-                    if (id === '71') return 'Цветы';
-                    if (id === '73') return 'Ремонт';
-                    if (id === '75') return 'Церковная служба';
-                    return id;
-                }).join(', ');
-                
-                // Определяем статус
-                let statusClass = '';
-                let statusText = deal.STAGE_ID || '';
-                
-                if (statusText === 'NEW') {
-                    statusText = 'Новая';
-                    statusClass = 'status-new';
-                } else if (statusText === 'PROCESSING') {
-                    statusText = 'В работе';
-                    statusClass = 'status-processing';
-                } else if (statusText === 'CLOSED') {
-                    statusText = 'Завершена';
-                    statusClass = 'status-closed';
+                showFallbackView() {
+                    document.getElementById('user-info').innerHTML = `
+                        <div class="welcome-text">
+                            Для использования приложения откройте его в Telegram
+                        </div>
+                    `;
                 }
-                
-                dealsList.innerHTML += `
-                    <tr>
-                        <td>${deal.ID}</td>
-                        <td>${deal.TITLE.replace('Заявка от ', '')}</td>
-                        <td>${serviceNames}</td>
-                        <td>${createdDate}</td>
-                        <td>${serviceDate}</td>
-                        <td>${deal.UF_CRM_685D2956BF4C8 || '-'}</td>
-                        <td><span class="status ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <button class="action-btn view-btn" data-id="${deal.ID}">Просмотр</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            // Добавляем обработчики для кнопок
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const dealId = this.getAttribute('data-id');
-                    viewDealDetails(dealId);
-                });
-            });
-        }
-        
-        // Обновление пагинации
-        function updatePagination(totalItems) {
-            const totalPages = Math.ceil(totalItems / pageSize);
-            const prevBtn = document.getElementById('prev-page');
-            const nextBtn = document.getElementById('next-page');
-            const currentPageEl = document.getElementById('current-page');
-            
-            currentPageEl.textContent = currentPage;
-            
-            prevBtn.disabled = currentPage === 1;
-            nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-        }
-        
-        // Смена страницы
-        function changePage(direction) {
-            currentPage += direction;
-            loadDeals();
-        }
-        
-        // Просмотр деталей сделки
-        function viewDealDetails(dealId) {
-            tg.showPopup({
-                title: 'Детали заявки',
-                message: `Загрузка информации о заявке #${dealId}...`,
-                buttons: []
-            });
-            
-            // Здесь можно реализовать запрос полной информации о сделке
-            // и отобразить её в расширенном попапе или на отдельной странице
-        }
-        
-        function showFallbackView() {
-            document.getElementById('user-info').innerHTML = `
-                <div class="welcome-text">
-                    Для использования приложения откройте его в Telegram
-                </div>
-            `;
-        }
-        
-        document.addEventListener('DOMContentLoaded', initApp);
+            };
+        })();
+
+        // Инициализация приложения после загрузки DOM
+        document.addEventListener('DOMContentLoaded', () => DashboardApp.init());
     </script>
 </body>
 </html>
