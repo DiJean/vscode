@@ -94,8 +94,8 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="../js/telegram-api.js"></script>
-    <script src="../js/bitrix-integration.js"></script>
+    <script src="/webapp/js/telegram-api.js"></script>
+    <script src="/webapp/js/bitrix-integration.js"></script>
     <script>
         let tg = null;
         let user = null;
