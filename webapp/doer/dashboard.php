@@ -39,7 +39,7 @@ header('Content-Type: text/html; charset=utf-8');
                         <th>Заказ</th>
                         <th>Услуги</th>
                         <th>Дата заявки</th>
-                        <th>Желаемая дата</th>
+                        <th>Желаемая дата исполнения</th>
                         <th>Город</th>
                         <th>Статус</th>
                         <th>Действия</th>
