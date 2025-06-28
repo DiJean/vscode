@@ -1,5 +1,11 @@
 const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
 
+const SERVICE_IDS = {
+    69: 'Уход',
+    71: 'Цветы',
+    73: 'Ремонт',
+    75: 'Церковная служба'
+};
 // Функция поиска контакта по телефону
 async function findContactByPhone(phone) {
     try {

@@ -8,6 +8,8 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма заявки</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем библиотеку IMask -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <link rel="stylesheet" href="/webapp/css/style.css">
     <link rel="stylesheet" href="/webapp/css/client-form.css">
 </head>
@@ -100,6 +102,7 @@ header('Content-Type: text/html; charset=utf-8');
     <script>
         let tg = null;
         let user = null;
+        let phoneMask = null; // Для хранения объекта маски
 
         // Основная функция инициализации
         async function initApp() {
@@ -143,6 +146,30 @@ header('Content-Type: text/html; charset=utf-8');
                 // Предзаполняем имя
                 document.getElementById('full-name').value = fullName;
                 
+                // Инициализация маски телефона
+                phoneMask = IMask(
+                    document.getElementById('phone'),
+                    {
+                        mask: '+{7} (000) 000-00-00',
+                        lazy: false, // Всегда показывать маску
+                        placeholderChar: ' ',
+                        blocks: {
+                            '0': {
+                                mask: /[0-9]/,
+                                placeholderChar: '_'
+                            }
+                        }
+                    }
+                );
+                
+                // Автоматически устанавливаем "+7 " при фокусе, если поле пустое
+                document.getElementById('phone').addEventListener('focus', function() {
+                    if (!this.value.trim()) {
+                        phoneMask.unmaskedValue = '7';
+                        phoneMask.updateValue();
+                    }
+                });
+                
                 // Показываем форму
                 document.getElementById('form-container').style.display = 'block';
                 
@@ -164,14 +191,14 @@ header('Content-Type: text/html; charset=utf-8');
             // Собираем данные формы
             const formData = {
                 fullName: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
+                phone: phoneMask.unmaskedValue, // Получаем очищенный номер
                 email: document.getElementById('email').value,
                 services: Array.from(document.querySelectorAll('input[name="services"]:checked'))
                     .map(checkbox => checkbox.value),
                 city: document.getElementById('city').value,
                 serviceDate: document.getElementById('service-date').value,
                 cemetery: document.getElementById('cemetery').value,
-                sector: document.getElementById('sector').value, // Новое поле
+                sector: document.getElementById('sector').value,
                 row: document.getElementById('row').value,
                 plot: document.getElementById('plot').value,
                 additionalInfo: document.getElementById('additional-info').value,
@@ -227,8 +254,8 @@ header('Content-Type: text/html; charset=utf-8');
             });
             
             // Валидация телефона
-            const phoneRegex = /^(\+7|8)[\d\s\-()]{10,15}$/;
-            if (!phoneRegex.test(formData.phone)) {
+            const phoneValue = formData.phone;
+            if (!phoneValue || phoneValue.length !== 11) {
                 document.getElementById('phone-error').style.display = 'block';
                 isValid = false;
             }
