@@ -58,6 +58,12 @@ header('Content-Type: text/html; charset=utf-8');
             <span id="current-page">1</span>
             <button id="next-page">Вперед →</button>
         </div>
+
+        <!-- Блок диагностики -->
+        <div id="debug-info" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; font-size: 0.9rem;">
+            <h3>Диагностическая информация</h3>
+            <pre id="debug-data"></pre>
+        </div>
     </div>
 
     <script src="../js/telegram-api.js"></script>
@@ -68,6 +74,7 @@ header('Content-Type: text/html; charset=utf-8');
         let currentPage = 1;
         const pageSize = 10;
         let contactId = null;
+        let performerCity = null;
 
         // Поиск исполнителя по Telegram ID
         async function findPerformerByTgId(tgId) {
@@ -77,11 +84,17 @@ header('Content-Type: text/html; charset=utf-8');
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         filter: {'UF_CRM_1751128872': tgId},
-                        select: ['ID']
+                        select: ['ID', 'UF_CRM_685D2956061DB'] // Добавляем город
                     })
                 });
+                
                 const data = await response.json();
-                return data.result && data.result.length > 0 ? data.result[0] : null;
+                console.log('Contact search response:', data);
+                
+                if (data.result && data.result.length > 0) {
+                    return data.result[0];
+                }
+                return null;
             } catch (error) {
                 console.error('Ошибка поиска исполнителя:', error);
                 return null;
@@ -90,7 +103,6 @@ header('Content-Type: text/html; charset=utf-8');
 
         // Основная функция инициализации
         async function initApp() {
-            // Проверка доступности Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -100,10 +112,12 @@ header('Content-Type: text/html; charset=utf-8');
             tg = telegramApp;
             
             try {
-                // Получаем данные пользователя
                 user = telegramApp.initDataUnsafe?.user || {};
                 
-                // Проверяем, зарегистрирован ли исполнитель
+                // Диагностика: покажем данные пользователя
+                console.log('User data:', user);
+                
+                // Проверяем регистрацию исполнителя
                 const performerContact = await findPerformerByTgId(user.id);
                 
                 if (!performerContact) {
@@ -113,15 +127,14 @@ header('Content-Type: text/html; charset=utf-8');
                         buttons: [{id: 'ok', type: 'ok'}]
                     });
                     
-                    // Перенаправляем на форму регистрации через 2 секунды
                     setTimeout(() => {
                         window.location.href = 'performer-form.php';
                     }, 2000);
-                    
                     return;
                 }
                 
                 contactId = performerContact.ID;
+                performerCity = performerContact.UF_CRM_685D2956061DB || '';
                 
                 // Отображаем информацию о пользователе
                 const firstName = user.first_name || '';
@@ -136,6 +149,7 @@ header('Content-Type: text/html; charset=utf-8');
                         }
                     </div>
                     <div class="user-name">${fullName || 'Исполнитель'}</div>
+                    <div class="user-debug">ID: ${contactId}, Город: ${performerCity}</div>
                 `;
                 
                 // Загружаем сделки
@@ -157,7 +171,6 @@ header('Content-Type: text/html; charset=utf-8');
         // Загрузка сделок исполнителя
         async function loadDeals() {
             try {
-                // Показываем индикатор загрузки
                 document.getElementById('deals-list').innerHTML = `
                     <tr>
                         <td colspan="8" class="loading">Загрузка данных...</td>
@@ -167,15 +180,17 @@ header('Content-Type: text/html; charset=utf-8');
                 const status = document.getElementById('status-filter').value;
                 const search = document.getElementById('search').value;
                 
-                // Формируем фильтр по пользовательскому полю UF_CRM_1751128612 (Исполнитель)
+                // Формируем фильтр
                 const filter = {
-                    'UF_CRM_1751128612': contactId // Используем пользовательское поле для фильтрации
+                    'UF_CRM_1751128612': contactId
                 };
                 
                 if (status) filter['STAGE_ID'] = status;
                 if (search) filter['%TITLE'] = search;
                 
-                // Запрашиваем сделки
+                // Показываем фильтр для диагностики
+                console.log('Deals filter:', filter);
+                
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -183,9 +198,10 @@ header('Content-Type: text/html; charset=utf-8');
                         filter: filter,
                         select: [
                             'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
-                            'UF_CRM_685D295664A8A', // Желаемая дата
-                            'UF_CRM_685D2956BF4C8', // Город
-                            'UF_CRM_685D2956C64E0'  // Услуги
+                            'UF_CRM_685D295664A8A', 
+                            'UF_CRM_685D2956BF4C8', 
+                            'UF_CRM_685D2956C64E0',
+                            'UF_CRM_1751128612' // Добавляем для диагностики
                         ],
                         order: {'DATE_CREATE': 'DESC'},
                         start: (currentPage - 1) * pageSize
@@ -193,6 +209,17 @@ header('Content-Type: text/html; charset=utf-8');
                 });
                 
                 const data = await response.json();
+                console.log('Deals response:', data);
+                
+                // Показываем диагностическую информацию
+                document.getElementById('debug-info').style.display = 'block';
+                document.getElementById('debug-data').textContent = JSON.stringify({
+                    contactId: contactId,
+                    tgUserId: user.id,
+                    filter: filter,
+                    response: data
+                }, null, 2);
+                
                 renderDeals(data.result || []);
                 updatePagination(data.total || 0);
                 
@@ -203,6 +230,9 @@ header('Content-Type: text/html; charset=utf-8');
                         <td colspan="8" class="error">Ошибка загрузки данных</td>
                     </tr>
                 `;
+                
+                document.getElementById('debug-info').style.display = 'block';
+                document.getElementById('debug-data').textContent = `Ошибка: ${error.message}\n\n${error.stack}`;
             }
         }
         
@@ -252,6 +282,11 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
+                // Добавляем информацию о исполнителе для диагностики
+                const performerInfo = deal.UF_CRM_1751128612 ? 
+                    `Исполнитель: ${deal.UF_CRM_1751128612}` : 
+                    'Исполнитель не назначен';
+                
                 dealsList.innerHTML += `
                     <tr>
                         <td>${deal.ID}</td>
@@ -263,6 +298,7 @@ header('Content-Type: text/html; charset=utf-8');
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                         <td>
                             <button class="action-btn view-btn" data-id="${deal.ID}">Просмотр</button>
+                            <div class="debug-info">${performerInfo}</div>
                         </td>
                     </tr>
                 `;
@@ -303,9 +339,6 @@ header('Content-Type: text/html; charset=utf-8');
                 message: `Загрузка информации о заявке #${dealId}...`,
                 buttons: []
             });
-            
-            // Здесь можно реализовать запрос полной информации о сделке
-            // и отобразить её в расширенном попапе или на отдельной странице
         }
         
         function showFallbackView() {
