@@ -114,9 +114,7 @@ header('Content-Type: text/html; charset=utf-8');
                             'UF_CRM_685D2956D0916',
                             'UF_CRM_1751022940',
                             'UF_CRM_685D2956D7C70',
-                            'UF_CRM_685D2956DF40F',
-                            'UF_CRM_1751129816', // Широта
-                            'UF_CRM_1751129854'  // Долгота
+                            'UF_CRM_685D2956DF40F'
                         ]
                     })
                 });
@@ -361,7 +359,7 @@ header('Content-Type: text/html; charset=utf-8');
             loadDeals();
         }
         
-        // Просмотр деталей сделки
+        // Просмотр деталей сделки - ОБНОВЛЕННАЯ ВЕРСИЯ
         async function viewDealDetails(dealId) {
             try {
                 // Показываем индикатор загрузки
@@ -374,70 +372,54 @@ header('Content-Type: text/html; charset=utf-8');
                     throw new Error('Не удалось загрузить детали сделки');
                 }
                 
-                // Форматируем данные
-                const createdDate = new Date(deal.DATE_CREATE).toLocaleString();
-                const serviceDate = deal.UF_CRM_685D295664A8A ? 
-                    new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-';
+                // Формируем краткое сообщение
+                let message = `Заявка #${deal.ID}\n`;
                 
-                // Обработка услуг
-                let serviceNames = '-';
-                const serviceField = deal.UF_CRM_685D2956C64E0;
-                if (serviceField) {
-                    let serviceIds = [];
-                    if (Array.isArray(serviceField)) {
-                        serviceIds = serviceField.map(id => String(id));
-                    } else if (typeof serviceField === 'string') {
-                        serviceIds = serviceField.split(',');
-                    } else {
-                        serviceIds = [String(serviceField)];
-                    }
-                    serviceNames = serviceIds.map(id => {
-                        if (id === '69') return 'Уход';
-                        if (id === '71') return 'Цветы';
-                        if (id === '73') return 'Ремонт';
-                        if (id === '75') return 'Церковная служба';
+                // Основные данные
+                message += `Клиент: ${deal.TITLE.replace('Заявка от ', '')}\n`;
+                message += `Дата услуги: ${deal.UF_CRM_685D295664A8A ? new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-'}\n`;
+                message += `Статус: ${deal.STAGE_ID || '-'}\n`;
+                
+                // Услуги
+                let services = '';
+                if (deal.UF_CRM_685D2956C64E0) {
+                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) ? 
+                        deal.UF_CRM_685D2956C64E0 : 
+                        [deal.UF_CRM_685D2956C64E0];
+                    
+                    services = serviceIds.map(id => {
+                        if (id == 69) return 'Уход';
+                        if (id == 71) return 'Цветы';
+                        if (id == 73) return 'Ремонт';
+                        if (id == 75) return 'Церковная';
                         return id;
                     }).join(', ');
                 }
+                message += `Услуги: ${services || '-'}\n`;
                 
-                // Формируем сообщение для popup
-                let message = `<b>Заявка #${deal.ID}</b>\n\n`;
-                message += `<b>Клиент:</b> ${deal.TITLE.replace('Заявка от ', '')}\n`;
-                message += `<b>Услуги:</b> ${serviceNames}\n`;
-                message += `<b>Дата заявки:</b> ${createdDate}\n`;
-                message += `<b>Желаемая дата:</b> ${serviceDate}\n`;
-                message += `<b>Город:</b> ${deal.UF_CRM_685D2956BF4C8 || '-'}\n`;
-                message += `<b>Статус:</b> ${deal.STAGE_ID || '-'}\n`;
-                message += `<b>Исполнитель:</b> ${performerName}\n`;
-                
-                // Дополнительные поля
-                if (deal.UF_CRM_685D2956D0916) message += `<b>Кладбище:</b> ${deal.UF_CRM_685D2956D0916}\n`;
-                if (deal.UF_CRM_1751022940) message += `<b>Сектор:</b> ${deal.UF_CRM_1751022940}\n`;
-                if (deal.UF_CRM_685D2956D7C70) message += `<b>Ряд:</b> ${deal.UF_CRM_685D2956D7C70}\n`;
-                if (deal.UF_CRM_685D2956DF40F) message += `<b>Участок:</b> ${deal.UF_CRM_685D2956DF40F}\n`;
-                
-                // Координаты
-                if (deal.UF_CRM_1751129816) message += `<b>Широта:</b> ${deal.UF_CRM_1751129816}\n`;
-                if (deal.UF_CRM_1751129854) message += `<b>Долгота:</b> ${deal.UF_CRM_1751129854}\n`;
-                
-                // Комментарии
-                if (deal.COMMENTS) {
-                    const comments = deal.COMMENTS.length > 200 ? 
-                        deal.COMMENTS.substring(0, 200) + '...' : 
-                        deal.COMMENTS;
-                    message += `\n<b>Комментарии:</b>\n${comments}`;
+                // Важные детали
+                if (deal.UF_CRM_685D2956D0916) message += `Кладбище: ${deal.UF_CRM_685D2956D0916}\n`;
+                if (deal.UF_CRM_685D2956D7C70 || deal.UF_CRM_685D2956DF40F) {
+                    message += `Место: ряд ${deal.UF_CRM_685D2956D7C70 || '-'}, уч. ${deal.UF_CRM_685D2956DF40F || '-'}\n`;
                 }
                 
-                // Убираем HTML-теги и ограничиваем длину
-                const plainMessage = message.replace(/<[^>]*>/g, '');
-                const finalMessage = plainMessage.length > 1000 ? 
-                    plainMessage.substring(0, 1000) + '...' : 
-                    plainMessage;
+                // Комментарий (сокращенный)
+                if (deal.COMMENTS) {
+                    const shortComment = deal.COMMENTS.length > 50 ? 
+                        deal.COMMENTS.substring(0, 50) + '...' : 
+                        deal.COMMENTS;
+                    message += `Коммент: ${shortComment}`;
+                }
+                
+                // Ограничиваем длину сообщения
+                if (message.length > 200) {
+                    message = message.substring(0, 197) + '...';
+                }
                 
                 // Показываем детали в popup
                 tg.showPopup({
                     title: `Заявка #${deal.ID}`,
-                    message: finalMessage,
+                    message: message,
                     buttons: [{id: 'close', type: 'close'}]
                 });
                 
@@ -445,7 +427,7 @@ header('Content-Type: text/html; charset=utf-8');
                 console.error('Ошибка просмотра заявки:', error);
                 tg.showPopup({
                     title: 'Ошибка',
-                    message: `Не удалось загрузить детали заявки: ${error.message}`,
+                    message: 'Не удалось загрузить детали',
                     buttons: [{id: 'ok', type: 'ok'}]
                 });
             } finally {
