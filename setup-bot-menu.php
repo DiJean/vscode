@@ -7,7 +7,7 @@ $setMenuUrl = "https://api.telegram.org/bot$botToken/setChatMenuButton";
 $menuData = [
     'menu_button' => [
         'type' => 'web_app',
-        'text' => 'Мои услуги',
+        'text' => 'Перейти к услугам',
         'web_app' => ['url' => $webAppUrl]
     ]
 ];

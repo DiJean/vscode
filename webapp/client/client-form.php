@@ -194,7 +194,7 @@ header('Content-Type: text/html; charset=utf-8');
                     localStorage.setItem('clientEmail', formData.email);
                     
                     // Переходим на страницу "Мои услуги"
-                    window.location.href = 'my-services.php';
+                    window.location.href = '/webapp/client/services.php';
                 } else {
                     console.error('Ошибка при создании заявки в Bitrix24');
                     tg.showPopup({
