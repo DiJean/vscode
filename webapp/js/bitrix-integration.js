@@ -6,6 +6,7 @@ const SERVICE_IDS = {
     73: 'Ремонт',
     75: 'Церковная служба'
 };
+
 // Функция поиска контакта по телефону
 async function findContactByPhone(phone) {
     try {
@@ -78,13 +79,9 @@ async function updateContact(contactId, data) {
     }
 }
 
-// Создание сделки с обновленными кодами полей
+// Создание сделки
 async function createDeal(contactId, data) {
     try {
-        const nameParts = data.fullName.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-        
         const dealData = {
             fields: {
                 TITLE: `Заявка от ${data.fullName}`,
@@ -92,14 +89,14 @@ async function createDeal(contactId, data) {
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                 EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
                 
-                // Обновленные пользовательские поля с новыми кодами
-                UF_CRM_685D295664A8A: data.serviceDate, // Желаемая дата услуги
-                UF_CRM_685D2956BF4C8: data.city,        // Город
-                UF_CRM_685D2956C64E0: data.services,    // Услуга
-                UF_CRM_685D2956D0916: data.cemetery,    // Кладбище
-                UF_CRM_1751022940: data.sector,         // Сектор
-                UF_CRM_685D2956D7C70: data.row,         // Ряд
-                UF_CRM_685D2956DF40F: data.plot,        // Участок
+                // Пользовательские поля
+                UF_CRM_685D295664A8A: data.serviceDate,
+                UF_CRM_685D2956BF4C8: data.city,
+                UF_CRM_685D2956C64E0: data.services,
+                UF_CRM_685D2956D0916: data.cemetery,
+                UF_CRM_1751022940: data.sector,
+                UF_CRM_685D2956D7C70: data.row,
+                UF_CRM_685D2956DF40F: data.plot,
                 
                 // Комментарий
                 COMMENTS: `Telegram: @${data.username || 'отсутствует'}\n` +
@@ -123,34 +120,6 @@ async function createDeal(contactId, data) {
 
 // Основная функция обработки заявки
 export async function processServiceRequest(data) {
-    // Старый код создания лида (закомментирован)
-    /*
-    const requestData = {
-        fields: {
-            NAME: firstName,
-            LAST_NAME: lastName,
-            PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-            EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-            UF_CRM_1749802456: data.serviceDate,
-            UF_CRM_1749802469: data.city,
-            UF_CRM_1749802574: data.services,
-            UF_CRM_1749802612: data.cemetery,
-            UF_CRM_1749802619: data.row,
-            UF_CRM_1749802630: data.plot,
-            UF_CRM_1749802631: data.plotNumber,
-            COMMENTS: `Telegram: @${data.username || 'отсутствует'}\n` +
-                      `Дополнительная информация: ${data.additionalInfo || 'не указано'}`
-        }
-    };
-    
-    return fetch(`${BITRIX_WEBHOOK}crm.lead.add`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(requestData),
-    });
-    */
-    
-    // Новый код работы с контактом и сделкой
     try {
         // Поиск существующего контакта
         const existingContact = await findContactByPhone(data.phone);
@@ -169,10 +138,10 @@ export async function processServiceRequest(data) {
             throw new Error('Не удалось создать/обновить контакт');
         }
         
-        // Создание сделки с новыми кодами полей
+        // Создание сделки
         const dealId = await createDeal(contactId, {
             ...data,
-            sector: data.sector || '' // Добавляем поле сектора
+            sector: data.sector || ''
         });
         
         if (!dealId) {
@@ -187,7 +156,7 @@ export async function processServiceRequest(data) {
     }
 }
 
-// Получение списка заявок пользователя (оставляем без изменений)
+// Получение списка заявок пользователя
 export async function getUserRequests(email) {
     const filter = {
         filter: {'EMAIL': email},
@@ -205,19 +174,28 @@ export async function getUserRequests(email) {
         body: JSON.stringify(filter),
     }).then(response => response.json());
 }
+
 // Поиск исполнителя по Telegram ID
-async function findPerformerByTgId(tgId) {
+export async function findPerformerByTgId(tgId) {
     try {
+        console.log(`[Bitrix] Поиск исполнителя по TG ID: ${tgId}`);
+        
         const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                filter: {'UF_CRM_1751128872': tgId},
-                select: ['ID']
+                filter: {'UF_CRM_1751128872': String(tgId)},
+                select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
             })
         });
+        
         const data = await response.json();
-        return data.result && data.result.length > 0 ? data.result[0] : null;
+        console.log('[Bitrix] Результат поиска исполнителя:', data);
+        
+        if (data.result && data.result.length > 0) {
+            return data.result[0];
+        }
+        return null;
     } catch (error) {
         console.error('Ошибка поиска исполнителя:', error);
         return null;

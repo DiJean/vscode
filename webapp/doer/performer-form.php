@@ -12,6 +12,17 @@ header('Content-Type: text/html; charset=utf-8');
     <link rel="stylesheet" href="/webapp/css/style.css">
     <link rel="stylesheet" href="/webapp/css/client-form.css">
     <style>
+        /* Важные стили для отображения формы */
+        .form-container {
+            display: block !important;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .form-container.visible {
+            opacity: 1;
+        }
+        
         .location-btn {
             width: 100%;
             padding: 14px 18px;
@@ -46,12 +57,30 @@ header('Content-Type: text/html; charset=utf-8');
             font-size: 0.9rem;
         }
         
+        /* Индикатор загрузки */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
         .debug-panel {
             margin-top: 20px;
             padding: 15px;
             background: rgba(0,0,0,0.2);
             border-radius: 12px;
             font-size: 0.9rem;
+            display: none;
         }
     </style>
 </head>
@@ -60,207 +89,130 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="greeting" id="greeting">Регистрация исполнителя</div>
         <div id="user-container"></div>
         
-        <div class="form-container" id="form-container" style="display: none;">
+        <div class="form-container" id="form-container">
             <form id="performer-form">
-                <!-- ... остальные поля формы ... -->
+                <div class="form-group">
+                    <label class="form-label required">Имя</label>
+                    <input type="text" id="first-name" class="form-input" required>
+                    <div class="form-error" id="first-name-error">Введите имя</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Фамилия</label>
+                    <input type="text" id="last-name" class="form-input" required>
+                    <div class="form-error" id="last-name-error">Введите фамилию</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Отчество</label>
+                    <input type="text" id="second-name" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Телефон</label>
+                    <input type="tel" id="phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
+                    <div class="form-error" id="phone-error">Введите корректный номер телефона</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="ваш@email.com" required>
+                    <div class="form-error" id="email-error">Введите корректный email</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Город</label>
+                    <input type="text" id="city" class="form-input" required>
+                    <div class="form-error" id="city-error">Введите город</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label required">Местоположение</label>
+                    <button type="button" id="get-location-btn" class="location-btn">
+                        Получить мои координаты
+                    </button>
+                    <div class="form-error" id="location-error">Не удалось получить координаты</div>
+                    
+                    <div class="coords-container">
+                        <div class="coord-input">Широта: <span id="latitude-display">не определено</span></div>
+                        <div class="coord-input">Долгота: <span id="longitude-display">не определено</span></div>
+                    </div>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                </div>
             </form>
         </div>
         
         <!-- Панель диагностики -->
-        <div class="debug-panel" id="debug-panel" style="display: none;">
+        <div class="debug-panel" id="debug-panel">
             <h3>Диагностическая информация</h3>
             <pre id="debug-data"></pre>
         </div>
     </div>
 
-    <script src="../js/telegram-api.js"></script>
-    <script src="../js/bitrix-integration.js"></script>
-    <script>
+    <script type="module">
+        import { BITRIX_WEBHOOK, findPerformerByTgId } from '../js/bitrix-integration.js';
+
         let tg = null;
         let user = null;
         let phoneMask = null;
 
         // Основная функция инициализации
         async function initApp() {
-            // ... инициализация (без изменений) ...
-        }
-        
-        // Получение геолокации
-        function getLocation() {
-            // ... без изменений ...
-        }
-        
-        // Отправка формы
-        async function submitForm() {
-            const formData = {
-                // ... сбор данных формы ...
-            };
-            
-            if (!validateForm(formData)) {
+            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+                showFallbackView();
                 return;
             }
             
+            tg = Telegram.WebApp;
+            
             try {
-                if (tg.showProgress) tg.showProgress();
+                tg.ready();
                 
-                // Сохраняем исполнителя в Bitrix24
-                const result = await savePerformer(formData);
+                // Получаем данные пользователя
+                user = tg.initDataUnsafe?.user || {};
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
                 
-                if (result.success) {
-                    // Переходим в дашборд
-                    window.location.href = 'dashboard.php';
-                } else {
-                    // Показываем подробную ошибку
-                    showDebugPanel(result);
-                    tg.showPopup({
-                        title: 'Ошибка регистрации',
-                        message: result.errorMessage || 'Не удалось зарегистрироваться',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                tg.showPopup({
-                    title: 'Ошибка',
-                    message: 'Произошла непредвиденная ошибка',
-                    buttons: [{id: 'ok', type: 'ok'}]
-                });
-            } finally {
-                if (tg.hideProgress) tg.hideProgress();
-            }
-        }
-        
-        // Валидация формы
-        function validateForm(formData) {
-            // ... без изменений ...
-        }
-        
-        // Сохранение исполнителя в Bitrix24 (с детальной диагностикой)
-        async function savePerformer(data) {
-            try {
-                const contactData = {
-                    fields: {
-                        NAME: data.firstName,
-                        LAST_NAME: data.lastName,
-                        SECOND_NAME: data.secondName || '',
-                        PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                        EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                        UF_CRM_685D2956061DB: data.city, 
-                        UF_CRM_1751129816: data.latitude, 
-                        UF_CRM_1751129854: data.longitude, 
-                        UF_CRM_1751128872: String(data.tgUserId),
-                        TYPE_ID: 'EMPLOYEE'
-                    }
-                };
-                
-                // Логируем данные перед отправкой
-                console.log("Данные для создания контакта:", contactData);
-                
-                // Проверяем, есть ли уже контакт
-                const existingContact = await findPerformerByTgId(data.tgUserId);
-                let response, result;
-                
-                if (existingContact) {
-                    // Обновляем существующий контакт
-                    response = await fetch(`${BITRIX_WEBHOOK}crm.contact.update`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            id: existingContact.ID,
-                            fields: contactData.fields
-                        })
-                    });
-                    result = await response.json();
-                    
-                    console.log("Результат обновления контакта:", result);
-                    
-                    if (result.result) {
-                        return {
-                            success: true,
-                            contactId: existingContact.ID
-                        };
-                    } else {
-                        return {
-                            success: false,
-                            error: result.error,
-                            errorMessage: `Ошибка обновления: ${result.error_description}`,
-                            requestData: contactData,
-                            response: result
-                        };
-                    }
-                } else {
-                    // Создаем новый контакт
-                    response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(contactData)
-                    });
-                    result = await response.json();
-                    
-                    console.log("Результат создания контакта:", result);
-                    
-                    if (result.result) {
-                        return {
-                            success: true,
-                            contactId: result.result
-                        };
-                    } else {
-                        return {
-                            success: false,
-                            error: result.error,
-                            errorMessage: `Ошибка создания: ${result.error_description}`,
-                            requestData: contactData,
-                            response: result
-                        };
-                    }
+                // Отображаем информацию о пользователе
+                const userContainer = document.getElementById('user-container');
+                if (userContainer) {
+                    userContainer.innerHTML = `
+                        <div class="avatar">
+                            ${user.photo_url ? 
+                                `<img src="${user.photo_url}" alt="${firstName} ${lastName}" crossorigin="anonymous">` : 
+                                `<div>${firstName.charAt(0) || 'И'}</div>`
+                            }
+                        </div>
+                        <div class="user-name">${firstName} ${lastName}</div>
+                    `;
                 }
                 
-            } catch (error) {
-                console.error('Ошибка сохранения исполнителя:', error);
-                return {
-                    success: false,
-                    error: error.message,
-                    errorMessage: `Сетевая ошибка: ${error.message}`
-                };
-            }
-        }
-        
-        // Поиск исполнителя по Telegram ID
-        async function findPerformerByTgId(tgId) {
-            try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        filter: {'UF_CRM_1751128872': String(tgId)},
-                        select: ['ID', 'NAME', 'LAST_NAME']
-                    })
-                });
-                
-                const data = await response.json();
-                console.log("Результат поиска контакта:", data);
-                
-                if (data.result && data.result.length > 0) {
-                    return data.result[0];
+                // Предзаполняем имя и фамилию
+                if (firstName) {
+                    const firstNameInput = document.getElementById('first-name');
+                    if (firstNameInput) firstNameInput.value = firstName;
                 }
-                return null;
-            } catch (error) {
-                console.error('Ошибка поиска исполнителя:', error);
-                return null;
-            }
-        }
-        
-        // Показать панель диагностики
-        function showDebugPanel(data) {
-            document.getElementById('debug-panel').style.display = 'block';
-            document.getElementById('debug-data').textContent = JSON.stringify(data, null, 2);
-        }
-        
-        function showFallbackView() {
-            // ... без изменений ...
-        }
-        
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-</body>
-</html>
+                if (lastName) {
+                    const lastNameInput = document.getElementById('last-name');
+                    if (lastNameInput) lastNameInput.value = lastName;
+                }
+                
+                // Инициализация маски телефона
+                const phoneInput = document.getElementById('phone');
+                if (phoneInput) {
+                    phoneMask = IMask(phoneInput, { 
+                        mask: '+{7} (000) 000-00-00'
+                    });
+                    
+                    // Автозаполнение +7
+                    phoneInput.addEventListener('focus', function() {
+                        if (!this.value.trim()) {
+                            phoneMask.unmaskedValue = '7';
+                            phoneMask.updateValue();
+                        }
+                    });
+                }
+                
+                // Обработчик для кнопки получения координат
+                const locationBtn = document.getElementB
