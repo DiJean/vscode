@@ -71,7 +71,7 @@ header('Content-Type: text/html; charset=utf-8');
                     userHtml += `
                         <div class="avatar">
                             ${user.photo_url ? 
-                                `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
+                                `<img src="${user.photo_url}" alt="${fullName}">` : 
                                 `<div>${firstName.charAt(0) || 'Г'}</div>`
                             }
                         </div>
@@ -115,11 +115,6 @@ header('Content-Type: text/html; charset=utf-8');
                         if (!role) {
                             document.getElementById('role-error').style.display = 'block';
                             return;
-                        }
-                        
-                        // Сохраняем данные пользователя для передачи на следующую страницу
-                        if (user) {
-                            sessionStorage.setItem('telegramUser', JSON.stringify(user));
                         }
                         
                         // Сохраняем роль
