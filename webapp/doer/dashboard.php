@@ -47,6 +47,32 @@ header('Content-Type: text/html; charset=utf-8');
         .table-hover tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.05) !important;
         }
+        
+        /* Новые стили */
+        .deals-container {
+            overflow-x: auto;
+        }
+        
+        #deals-table a {
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        #deals-table a:hover {
+            text-decoration: underline;
+            opacity: 0.9;
+        }
+        
+        #deals-table th, 
+        #deals-table td {
+            white-space: nowrap;
+            min-width: 80px;
+        }
+        
+        #deals-table td:first-child,
+        #deals-table td:last-child {
+            min-width: 60px;
+        }
     </style>
 </head>
 <body>
@@ -82,10 +108,10 @@ header('Content-Type: text/html; charset=utf-8');
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>Заказ</th>
+                            <th>Клиент</th>
                             <th>Услуги</th>
-                            <th>Дата заявки</th>
-                            <th>Дата исполнения</th>
+                            <th>Создана</th>
+                            <th>Исполнение</th>
                             <th>Город</th>
                             <th>Статус</th>
                             <th>Действия</th>
@@ -310,10 +336,15 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
-                // ДОБАВЛЕНА ССЫЛКА НА ДЕТАЛИ СДЕЛКИ
+                // СДЕЛАЕМ ID КЛИКАБЕЛЬНЫМ
                 dealsList.innerHTML += `
                     <tr>
-                        <td>${deal.ID}</td>
+                        <td>
+                            <a href="deal-details.php?id=${deal.ID}" 
+                               class="text-white text-decoration-none fw-bold">
+                                ${deal.ID}
+                            </a>
+                        </td>
                         <td>${deal.TITLE.replace('Заявка от ', '')}</td>
                         <td>${serviceNames}</td>
                         <td>${createdDate}</td>
@@ -321,7 +352,10 @@ header('Content-Type: text/html; charset=utf-8');
                         <td>${deal.UF_CRM_685D2956BF4C8 || '-'}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>
-                            <a href="deal-details.php?id=${deal.ID}" class="btn btn-sm btn-primary">Просмотр</a>
+                            <a href="deal-details.php?id=${deal.ID}" 
+                               class="btn btn-sm btn-primary action-btn">
+                                Просмотр
+                            </a>
                         </td>
                     </tr>
                 `;
