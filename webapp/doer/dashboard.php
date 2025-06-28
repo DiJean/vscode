@@ -58,12 +58,6 @@ header('Content-Type: text/html; charset=utf-8');
             <span id="current-page">1</span>
             <button id="next-page">Вперед →</button>
         </div>
-
-        <!-- Блок диагностики -->
-        <div id="debug-info" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; font-size: 0.9rem;">
-            <h3>Диагностическая информация</h3>
-            <pre id="debug-data"></pre>
-        </div>
     </div>
 
     <script>
@@ -93,36 +87,6 @@ header('Content-Type: text/html; charset=utf-8');
                 return data.result && data.result.length > 0 ? data.result[0] : null;
             } catch (error) {
                 console.error('Ошибка поиска исполнителя:', error);
-                return null;
-            }
-        }
-
-        // Загрузка деталей сделки
-        async function loadDealDetails(dealId) {
-            try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        id: dealId,
-                        select: [
-                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
-                            'UF_CRM_685D295664A8A', 
-                            'UF_CRM_685D2956BF4C8', 
-                            'UF_CRM_685D2956C64E0',
-                            'UF_CRM_1751128612',
-                            'UF_CRM_685D2956D0916',
-                            'UF_CRM_1751022940',
-                            'UF_CRM_685D2956D7C70',
-                            'UF_CRM_685D2956DF40F'
-                        ]
-                    })
-                });
-                
-                const data = await response.json();
-                return data.result || null;
-            } catch (error) {
-                console.error('Ошибка загрузки деталей сделки:', error);
                 return null;
             }
         }
@@ -172,7 +136,6 @@ header('Content-Type: text/html; charset=utf-8');
                         }
                     </div>
                     <div class="user-name">${fullName || 'Исполнитель'}</div>
-                    <div class="user-debug">ID: ${contactId}, Город: ${performerCity}</div>
                 `;
                 
                 // Загружаем сделки
@@ -211,8 +174,6 @@ header('Content-Type: text/html; charset=utf-8');
                 if (status) filter['STAGE_ID'] = status;
                 if (search) filter['%TITLE'] = search;
                 
-                console.log('Фильтр для сделок:', filter);
-                
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -230,17 +191,6 @@ header('Content-Type: text/html; charset=utf-8');
                 });
                 
                 const data = await response.json();
-                console.log('Ответ от Bitrix24:', data);
-                
-                // Показываем диагностическую информацию
-                document.getElementById('debug-info').style.display = 'block';
-                document.getElementById('debug-data').textContent = JSON.stringify({
-                    contactId: contactId,
-                    tgUserId: user.id,
-                    filter: filter,
-                    response: data
-                }, null, 2);
-                
                 renderDeals(data.result || []);
                 updatePagination(data.total || 0);
                 
@@ -251,9 +201,6 @@ header('Content-Type: text/html; charset=utf-8');
                         <td colspan="8" class="error">Ошибка загрузки данных</td>
                     </tr>
                 `;
-                
-                document.getElementById('debug-info').style.display = 'block';
-                document.getElementById('debug-data').textContent = `Ошибка: ${error.message}`;
             }
         }
         
@@ -325,18 +272,10 @@ header('Content-Type: text/html; charset=utf-8');
                         <td>${deal.UF_CRM_685D2956BF4C8 || '-'}</td>
                         <td><span class="status ${statusClass}">${statusText}</span></td>
                         <td>
-                            <button class="action-btn view-btn" data-id="${deal.ID}">Просмотр</button>
+                            <a href="deal-details.php?id=${deal.ID}" class="action-btn view-btn">Просмотр</a>
                         </td>
                     </tr>
                 `;
-            });
-            
-            // Добавляем обработчики для кнопок
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const dealId = this.getAttribute('data-id');
-                    viewDealDetails(dealId);
-                });
             });
         }
         
@@ -357,82 +296,6 @@ header('Content-Type: text/html; charset=utf-8');
         function changePage(direction) {
             currentPage += direction;
             loadDeals();
-        }
-        
-        // Просмотр деталей сделки - ОБНОВЛЕННАЯ ВЕРСИЯ
-        async function viewDealDetails(dealId) {
-            try {
-                // Показываем индикатор загрузки
-                if (tg.showProgress) tg.showProgress();
-                
-                // Загружаем детали сделки
-                const deal = await loadDealDetails(dealId);
-                
-                if (!deal) {
-                    throw new Error('Не удалось загрузить детали сделки');
-                }
-                
-                // Формируем краткое сообщение
-                let message = `Заявка #${deal.ID}\n`;
-                
-                // Основные данные
-                message += `Клиент: ${deal.TITLE.replace('Заявка от ', '')}\n`;
-                message += `Дата услуги: ${deal.UF_CRM_685D295664A8A ? new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-'}\n`;
-                message += `Статус: ${deal.STAGE_ID || '-'}\n`;
-                
-                // Услуги
-                let services = '';
-                if (deal.UF_CRM_685D2956C64E0) {
-                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) ? 
-                        deal.UF_CRM_685D2956C64E0 : 
-                        [deal.UF_CRM_685D2956C64E0];
-                    
-                    services = serviceIds.map(id => {
-                        if (id == 69) return 'Уход';
-                        if (id == 71) return 'Цветы';
-                        if (id == 73) return 'Ремонт';
-                        if (id == 75) return 'Церковная';
-                        return id;
-                    }).join(', ');
-                }
-                message += `Услуги: ${services || '-'}\n`;
-                
-                // Важные детали
-                if (deal.UF_CRM_685D2956D0916) message += `Кладбище: ${deal.UF_CRM_685D2956D0916}\n`;
-                if (deal.UF_CRM_685D2956D7C70 || deal.UF_CRM_685D2956DF40F) {
-                    message += `Место: ряд ${deal.UF_CRM_685D2956D7C70 || '-'}, уч. ${deal.UF_CRM_685D2956DF40F || '-'}\n`;
-                }
-                
-                // Комментарий (сокращенный)
-                if (deal.COMMENTS) {
-                    const shortComment = deal.COMMENTS.length > 50 ? 
-                        deal.COMMENTS.substring(0, 50) + '...' : 
-                        deal.COMMENTS;
-                    message += `Коммент: ${shortComment}`;
-                }
-                
-                // Ограничиваем длину сообщения
-                if (message.length > 200) {
-                    message = message.substring(0, 197) + '...';
-                }
-                
-                // Показываем детали в popup
-                tg.showPopup({
-                    title: `Заявка #${deal.ID}`,
-                    message: message,
-                    buttons: [{id: 'close', type: 'close'}]
-                });
-                
-            } catch (error) {
-                console.error('Ошибка просмотра заявки:', error);
-                tg.showPopup({
-                    title: 'Ошибка',
-                    message: 'Не удалось загрузить детали',
-                    buttons: [{id: 'ok', type: 'ok'}]
-                });
-            } finally {
-                if (tg.hideProgress) tg.hideProgress();
-            }
         }
         
         function showFallbackView() {
