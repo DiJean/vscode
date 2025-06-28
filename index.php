@@ -7,24 +7,77 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор роли</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        .role-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .role-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .role-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .desktop-warning {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="greeting" id="greeting">Здравствуйте.</div>
-        <div id="user-container"></div>
-    </div>
-    
-    <div class="desktop-warning" id="desktop-warning" style="display: none;">
-        ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
+    <div class="container py-4">
+        <div class="greeting mb-4" id="greeting">Здравствуйте.</div>
+        <div id="user-container" class="mb-4"></div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="role-card" data-role="client">
+                    <div class="role-icon">👤</div>
+                    <h3>Клиент</h3>
+                    <p>Хочу заказать услуги</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="role-card" data-role="performer">
+                    <div class="role-icon">👷</div>
+                    <h3>Исполнитель</h3>
+                    <p>Хочу выполнять заказы</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="desktop-warning text-center mt-4" id="desktop-warning" style="display: none;">
+            ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
+        </div>
     </div>
 
-    <script src="/webapp/js/telegram-api.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Основная функция инициализации приложения
         function initApp() {
-            // Проверка доступности Telegram WebApp API
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -33,108 +86,69 @@ header('Content-Type: text/html; charset=utf-8');
             const tg = Telegram.WebApp;
             
             try {
-                // Инициализация WebApp
                 tg.ready();
                 
-                // Пытаемся раскрыть на весь экран
                 if (tg.isExpanded !== true && tg.expand) {
                     tg.expand();
                 }
                 
-                // Установка цвета фона
                 tg.backgroundColor = '#6a11cb';
                 if (tg.setHeaderColor) {
                     tg.setHeaderColor('#6a11cb');
                 }
                 
-                // Получаем данные пользователя
                 let user = null;
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     user = tg.initDataUnsafe.user;
                 }
                 
-                // Генерировать HTML для пользователя
                 let userHtml = '';
                 
                 if (user) {
-                    // Если есть данные пользователя
                     const firstName = user.first_name || '';
                     const lastName = user.last_name || '';
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
                     
-                    // Формируем Здравствуйтествие
                     const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
                     document.getElementById('greeting').textContent = greeting;
                     
-                    // Формируем аватар
-                    userHtml += `
-                        <div class="avatar">
-                            ${user.photo_url ? 
-                                `<img src="${user.photo_url}" alt="${fullName}">` : 
-                                `<div>${firstName.charAt(0) || 'Г'}</div>`
-                            }
+                    userHtml = `
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="avatar mb-3">
+                                ${user.photo_url ? 
+                                    `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle">` : 
+                                    `<div class="d-flex align-items-center justify-content-center h-100 fw-bold fs-3">${firstName.charAt(0) || 'Г'}</div>`
+                                }
+                            </div>
+                            <div class="user-name fs-4 mb-1">${fullName || 'Анонимный пользователь'}</div>
+                            <div class="username text-muted">${username}</div>
                         </div>
-                        <div class="user-name">${fullName || 'Анонимный пользователь'}</div>
-                        <div class="username">${username}</div>
                     `;
                 } else {
-                    // Если данные пользователя недоступны
                     userHtml = `
-                        <div class="avatar">Г</div>
-                        <div class="user-name">Гость</div>
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="avatar mb-3 d-flex align-items-center justify-content-center fw-bold fs-3">Г</div>
+                            <div class="user-name fs-4">Гость</div>
+                        </div>
                     `;
                 }
                 
-                // Добавляем блок выбора роли
-                userHtml += `
-                    <div class="role-selection">
-                        <div class="role-label">Выберите роль:</div>
-                        <select class="role-select" id="role">
-                            <option value="" disabled selected>Выберите роль...</option>
-                            <option value="client">Клиент</option>
-                            <option value="performer">Исполнитель</option>
-                        </select>
-                        <div class="role-error" id="role-error">Выберите действие.</div>
-                    </div>
-                    <div class="welcome-text">
-                        Мы рады помочь Вам. <span class="heart"></span>
-                    </div>
-                `;
-                
-                // Отображаем информацию о пользователе
                 document.getElementById('user-container').innerHTML = userHtml;
                 
-                // Настройка кнопки
-                if (tg.MainButton) {
-                    tg.MainButton.setText("Продолжить");
-                    
-                    // Обработчик для кнопки
-                    tg.MainButton.onClick(function() {
-                        const role = document.getElementById('role').value;
-                        if (!role) {
-                            document.getElementById('role-error').style.display = 'block';
-                            return;
-                        }
-                        
-                        // Сохраняем роль
+                document.querySelectorAll('.role-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const role = this.getAttribute('data-role');
                         localStorage.setItem('selectedRole', role);
                         
-                        // Перенаправляем в зависимости от роли
                         if (role === 'client') {
-                            window.location.assign('/webapp/client/client-form.php');
                             window.location.href = '/webapp/client/client-form.php';
                         } else {
-                            // Для исполнителя другая страница
                             window.location.href = '/webapp/doer/dashboard.php';
                         }
                     });
-                    
-                    // Показываем кнопку
-                    tg.MainButton.show();
-                }
+                });
                 
-                // Показываем предупреждение для десктопной версии
                 if (tg.isDesktop) {
                     document.getElementById('desktop-warning').style.display = 'block';
                 }
@@ -145,17 +159,17 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        // Функция для отображения запасного вида
         function showFallbackView() {
             document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
             document.getElementById('user-container').innerHTML = `
-                <div class="welcome-text">
-                    Добро пожаловать в наше приложение.
+                <div class="text-center">
+                    <div class="welcome-text">
+                        Добро пожаловать в наше приложение.
+                    </div>
                 </div>
             `;
         }
         
-        // Инициализация при загрузке
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
