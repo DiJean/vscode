@@ -215,4 +215,310 @@ header('Content-Type: text/html; charset=utf-8');
                 }
                 
                 // Обработчик для кнопки получения координат
-                const locationBtn = document.getElementB
+                const locationBtn = document.getElementById('get-location-btn');
+                if (locationBtn) {
+                    locationBtn.addEventListener('click', getLocation);
+                }
+                
+                // Показываем форму с анимацией
+                const formContainer = document.getElementById('form-container');
+                if (formContainer) {
+                    setTimeout(() => {
+                        formContainer.classList.add('visible');
+                    }, 300);
+                }
+                
+                // Настраиваем кнопку отправки
+                if (tg.MainButton) {
+                    tg.MainButton.setText("Зарегистрироваться");
+                    tg.MainButton.onClick(submitForm);
+                    tg.MainButton.show();
+                }
+                
+            } catch (e) {
+                console.error('Ошибка инициализации:', e);
+                showFallbackView();
+            }
+        }
+        
+        // Получение геолокации
+        function getLocation() {
+            if (!navigator.geolocation) {
+                showLocationError("Геолокация не поддерживается вашим браузером");
+                return;
+            }
+            
+            const btn = document.getElementById('get-location-btn');
+            if (!btn) return;
+            
+            btn.innerHTML = '<span class="loader"></span> Определение местоположения...';
+            btn.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    document.getElementById('latitude').value = lat;
+                    document.getElementById('longitude').value = lng;
+                    
+                    const latDisplay = document.getElementById('latitude-display');
+                    const lngDisplay = document.getElementById('longitude-display');
+                    
+                    if (latDisplay) latDisplay.textContent = lat.toFixed(6);
+                    if (lngDisplay) lngDisplay.textContent = lng.toFixed(6);
+                    
+                    const locationError = document.getElementById('location-error');
+                    if (locationError) locationError.style.display = 'none';
+                    
+                    btn.innerHTML = 'Координаты получены!';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = 'Получить мои координаты';
+                        btn.disabled = false;
+                    }, 2000);
+                },
+                error => {
+                    let message = "Не удалось получить координаты";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = "Доступ к геолокации запрещен";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = "Информация о местоположении недоступна";
+                            break;
+                        case error.TIMEOUT:
+                            message = "Время ожидания истекло";
+                            break;
+                    }
+                    showLocationError(message);
+                    btn.innerHTML = 'Получить мои координаты';
+                    btn.disabled = false;
+                },
+                { 
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        function showLocationError(message) {
+            const errorEl = document.getElementById('location-error');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+            }
+        }
+        
+        // Отправка формы
+        async function submitForm() {
+            const formData = {
+                firstName: document.getElementById('first-name')?.value || '',
+                lastName: document.getElementById('last-name')?.value || '',
+                secondName: document.getElementById('second-name')?.value || '',
+                phone: phoneMask?.unmaskedValue || '',
+                email: document.getElementById('email')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                latitude: document.getElementById('latitude')?.value || '',
+                longitude: document.getElementById('longitude')?.value || '',
+                tgUserId: user?.id || null
+            };
+            
+            if (!validateForm(formData)) {
+                return;
+            }
+            
+            try {
+                if (tg.showProgress) tg.showProgress();
+                
+                // Сохраняем исполнителя в Bitrix24
+                const result = await savePerformer(formData);
+                
+                if (result.success) {
+                    window.location.href = 'dashboard.php';
+                } else {
+                    showDebugPanel(result);
+                    tg.showPopup({
+                        title: 'Ошибка регистрации',
+                        message: result.errorMessage || 'Не удалось зарегистрироваться',
+                        buttons: [{id: 'ok', type: 'ok'}]
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                tg.showPopup({
+                    title: 'Ошибка',
+                    message: 'Произошла непредвиденная ошибка',
+                    buttons: [{id: 'ok', type: 'ok'}]
+                });
+            } finally {
+                if (tg.hideProgress) tg.hideProgress();
+            }
+        }
+        
+        // Валидация формы
+        function validateForm(formData) {
+            let isValid = true;
+            
+            // Скрываем все ошибки
+            document.querySelectorAll('.form-error').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Проверка обязательных полей
+            if (!formData.firstName.trim()) {
+                const errorEl = document.getElementById('first-name-error');
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            if (!formData.lastName.trim()) {
+                const errorEl = document.getElementById('last-name-error');
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            const phoneValue = formData.phone;
+            if (!phoneValue || phoneValue.length !== 11) {
+                const errorEl = document.getElementById('phone-error');
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                const errorEl = document.getElementById('email-error');
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            if (!formData.city.trim()) {
+                const errorEl = document.getElementById('city-error');
+                if (errorEl) {
+                    errorEl.style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            if (!formData.latitude || !formData.longitude) {
+                showLocationError("Получите координаты для продолжения");
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Сохранение исполнителя в Bitrix24
+        async function savePerformer(data) {
+            try {
+                const contactData = {
+                    fields: {
+                        NAME: data.firstName,
+                        LAST_NAME: data.lastName,
+                        SECOND_NAME: data.secondName || '',
+                        PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
+                        EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
+                        UF_CRM_685D2956061DB: data.city,
+                        UF_CRM_1751129816: data.latitude,
+                        UF_CRM_1751129854: data.longitude,
+                        UF_CRM_1751128872: String(data.tgUserId),
+                        TYPE_ID: 'EMPLOYEE'
+                    }
+                };
+                
+                console.log("Saving performer data:", contactData);
+                
+                // Проверяем, есть ли уже контакт (используем импортированную функцию)
+                const existingContact = await findPerformerByTgId(data.tgUserId);
+                let response, result;
+                
+                if (existingContact) {
+                    // Обновляем существующий контакт
+                    response = await fetch(`${BITRIX_WEBHOOK}crm.contact.update`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            id: existingContact.ID,
+                            fields: contactData.fields
+                        })
+                    });
+                    result = await response.json();
+                    
+                    if (result.result) {
+                        return { success: true, contactId: existingContact.ID };
+                    } else {
+                        return {
+                            success: false,
+                            errorMessage: result.error_description || "Ошибка обновления контакта",
+                            response: result
+                        };
+                    }
+                } else {
+                    // Создаем новый контакт
+                    response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(contactData)
+                    });
+                    result = await response.json();
+                    
+                    if (result.result) {
+                        return { success: true, contactId: result.result };
+                    } else {
+                        return {
+                            success: false,
+                            errorMessage: result.error_description || "Ошибка создания контакта",
+                            response: result
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения исполнителя:', error);
+                return {
+                    success: false,
+                    errorMessage: `Сетевая ошибка: ${error.message}`
+                };
+            }
+        }
+        
+        // Показать панель диагностики
+        function showDebugPanel(data) {
+            const panel = document.getElementById('debug-panel');
+            const content = document.getElementById('debug-data');
+            
+            if (panel && content) {
+                panel.style.display = 'block';
+                content.textContent = JSON.stringify(data, null, 2);
+            }
+        }
+        
+        function showFallbackView() {
+            const greeting = document.getElementById('greeting');
+            const userContainer = document.getElementById('user-container');
+            
+            if (greeting) {
+                greeting.textContent = 'Регистрация исполнителя';
+            }
+            
+            if (userContainer) {
+                userContainer.innerHTML = `
+                    <div class="welcome-text">
+                        Для регистрации откройте приложение в Telegram
+                    </div>
+                `;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
