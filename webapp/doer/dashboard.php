@@ -310,6 +310,7 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
+                // ДОБАВЛЕНА ССЫЛКА НА ДЕТАЛИ СДЕЛКИ
                 dealsList.innerHTML += `
                     <tr>
                         <td>${deal.ID}</td>
