@@ -8,9 +8,45 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация исполнителя</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем библиотеку IMask для телефона -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <link rel="stylesheet" href="/webapp/css/style.css">
+    <link rel="stylesheet" href="/webapp/css/client-form.css">
+    <style>
+        /* Дополнительные стили для формы исполнителя */
+        .location-btn {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 5px;
+        }
+        
+        .location-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .coords-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .coord-input {
+            flex: 1;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -56,10 +92,15 @@ header('Content-Type: text/html; charset=utf-8');
                 
                 <div class="form-group">
                     <label class="form-label required">Местоположение</label>
-                    <button type="button" id="get-location-btn" class="form-input" style="text-align: center; background: rgba(106, 17, 203, 0.3); cursor: pointer;">
+                    <button type="button" id="get-location-btn" class="location-btn">
                         Получить мои координаты
                     </button>
                     <div class="form-error" id="location-error">Не удалось получить координаты</div>
+                    
+                    <div class="coords-container">
+                        <div class="coord-input">Широта: <span id="latitude-display">не определено</span></div>
+                        <div class="coord-input">Долгота: <span id="longitude-display">не определено</span></div>
+                    </div>
                     <input type="hidden" id="latitude">
                     <input type="hidden" id="longitude">
                 </div>
@@ -138,18 +179,28 @@ header('Content-Type: text/html; charset=utf-8');
                 return;
             }
             
+            // Показываем индикатор загрузки
+            const btn = document.getElementById('get-location-btn');
+            btn.innerHTML = '<span class="loader"></span> Определение местоположения...';
+            btn.disabled = true;
+            
             navigator.geolocation.getCurrentPosition(
                 position => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
+                    
                     document.getElementById('latitude').value = lat;
                     document.getElementById('longitude').value = lng;
+                    document.getElementById('latitude-display').textContent = lat.toFixed(6);
+                    document.getElementById('longitude-display').textContent = lng.toFixed(6);
+                    
                     document.getElementById('location-error').style.display = 'none';
-                    tg.showPopup({
-                        title: 'Успешно',
-                        message: `Координаты получены: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
+                    btn.innerHTML = 'Координаты получены!';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = 'Получить мои координаты';
+                        btn.disabled = false;
+                    }, 2000);
                 },
                 error => {
                     let message = "Не удалось получить координаты";
@@ -165,6 +216,13 @@ header('Content-Type: text/html; charset=utf-8');
                             break;
                     }
                     showLocationError(message);
+                    btn.innerHTML = 'Получить мои координаты';
+                    btn.disabled = false;
+                },
+                { 
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 }
             );
         }
@@ -200,11 +258,8 @@ header('Content-Type: text/html; charset=utf-8');
                 const contactId = await savePerformer(formData);
                 
                 if (contactId) {
-                    // Сохраняем ID контакта в sessionStorage
-                    sessionStorage.setItem('performerContactId', contactId);
-                    
                     // Переходим в дашборд
-                    window.location.href = '/webapp/doer/dashboard.php';
+                    window.location.href = 'dashboard.php';
                 } else {
                     tg.showPopup({
                         title: 'Ошибка',
