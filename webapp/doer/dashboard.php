@@ -201,7 +201,7 @@ header('Content-Type: text/html; charset=utf-8');
                             'UF_CRM_685D295664A8A', 
                             'UF_CRM_685D2956BF4C8', 
                             'UF_CRM_685D2956C64E0',
-                            'UF_CRM_1751128612' // Добавляем для диагностики
+                            'UF_CRM_1751128612'
                         ],
                         order: {'DATE_CREATE': 'DESC'},
                         start: (currentPage - 1) * pageSize
@@ -236,7 +236,7 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        // Отображение сделок в таблице
+        // Отображение сделок в таблице - ИСПРАВЛЕННАЯ ВЕРСИЯ
         function renderDeals(deals) {
             const dealsList = document.getElementById('deals-list');
             
@@ -255,17 +255,21 @@ header('Content-Type: text/html; charset=utf-8');
                 const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString();
                 const serviceDate = deal.UF_CRM_685D295664A8A || '-';
                 
-                // Преобразуем ID услуг в названия
-                const serviceIds = deal.UF_CRM_685D2956C64E0 ? 
-                    deal.UF_CRM_685D2956C64E0.split(',') : [];
+                // Безопасная обработка услуг
+                let serviceNames = '-';
+                const serviceField = deal.UF_CRM_685D2956C64E0;
                 
-                const serviceNames = serviceIds.map(id => {
-                    if (id === '69') return 'Уход';
-                    if (id === '71') return 'Цветы';
-                    if (id === '73') return 'Ремонт';
-                    if (id === '75') return 'Церковная служба';
-                    return id;
-                }).join(', ');
+                if (serviceField) {
+                    const serviceIds = String(serviceField).split(',');
+                    
+                    serviceNames = serviceIds.map(id => {
+                        if (id === '69') return 'Уход';
+                        if (id === '71') return 'Цветы';
+                        if (id === '73') return 'Ремонт';
+                        if (id === '75') return 'Церковная служба';
+                        return id;
+                    }).join(', ');
+                }
                 
                 // Определяем статус
                 let statusClass = '';
