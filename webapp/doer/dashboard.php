@@ -36,7 +36,7 @@ header('Content-Type: text/html; charset=utf-8');
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Клиент</th>
+                        <th>Заказ</th>
                         <th>Услуги</th>
                         <th>Дата заявки</th>
                         <th>Желаемая дата</th>
