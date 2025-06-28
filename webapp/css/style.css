@@ -1,3 +1,22 @@
+:root {
+    /* Основные цвета */
+    --primary-color: #6a11cb;
+    --secondary-color: #2575fc;
+    --accent-color: #ff2e63;
+    --background-color: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    
+    /* Производные цвета */
+    --primary-light: rgba(106, 17, 203, 0.15);
+    --primary-medium: rgba(106, 17, 203, 0.25);
+    --primary-dark: rgba(106, 17, 203, 0.9);
+    --accent-light: rgba(255, 46, 99, 0.15);
+    --text-color: #ffffff;
+    --border-light: rgba(255, 255, 255, 0.3);
+    --border-medium: rgba(255, 255, 255, 0.7);
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --background-dark: rgba(0, 0, 0, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,7 +25,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: var(--background-color);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -14,7 +33,7 @@ body {
     align-items: center;
     padding: 20px;
     text-align: center;
-    color: white;
+    color: var(--text-color);
     line-height: 1.5;
 }
 
@@ -25,8 +44,8 @@ body {
     backdrop-filter: blur(10px);
     border-radius: 24px;
     padding: 40px 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px var(--shadow-color);
+    border: 1px solid var(--border-light);
     margin: 20px 0;
     animation: fadeIn 0.5s ease-out;
 }
@@ -40,14 +59,14 @@ body {
     font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 30px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .avatar {
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    border: 3px solid white;
+    border: 3px solid var(--text-color);
     margin: 0 auto 15px;
     background: rgba(255, 255, 255, 0.3);
     display: flex;
@@ -88,12 +107,12 @@ body {
 }
 
 .heart {
-    color: #ff2e63;
+    color: var(--accent-color);
     display: inline-block;
 }
 
 .desktop-warning {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--background-dark);
     border-radius: 12px;
     padding: 15px;
     margin-top: 20px;
@@ -104,6 +123,7 @@ body {
 .role-selection {
     margin: 25px 0;
     width: 100%;
+    animation: fadeIn 0.5s ease-out;
 }
 
 .role-label {
@@ -117,9 +137,9 @@ body {
     width: 100%;
     padding: 14px 18px;
     border-radius: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
+    border: 2px solid var(--border-light);
+    background: var(--primary-light);
+    color: var(--text-color);
     font-size: 1.1rem;
     appearance: none;
     text-align: center;
@@ -129,21 +149,24 @@ body {
 
 .role-select:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.25);
+    border-color: var(--border-medium);
+    background: var(--primary-medium);
 }
 
 .role-select option {
-    background: rgba(106, 17, 203, 0.9);
-    color: white;
+    background: var(--primary-dark);
+    color: var(--text-color);
     padding: 10px;
 }
 
 .role-error {
-    color: #ff2e63;
+    color: var(--accent-color);
     margin-top: 10px;
     font-weight: 500;
     display: none;
+    padding: 8px 12px;
+    background: var(--accent-light);
+    border-radius: 8px;
 }
 
 .form-container {
@@ -164,24 +187,24 @@ body {
 
 .form-label.required::after {
     content: " *";
-    color: #ff2e63;
+    color: var(--accent-color);
 }
 
 .form-input, .form-textarea {
     width: 100%;
     padding: 14px 18px;
     border-radius: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
+    border: 2px solid var(--border-light);
+    background: var(--primary-light);
+    color: var(--text-color);
     font-size: 1rem;
     transition: all 0.3s ease;
 }
 
 .form-input:focus, .form-textarea:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.25);
+    border-color: var(--border-medium);
+    background: var(--primary-medium);
 }
 
 .form-input::placeholder, .form-textarea::placeholder {
@@ -194,11 +217,14 @@ body {
 }
 
 .form-error {
-    color: #ff2e63;
+    color: var(--accent-color);
     margin-top: 8px;
     font-size: 0.9rem;
     font-weight: 500;
     display: none;
+    padding: 8px 12px;
+    background: var(--accent-light);
+    border-radius: 8px;
 }
 
 .services-container {
@@ -226,7 +252,7 @@ body {
     margin-right: 8px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .container {
         padding: 30px 15px;
     }
@@ -259,4 +285,79 @@ body {
     .services-container {
         grid-template-columns: 1fr;
     }
+}
+
+@media (max-width: 480px) {
+    .greeting {
+        font-size: 1.8rem;
+    }
+    
+    .avatar {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .user-name {
+        font-size: 1.3rem;
+    }
+    
+    .welcome-text {
+        font-size: 1.1rem;
+    }
+    
+    .form-container {
+        padding: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-input, .form-textarea {
+        padding: 12px 15px;
+    }
+}
+
+/* Стили для индикатора загрузки */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: var(--text-color);
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* Цветовые темы */
+.theme-blue {
+    --primary-color: #1a73e8;
+    --secondary-color: #4285f4;
+}
+
+.theme-green {
+    --primary-color: #0f9d58;
+    --secondary-color: #34a853;
+}
+
+.theme-purple {
+    --primary-color: #8e24aa;
+    --secondary-color: #ab47bc;
+}
+
+.theme-red {
+    --primary-color: #d93025;
+    --secondary-color: #ea4335;
+}
+
+.theme-orange {
+    --primary-color: #f57c00;
+    --secondary-color: #fb8c00;
 }
