@@ -66,9 +66,9 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="../js/telegram-api.js"></script>
-    <script src="../js/bitrix-integration.js"></script>
     <script>
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        
         let tg = null;
         let user = null;
         let currentPage = 1;
@@ -83,18 +83,13 @@ header('Content-Type: text/html; charset=utf-8');
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        filter: {'UF_CRM_1751128872': tgId},
-                        select: ['ID', 'UF_CRM_685D2956061DB'] // Добавляем город
+                        filter: {'UF_CRM_1751128872': String(tgId)},
+                        select: ['ID', 'UF_CRM_685D2956061DB']
                     })
                 });
                 
                 const data = await response.json();
-                console.log('Contact search response:', data);
-                
-                if (data.result && data.result.length > 0) {
-                    return data.result[0];
-                }
-                return null;
+                return data.result && data.result.length > 0 ? data.result[0] : null;
             } catch (error) {
                 console.error('Ошибка поиска исполнителя:', error);
                 return null;
@@ -108,14 +103,11 @@ header('Content-Type: text/html; charset=utf-8');
                 return;
             }
             
-            const telegramApp = Telegram.WebApp;
-            tg = telegramApp;
+            tg = Telegram.WebApp;
             
             try {
-                user = telegramApp.initDataUnsafe?.user || {};
-                
-                // Диагностика: покажем данные пользователя
-                console.log('User data:', user);
+                user = tg.initDataUnsafe?.user || {};
+                console.log('Данные пользователя Telegram:', user);
                 
                 // Проверяем регистрацию исполнителя
                 const performerContact = await findPerformerByTgId(user.id);
@@ -180,7 +172,7 @@ header('Content-Type: text/html; charset=utf-8');
                 const status = document.getElementById('status-filter').value;
                 const search = document.getElementById('search').value;
                 
-                // Формируем фильтр
+                // Формируем фильтр по пользовательскому полю UF_CRM_1751128612
                 const filter = {
                     'UF_CRM_1751128612': contactId
                 };
@@ -188,8 +180,7 @@ header('Content-Type: text/html; charset=utf-8');
                 if (status) filter['STAGE_ID'] = status;
                 if (search) filter['%TITLE'] = search;
                 
-                // Показываем фильтр для диагностики
-                console.log('Deals filter:', filter);
+                console.log('Фильтр для сделок:', filter);
                 
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
                     method: 'POST',
@@ -209,7 +200,7 @@ header('Content-Type: text/html; charset=utf-8');
                 });
                 
                 const data = await response.json();
-                console.log('Deals response:', data);
+                console.log('Ответ от Bitrix24:', data);
                 
                 // Показываем диагностическую информацию
                 document.getElementById('debug-info').style.display = 'block';
@@ -232,15 +223,15 @@ header('Content-Type: text/html; charset=utf-8');
                 `;
                 
                 document.getElementById('debug-info').style.display = 'block';
-                document.getElementById('debug-data').textContent = `Ошибка: ${error.message}\n\n${error.stack}`;
+                document.getElementById('debug-data').textContent = `Ошибка: ${error.message}`;
             }
         }
         
-        // Отображение сделок в таблице - ОБНОВЛЕННАЯ ВЕРСИЯ
+        // Отображение сделок в таблице
         function renderDeals(deals) {
             const dealsList = document.getElementById('deals-list');
             
-            if (deals.length === 0) {
+            if (!deals || deals.length === 0) {
                 dealsList.innerHTML = `
                     <tr>
                         <td colspan="8" class="empty">Заявок не найдено</td>
@@ -253,27 +244,20 @@ header('Content-Type: text/html; charset=utf-8');
             
             deals.forEach(deal => {
                 const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString();
-                const serviceDate = deal.UF_CRM_685D295664A8A || '-';
+                const serviceDate = deal.UF_CRM_685D295664A8A ? new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString() : '-';
                 
-                // Улучшенная обработка услуг
+                // Обработка услуг
                 let serviceNames = '-';
                 const serviceField = deal.UF_CRM_685D2956C64E0;
                 
                 if (serviceField) {
                     let serviceIds = [];
                     
-                    // Обработка разных форматов данных
                     if (Array.isArray(serviceField)) {
-                        // Если пришел массив
                         serviceIds = serviceField.map(id => String(id));
                     } else if (typeof serviceField === 'string') {
-                        // Если пришла строка
                         serviceIds = serviceField.split(',');
-                    } else if (typeof serviceField === 'number') {
-                        // Если пришло число
-                        serviceIds = [String(serviceField)];
                     } else {
-                        // Другие форматы
                         serviceIds = [String(serviceField)];
                     }
                     
@@ -301,7 +285,7 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
-                // Добавляем информацию о исполнителе для диагностики
+                // Информация о назначенном исполнителе
                 const performerInfo = deal.UF_CRM_1751128612 ? 
                     `Исполнитель: ${deal.UF_CRM_1751128612}` : 
                     'Исполнитель не назначен';
