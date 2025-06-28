@@ -48,7 +48,7 @@ header('Content-Type: text/html; charset=utf-8');
             userContainer.innerHTML = `
                 <div class="avatar">
                     ${user.photo_url ? 
-                        `<img src="${user.photo_url}" alt="${fullName}">` : 
+                        `<img src="${user.photo_url}" alt="${fullName}" crossorigin="anonymous">` : 
                         `<div class="avatar-letter">${avatarLetter}</div>`
                     }
                 </div>
@@ -61,7 +61,7 @@ header('Content-Type: text/html; charset=utf-8');
                         <option value="client">Клиент</option>
                         <option value="performer">Исполнитель</option>
                     </select>
-                    <div class="role-error" id="role-error">Выберите роль!</div>
+                    <div class="role-error" id="role-error" style="display: none;">Выберите роль!</div>
                 </div>
                 <div class="welcome-text">
                     Мы рады видеть вас здесь! <span class="heart">❤️</span>
@@ -80,6 +80,12 @@ header('Content-Type: text/html; charset=utf-8');
             }
             
             localStorage.setItem('selectedRole', role);
+            
+            // Сохраняем данные пользователя для передачи на следующую страницу
+            const user = getUserData();
+            if (user) {
+                sessionStorage.setItem('telegramUser', JSON.stringify(user));
+            }
             
             if (role === 'client') {
                 window.location.href = 'client/client-form.php';
@@ -101,6 +107,7 @@ header('Content-Type: text/html; charset=utf-8');
             const tg = initTelegramApp();
             const user = getUserData();
             
+            // Если Telegram WebApp не инициализирован, показываем запасной вид
             if (!tg) {
                 showFallbackView();
                 return;
@@ -108,11 +115,21 @@ header('Content-Type: text/html; charset=utf-8');
             
             renderUserInfo(user);
             
+            // Настраиваем главную кнопку
             MainButton.show("Продолжить");
             MainButton.onClick(handleRoleSubmit);
             
+            // Показываем предупреждение для десктопной версии
             if (!isMobile()) {
                 document.getElementById('desktop-warning').style.display = 'block';
+            }
+            
+            // Обработчик изменения выбора роли
+            const roleSelect = document.getElementById('role');
+            if (roleSelect) {
+                roleSelect.addEventListener('change', () => {
+                    document.getElementById('role-error').style.display = 'none';
+                });
             }
         });
     </script>
