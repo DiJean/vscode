@@ -124,7 +124,7 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
         
         <div class="deals-container">
-            <div class="table-responsive rounded-3 overflow-hidden">
+            <div class="table-responsive rounded-3">
                 <table class="table table-hover align-middle mb-0" id="deals-table">
                     <thead class="table-dark">
                         <tr>
