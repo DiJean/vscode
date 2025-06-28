@@ -16,7 +16,7 @@ $version = time();
 </head>
 <body>
     <div class="container">
-        <div class="greeting" id="greeting">Здравствуйте.</div>
+        <div class="greeting" id="greeting">Привет!</div>
         <div id="user-container"></div>
     </div>
     
@@ -24,6 +24,7 @@ $version = time();
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
+    <script src="/webapp/js/telegram-api.js?<?=$version?>"></script>
     <script>
         const CURRENT_VERSION = "<?=$version?>";
         const storedVersion = localStorage.getItem('appVersion');
@@ -39,23 +40,20 @@ $version = time();
         }
         localStorage.setItem('appVersion', CURRENT_VERSION);
         
-        // Проверяем, есть ли сохраненная роль и данные
-        const savedRole = sessionStorage.getItem('selectedRole');
-        const savedInitData = sessionStorage.getItem('tgInitData');
-        const savedUser = sessionStorage.getItem('tgUser');
-        
-        // Если есть сохраненная роль, перенаправляем сразу
-        if (savedRole && savedInitData) {
-            if (savedRole === 'client') {
-                window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(savedInitData)}&v=${CURRENT_VERSION}`;
-            } else {
-                window.location.href = `/webapp/doer/dashboard.php?tgInitData=${encodeURIComponent(savedInitData)}&v=${CURRENT_VERSION}`;
+        function checkScriptLoaded() {
+            const errors = [];
+            if (typeof Telegram === 'undefined') errors.push('Telegram SDK не загружен');
+            if (typeof initTelegramApp === 'undefined') errors.push('telegram-api.js не загружен');
+            if (errors.length > 0) {
+                console.error('Ошибки:', errors.join(', '));
+                showFallbackView();
+                return false;
             }
-            // Останавливаем выполнение скрипта
-            throw new Error("Redirecting to saved role...");
+            return true;
         }
         
         function initApp() {
+            if (!checkScriptLoaded()) return;
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -65,18 +63,81 @@ $version = time();
             try {
                 tg.ready();
                 if (tg.isExpanded !== true && tg.expand) tg.expand();
+                tg.backgroundColor = '#6a11cb';
+                if (tg.setHeaderColor) tg.setHeaderColor('#6a11cb');
                 
-                // Сохраняем данные авторизации в sessionStorage
-                if (tg.initData) {
-                    sessionStorage.setItem('tgInitData', tg.initData);
-                    sessionStorage.setItem('tgUser', JSON.stringify(tg.initDataUnsafe.user || {}));
+                let user = null;
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) user = tg.initDataUnsafe.user;
+                
+                let userHtml = '';
+                if (user) {
+                    const firstName = user.first_name || '';
+                    const lastName = user.last_name || '';
+                    const username = user.username ? `@${user.username}` : 'без username';
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
+                    document.getElementById('greeting').textContent = greeting;
+                    
+                    userHtml += `
+                        <div class="avatar">
+                            ${user.photo_url ? 
+                                `<img src="${user.photo_url}" alt="${fullName}">` : 
+                                `<div>${firstName.charAt(0) || 'Г'}</div>`
+                            }
+                        </div>
+                        <div class="user-name">${fullName || 'Аноним'}</div>
+                        <div class="username">${username}</div>
+                    `;
+                    
+                    // Сохраняем данные пользователя сразу при инициализации
+                    localStorage.setItem('userData', JSON.stringify({
+                        firstName,
+                        lastName,
+                        username,
+                        photo_url: user.photo_url || ''
+                    }));
+                } else {
+                    userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
                 }
                 
-                // Показываем данные пользователя
-                showUserData(tg);
+                userHtml += `
+                    <div class="role-selection">
+                        <div class="role-label">Выберите роль:</div>
+                        <select class="role-select" id="role">
+                            <option value="" disabled selected>Выберите роль...</option>
+                            <option value="client">Клиент</option>
+                            <option value="performer">Исполнитель</option>
+                        </select>
+                        <div class="role-error" id="role-error">Выберите роль!</div>
+                    </div>
+                    <div class="welcome-text">
+                        Мы рады видеть вас здесь! <span class="heart">❤️</span>
+                    </div>
+                `;
                 
-                // Инициализация кнопки
-                initMainButton(tg);
+                document.getElementById('user-container').innerHTML = userHtml;
+                
+                if (tg.MainButton) {
+                    tg.MainButton.setText("Продолжить");
+                    tg.MainButton.onClick(function() {
+                        const role = document.getElementById('role').value;
+                        if (!role) {
+                            document.getElementById('role-error').style.display = 'block';
+                            return;
+                        }
+                        
+                        // Сохраняем роль в sessionStorage и localStorage
+                        sessionStorage.setItem('selectedRole', role);
+                        localStorage.setItem('selectedRole', role);
+                        
+                        if (role === 'client') {
+                            window.location.href = '/webapp/client/services.php?v=' + CURRENT_VERSION;
+                        } else {
+                            window.location.href = '/webapp/doer/dashboard.php?v=' + CURRENT_VERSION;
+                        }
+                    });
+                    tg.MainButton.show();
+                }
                 
                 if (tg.isDesktop) {
                     document.getElementById('desktop-warning').style.display = 'block';
@@ -88,106 +149,8 @@ $version = time();
             }
         }
         
-        function showUserData(tg) {
-            let user = null;
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                user = tg.initDataUnsafe.user;
-            } else {
-                // Пробуем восстановить из sessionStorage
-                const savedUser = sessionStorage.getItem('tgUser');
-                if (savedUser) {
-                    try {
-                        user = JSON.parse(savedUser);
-                    } catch (e) {
-                        console.error('Error parsing saved user data', e);
-                    }
-                }
-            }
-            
-            let userHtml = '';
-            if (user) {
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const username = user.username ? `@${user.username}` : 'без username';
-                const fullName = `${firstName} ${lastName}`.trim();
-                const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
-                document.getElementById('greeting').textContent = greeting;
-                
-                userHtml += `
-                    <div class="avatar">
-                        ${user.photo_url ? 
-                            `<img src="${user.photo_url}" alt="${fullName}">` : 
-                            `<div>${firstName.charAt(0) || 'Г'}</div>`}
-                    </div>
-                    <div class="user-name">${fullName || 'Аноним'}</div>
-                    <div class="username">${username}</div>
-                `;
-            } else {
-                userHtml = `<div class="avatar">Г</div><div class="user-name">Гость</div>`;
-            }
-            
-            // Добавляем чекбокс "Запомнить выбор"
-            userHtml += `
-                <div class="role-selection">
-                    <div class="role-label">Выберите роль:</div>
-                    <select class="role-select" id="role">
-                        <option value="" disabled selected>Выберите роль...</option>
-                        <option value="client">Клиент</option>
-                        <option value="performer">Исполнитель</option>
-                    </select>
-                    <div class="role-error" id="role-error">Выберите роль!</div>
-                    
-                    <div class="remember-container">
-                        <input type="checkbox" id="remember-role" checked>
-                        <label for="remember-role">Запомнить мой выбор</label>
-                    </div>
-                </div>
-                <div class="welcome-text">
-                    Мы готовы помочь Вам. <span class="heart">❤️</span>
-                </div>
-            `;
-            
-            document.getElementById('user-container').innerHTML = userHtml;
-            
-            // Обработчик изменения роли
-            document.getElementById('role').addEventListener('change', function() {
-                document.getElementById('role-error').style.display = 'none';
-            });
-        }
-        
-        function initMainButton(tg) {
-            if (tg.MainButton) {
-                tg.MainButton.setText("Продолжить");
-                tg.MainButton.onClick(function() {
-                    const role = document.getElementById('role').value;
-                    if (!role) {
-                        document.getElementById('role-error').style.display = 'block';
-                        return;
-                    }
-                    
-                    const rememberRole = document.getElementById('remember-role').checked;
-                    const tgInitData = sessionStorage.getItem('tgInitData') || '';
-                    
-                    // Сохраняем выбранную роль, если нужно
-                    if (rememberRole) {
-                        sessionStorage.setItem('selectedRole', role);
-                    } else {
-                        sessionStorage.removeItem('selectedRole');
-                    }
-                    
-                    // Переходим на страницу роли
-                    if (role === 'client') {
-                        window.location.href = `/webapp/client/services.php?tgInitData=${encodeURIComponent(tgInitData)}&v=${CURRENT_VERSION}`;
-                    } else {
-                        window.location.href = `/webapp/doer/dashboard.php?tgInitData=${encodeURIComponent(tgInitData)}&v=${CURRENT_VERSION}`;
-                    }
-                });
-                tg.MainButton.show();
-            }
-        }
-        
         function showFallbackView() {
-            document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
+            document.getElementById('greeting').textContent = 'Привет, Гость!';
             document.getElementById('user-container').innerHTML = `
                 <div class="welcome-text">Добро пожаловать!</div>
                 <div style="margin-top: 20px; color: #ff6b6b;">
@@ -216,22 +179,5 @@ $version = time();
             });
         }
     </script>
-    
-    <style>
-        .remember-container {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-        }
-        
-        .remember-container input {
-            margin-right: 10px;
-        }
-        
-        .remember-container label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-    </style>
 </body>
 </html>
