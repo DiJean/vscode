@@ -1,5 +1,6 @@
+<?php
 $botToken = '1845249310:AAGgqxI9crjWVgyCXlve0BDGssGgEANhh3g';
-$webAppUrl = 'https://vm20c2.ru/webapp/index.php';
+$webAppUrl = 'https://vm20c2.ru/index.php';
 
 // Установка кнопки меню
 $setMenuUrl = "https://api.telegram.org/bot$botToken/setChatMenuButton";
@@ -18,3 +19,4 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_exec($ch);
 curl_close($ch);
+?>
