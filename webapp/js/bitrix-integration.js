@@ -206,7 +206,7 @@ export async function getUserRequests(email) {
     }).then(response => response.json());
 }
 // Поиск исполнителя по Telegram ID
-export async function findPerformerByTgId(tgId) {
+async function findPerformerByTgId(tgId) {
     try {
         const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
             method: 'POST',
