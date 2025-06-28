@@ -63,8 +63,8 @@ header('Content-Type: text/html; charset=utf-8');
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
                     
-                    // Формируем приветствие
-                    const greeting = fullName ? `Привет, ${fullName}!` : 'Привет!';
+                    // Формируем Здравствуйтествие
+                    const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
                     document.getElementById('greeting').textContent = greeting;
                     
                     // Формируем аватар
@@ -89,16 +89,16 @@ header('Content-Type: text/html; charset=utf-8');
                 // Добавляем блок выбора роли
                 userHtml += `
                     <div class="role-selection">
-                        <div class="role-label">Выберите роль:</div>
+                        <div class="role-label">Выберите действие:</div>
                         <select class="role-select" id="role">
-                            <option value="" disabled selected>Выберите роль...</option>
-                            <option value="client">Клиент</option>
-                            <option value="performer">Исполнитель</option>
+                            <option value="" disabled selected>Выберите действие...</option>
+                            <option value="client">Отправить запрос</option>
+                            <option value="performer">Выполнить заказ</option>
                         </select>
-                        <div class="role-error" id="role-error">Выберите роль!</div>
+                        <div class="role-error" id="role-error">Выберите действие.</div>
                     </div>
                     <div class="welcome-text">
-                        Мы рады видеть вас здесь! <span class="heart">❤️</span>
+                        Мы рады помочь Вам. <span class="heart"></span>
                     </div>
                 `;
                 
@@ -150,7 +150,7 @@ header('Content-Type: text/html; charset=utf-8');
             document.getElementById('greeting').textContent = 'Привет, Гость!';
             document.getElementById('user-container').innerHTML = `
                 <div class="welcome-text">
-                    Добро пожаловать в наше приложение!
+                    Добро пожаловать в наше приложение.
                 </div>
             `;
         }
