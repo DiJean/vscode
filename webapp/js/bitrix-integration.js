@@ -1,3 +1,4 @@
+// bitrix-integration.js
 const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
 
 const SERVICE_IDS = {
@@ -178,8 +179,6 @@ export async function getUserRequests(email) {
 // Поиск исполнителя по Telegram ID
 export async function findPerformerByTgId(tgId) {
     try {
-        console.log(`[Bitrix] Поиск исполнителя по TG ID: ${tgId}`);
-        
         const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -190,12 +189,7 @@ export async function findPerformerByTgId(tgId) {
         });
         
         const data = await response.json();
-        console.log('[Bitrix] Результат поиска исполнителя:', data);
-        
-        if (data.result && data.result.length > 0) {
-            return data.result[0];
-        }
-        return null;
+        return data.result && data.result.length > 0 ? data.result[0] : null;
     } catch (error) {
         console.error('Ошибка поиска исполнителя:', error);
         return null;
