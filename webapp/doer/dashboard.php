@@ -236,7 +236,7 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
         
-        // Отображение сделок в таблице - ИСПРАВЛЕННАЯ ВЕРСИЯ
+        // Отображение сделок в таблице - ОБНОВЛЕННАЯ ВЕРСИЯ
         function renderDeals(deals) {
             const dealsList = document.getElementById('deals-list');
             
@@ -255,12 +255,27 @@ header('Content-Type: text/html; charset=utf-8');
                 const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString();
                 const serviceDate = deal.UF_CRM_685D295664A8A || '-';
                 
-                // Безопасная обработка услуг
+                // Улучшенная обработка услуг
                 let serviceNames = '-';
                 const serviceField = deal.UF_CRM_685D2956C64E0;
                 
                 if (serviceField) {
-                    const serviceIds = String(serviceField).split(',');
+                    let serviceIds = [];
+                    
+                    // Обработка разных форматов данных
+                    if (Array.isArray(serviceField)) {
+                        // Если пришел массив
+                        serviceIds = serviceField.map(id => String(id));
+                    } else if (typeof serviceField === 'string') {
+                        // Если пришла строка
+                        serviceIds = serviceField.split(',');
+                    } else if (typeof serviceField === 'number') {
+                        // Если пришло число
+                        serviceIds = [String(serviceField)];
+                    } else {
+                        // Другие форматы
+                        serviceIds = [String(serviceField)];
+                    }
                     
                     serviceNames = serviceIds.map(id => {
                         if (id === '69') return 'Уход';
