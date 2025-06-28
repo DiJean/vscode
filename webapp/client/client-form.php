@@ -39,16 +39,16 @@ header('Content-Type: text/html; charset=utf-8');
                     <label class="form-label required">Услуги</label>
                     <div class="services-container">
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="Уборка"> Уборка
+                            <input type="checkbox" name="services" value="69"> Уход
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="Ремонт"> Ремонт
+                            <input type="checkbox" name="services" value="71"> Цветы
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="Цветы"> Цветы
+                            <input type="checkbox" name="services" value="73"> Ремонт
                         </label>
                         <label class="service-checkbox">
-                            <input type="checkbox" name="services" value="Церковная служба"> Церковная служба
+                            <input type="checkbox" name="services" value="75"> Церковная служба
                         </label>
                     </div>
                     <div class="form-error" id="services-error">Выберите хотя бы одну услугу</div>
@@ -71,9 +71,10 @@ header('Content-Type: text/html; charset=utf-8');
                     <input type="text" id="cemetery" class="form-input">
                 </div>
                 
+                <!-- Новое поле: Сектор -->
                 <div class="form-group">
-                    <label class="form-label">Участок</label>
-                    <input type="text" id="plot" class="form-input">
+                    <label class="form-label">Сектор</label>
+                    <input type="text" id="sector" class="form-input">
                 </div>
                 
                 <div class="form-group">
@@ -82,8 +83,8 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Номер участка</label>
-                    <input type="text" id="plot-number" class="form-input">
+                    <label class="form-label">Участок</label>
+                    <input type="text" id="plot" class="form-input">
                 </div>
                 
                 <div class="form-group">
@@ -94,8 +95,8 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="/webapp/js/telegram-api.js"></script>
-    <script src="/webapp/js/bitrix-integration.js"></script>
+    <script src="../js/telegram-api.js"></script>
+    <script src="../js/bitrix-integration.js"></script>
     <script>
         let tg = null;
         let user = null;
@@ -162,7 +163,7 @@ header('Content-Type: text/html; charset=utf-8');
         async function submitForm() {
             // Собираем данные формы
             const formData = {
-                firstName: document.getElementById('full-name').value,
+                fullName: document.getElementById('full-name').value,
                 phone: document.getElementById('phone').value,
                 email: document.getElementById('email').value,
                 services: Array.from(document.querySelectorAll('input[name="services"]:checked'))
@@ -170,9 +171,9 @@ header('Content-Type: text/html; charset=utf-8');
                 city: document.getElementById('city').value,
                 serviceDate: document.getElementById('service-date').value,
                 cemetery: document.getElementById('cemetery').value,
-                plot: document.getElementById('plot').value,
+                sector: document.getElementById('sector').value, // Новое поле
                 row: document.getElementById('row').value,
-                plotNumber: document.getElementById('plot-number').value,
+                plot: document.getElementById('plot').value,
                 additionalInfo: document.getElementById('additional-info').value,
                 username: user?.username || null
             };
@@ -187,14 +188,14 @@ header('Content-Type: text/html; charset=utf-8');
                 if (tg.showProgress) tg.showProgress();
                 
                 // Отправляем данные в Bitrix24
-                const response = await createServiceRequest(formData);
+                const response = await processServiceRequest(formData);
                 
-                if (response.ok) {
+                if (response.success) {
                     // Сохраняем email для последующего поиска заказов
                     localStorage.setItem('clientEmail', formData.email);
                     
                     // Переходим на страницу "Мои услуги"
-                    window.location.href = '/webapp/client/services.php';
+                    window.location.href = 'my-services.php';
                 } else {
                     console.error('Ошибка при создании заявки в Bitrix24');
                     tg.showPopup({
