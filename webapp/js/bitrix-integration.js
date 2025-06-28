@@ -205,3 +205,21 @@ export async function getUserRequests(email) {
         body: JSON.stringify(filter),
     }).then(response => response.json());
 }
+// Поиск исполнителя по Telegram ID
+export async function findPerformerByTgId(tgId) {
+    try {
+        const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                filter: {'UF_CRM_1751128872': tgId},
+                select: ['ID']
+            })
+        });
+        const data = await response.json();
+        return data.result && data.result.length > 0 ? data.result[0] : null;
+    } catch (error) {
+        console.error('Ошибка поиска исполнителя:', error);
+        return null;
+    }
+}

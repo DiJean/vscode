@@ -69,6 +69,25 @@ header('Content-Type: text/html; charset=utf-8');
         const pageSize = 10;
         let contactId = null;
 
+        // Поиск исполнителя по Telegram ID
+        async function findPerformerByTgId(tgId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filter: {'UF_CRM_1751128872': tgId},
+                        select: ['ID']
+                    })
+                });
+                const data = await response.json();
+                return data.result && data.result.length > 0 ? data.result[0] : null;
+            } catch (error) {
+                console.error('Ошибка поиска исполнителя:', error);
+                return null;
+            }
+        }
+
         // Основная функция инициализации
         async function initApp() {
             // Проверка доступности Telegram WebApp API
@@ -83,6 +102,22 @@ header('Content-Type: text/html; charset=utf-8');
             try {
                 // Получаем данные пользователя
                 user = telegramApp.initDataUnsafe?.user || {};
+                
+                // Проверяем, зарегистрирован ли исполнитель
+                const performerContact = await findPerformerByTgId(user.id);
+                if (!performerContact) {
+                    tg.showPopup({
+                        title: 'Требуется регистрация',
+                        message: 'Пройдите регистрацию для доступа к дашборду',
+                        buttons: [{id: 'ok', type: 'ok'}]
+                    });
+                    setTimeout(() => {
+                        window.location.href = 'performer-form.php';
+                    }, 2000);
+                    return;
+                }
+                
+                contactId = performerContact.ID;
                 
                 // Отображаем информацию о пользователе
                 const firstName = user.first_name || '';
@@ -99,18 +134,6 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="user-name">${fullName || 'Исполнитель'}</div>
                 `;
                 
-                // Получаем ID контакта исполнителя
-                contactId = await getPerformerContactId(user.id);
-                
-                if (!contactId) {
-                    tg.showPopup({
-                        title: 'Ошибка',
-                        message: 'Ваш профиль исполнителя не найден',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                    return;
-                }
-                
                 // Загружаем сделки
                 loadDeals();
                 
@@ -124,46 +147,6 @@ header('Content-Type: text/html; charset=utf-8');
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
                 showFallbackView();
-            }
-        }
-        
-        // Получение ID контакта исполнителя
-        async function getPerformerContactId(tgUserId) {
-            try {
-                // Ищем контакт по Telegram ID
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        filter: {'UF_CRM_1751128612': tgUserId},
-                        select: ['ID']
-                    })
-                });
-                
-                const data = await response.json();
-                if (data.result && data.result.length > 0) {
-                    return data.result[0].ID;
-                }
-                
-                // Если не нашли, создаем новый контакт
-                const createResponse = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        fields: {
-                            NAME: user.first_name || 'Исполнитель',
-                            LAST_NAME: user.last_name || '',
-                            UF_CRM_1751128612: tgUserId // Привязываем Telegram ID
-                        }
-                    })
-                });
-                
-                const createData = await createResponse.json();
-                return createData.result;
-                
-            } catch (error) {
-                console.error('Ошибка получения контакта исполнителя:', error);
-                return null;
             }
         }
         

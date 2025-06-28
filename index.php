@@ -126,7 +126,7 @@ header('Content-Type: text/html; charset=utf-8');
                             window.location.href = '/webapp/client/client-form.php';
                         } else {
                             // Для исполнителя другая страница
-                            window.location.href = '/webapp/doer/dashboard.php';
+                            window.location.href = '/webapp/doer/performer-form.php';
                         }
                     });
                     
