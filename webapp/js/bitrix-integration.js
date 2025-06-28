@@ -1,4 +1,3 @@
-// bitrix-integration.js
 const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
 
 const SERVICE_IDS = {
