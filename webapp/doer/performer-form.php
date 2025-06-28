@@ -204,7 +204,7 @@ header('Content-Type: text/html; charset=utf-8');
                     sessionStorage.setItem('performerContactId', contactId);
                     
                     // Переходим в дашборд
-                    window.location.href = 'dashboard.php';
+                    window.location.href = '/webapp/doer/dashboard.php';
                 } else {
                     tg.showPopup({
                         title: 'Ошибка',

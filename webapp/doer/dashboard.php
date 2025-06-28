@@ -112,7 +112,7 @@ header('Content-Type: text/html; charset=utf-8');
                         buttons: [{id: 'ok', type: 'ok'}]
                     });
                     setTimeout(() => {
-                        window.location.href = 'performer-form.php';
+                        window.location.href = '/webapp/doer/performer-form.php';
                     }, 2000);
                     return;
                 }
