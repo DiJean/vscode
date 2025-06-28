@@ -74,7 +74,7 @@ header('Content-Type: text/html; charset=utf-8');
         let currentPage = 1;
         const pageSize = 10;
         let contactId = null;
-        let performerName = ""; // Будем хранить имя исполнителя
+        let performerName = "";
         let performerCity = null;
 
         // Поиск исполнителя по Telegram ID
@@ -111,10 +111,10 @@ header('Content-Type: text/html; charset=utf-8');
                             'UF_CRM_685D2956BF4C8', 
                             'UF_CRM_685D2956C64E0',
                             'UF_CRM_1751128612',
-                            'UF_CRM_685D2956D0916', // Кладбище
-                            'UF_CRM_1751022940',     // Сектор
-                            'UF_CRM_685D2956D7C70',  // Ряд
-                            'UF_CRM_685D2956DF40F'   // Участок
+                            'UF_CRM_685D2956D0916',
+                            'UF_CRM_1751022940',
+                            'UF_CRM_685D2956D7C70',
+                            'UF_CRM_685D2956DF40F'
                         ]
                     })
                 });
@@ -138,7 +138,6 @@ header('Content-Type: text/html; charset=utf-8');
             
             try {
                 user = tg.initDataUnsafe?.user || {};
-                console.log('Данные пользователя Telegram:', user);
                 
                 // Проверяем регистрацию исполнителя
                 const performerContact = await findPerformerByTgId(user.id);
@@ -360,7 +359,7 @@ header('Content-Type: text/html; charset=utf-8');
             loadDeals();
         }
         
-        // Просмотр деталей сделки - ОБНОВЛЕННАЯ ФУНКЦИЯ
+        // Просмотр деталей сделки - ИСПРАВЛЕННАЯ ВЕРСИЯ
         async function viewDealDetails(dealId) {
             try {
                 // Показываем индикатор загрузки
@@ -407,33 +406,46 @@ header('Content-Type: text/html; charset=utf-8');
                 else statusText = deal.STAGE_ID;
                 
                 // Формируем сообщение для popup
-                let message = `Заявка #${deal.ID}\n\n`;
-                message += `Клиент: ${deal.TITLE.replace('Заявка от ', '')}\n`;
-                message += `Услуги: ${serviceNames}\n`;
-                message += `Дата заявки: ${createdDate}\n`;
-                message += `Желаемая дата: ${serviceDate}\n`;
-                message += `Город: ${deal.UF_CRM_685D2956BF4C8 || '-'}\n`;
-                message += `Статус: ${statusText}\n`;
-                message += `Исполнитель: ${performerName}\n`;
+                let message = `<b>Заявка #${deal.ID}</b>\n\n`;
+                message += `<b>Клиент:</b> ${deal.TITLE.replace('Заявка от ', '')}\n`;
+                message += `<b>Услуги:</b> ${serviceNames}\n`;
+                message += `<b>Дата заявки:</b> ${createdDate}\n`;
+                message += `<b>Желаемая дата:</b> ${serviceDate}\n`;
+                message += `<b>Город:</b> ${deal.UF_CRM_685D2956BF4C8 || '-'}\n`;
+                message += `<b>Статус:</b> ${statusText}\n`;
+                message += `<b>Исполнитель:</b> ${performerName}\n`;
                 
                 // Дополнительные поля
-                if (deal.UF_CRM_685D2956D0916) message += `Кладбище: ${deal.UF_CRM_685D2956D0916}\n`;
-                if (deal.UF_CRM_1751022940) message += `Сектор: ${deal.UF_CRM_1751022940}\n`;
-                if (deal.UF_CRM_685D2956D7C70) message += `Ряд: ${deal.UF_CRM_685D2956D7C70}\n`;
-                if (deal.UF_CRM_685D2956DF40F) message += `Участок: ${deal.UF_CRM_685D2956DF40F}\n`;
-                if (deal.COMMENTS) message += `\nКомментарии:\n${deal.COMMENTS}`;
+                if (deal.UF_CRM_685D2956D0916) message += `<b>Кладбище:</b> ${deal.UF_CRM_685D2956D0916}\n`;
+                if (deal.UF_CRM_1751022940) message += `<b>Сектор:</b> ${deal.UF_CRM_1751022940}\n`;
+                if (deal.UF_CRM_685D2956D7C70) message += `<b>Ряд:</b> ${deal.UF_CRM_685D2956D7C70}\n`;
+                if (deal.UF_CRM_685D2956DF40F) message += `<b>Участок:</b> ${deal.UF_CRM_685D2956DF40F}\n`;
+                
+                // Комментарии (обрабатываем отдельно)
+                if (deal.COMMENTS) {
+                    const comments = deal.COMMENTS.length > 200 ? 
+                        deal.COMMENTS.substring(0, 200) + '...' : 
+                        deal.COMMENTS;
+                    message += `\n<b>Комментарии:</b>\n${comments}`;
+                }
+                
+                // Убираем HTML-теги и ограничиваем длину
+                const plainMessage = message.replace(/<[^>]*>/g, '');
+                const finalMessage = plainMessage.length > 1000 ? 
+                    plainMessage.substring(0, 1000) + '...' : 
+                    plainMessage;
                 
                 // Показываем детали в popup
                 tg.showPopup({
-                    title: `Детали заявки #${deal.ID}`,
-                    message: message,
+                    title: `Заявка #${deal.ID}`,
+                    message: finalMessage,
                     buttons: [{id: 'close', type: 'close'}]
                 });
                 
             } catch (error) {
                 tg.showPopup({
                     title: 'Ошибка',
-                    message: 'Не удалось загрузить детали заявки: ' + error.message,
+                    message: 'Не удалось загрузить детали заявки',
                     buttons: [{id: 'ok', type: 'ok'}]
                 });
             } finally {
