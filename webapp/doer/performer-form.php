@@ -151,7 +151,7 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <script type="module">
-        import { BITRIX_WEBHOOK, findPerformerByTgId } from '../js/bitrix-integration.js';
+        import { BITRIX_WEBHOOK, findPerformerByTgId } from '/webapp/js/bitrix-integration.js';
 
         let tg = null;
         let user = null;
