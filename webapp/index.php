@@ -20,7 +20,7 @@ header('Content-Type: text/html; charset=utf-8');
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
-    <script src="js/telegram-api.js"></script>
+    <script src="/webapp/js/telegram-api.js"></script>
     <script>
         // Основная функция инициализации приложения
         function initApp() {
