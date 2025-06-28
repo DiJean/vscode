@@ -9,6 +9,16 @@ header('Content-Type: text/html; charset=utf-8');
     <title>Выбор роли</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Локальные стили для анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .role-selection {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,9 +30,110 @@ header('Content-Type: text/html; charset=utf-8');
         ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
     </div>
 
-    <script type="module">
-        import { initTelegramApp, MainButton, getUserData, isMobile } from './js/telegram-api.js';
+    <script>
+        // Telegram API функции
+        function initTelegramApp() {
+            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+                return null;
+            }
+            
+            const tg = Telegram.WebApp;
+            
+            try {
+                tg.ready();
+                if (tg.isExpanded !== true) {
+                    tg.expand();
+                }
+                tg.backgroundColor = '#6a11cb';
+                if (tg.setHeaderColor) {
+                    tg.setHeaderColor('#6a11cb');
+                }
+                return tg;
+            } catch (e) {
+                console.error('Telegram init error:', e);
+                return null;
+            }
+        }
 
+        function getUserData() {
+            try {
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    return Telegram.WebApp.initDataUnsafe?.user || null;
+                }
+            } catch (e) {
+                console.error('Error getting user data:', e);
+            }
+            return null;
+        }
+
+        function isMobile() {
+            const tg = Telegram.WebApp;
+            return tg?.isMobile || false;
+        }
+
+        const MainButton = {
+            show: function(text, color = '#6a11cb', textColor = '#ffffff') {
+                try {
+                    if (typeof Telegram !== 'undefined' && Telegram.WebApp?.MainButton) {
+                        const mainButton = Telegram.WebApp.MainButton;
+                        mainButton.setText(text);
+                        mainButton.color = color;
+                        mainButton.textColor = textColor;
+                        mainButton.show();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error showing main button:', e);
+                }
+                return false;
+            },
+            hide: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.hide();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error hiding main button:', e);
+                }
+                return false;
+            },
+            onClick: function(handler) {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.onClick(handler);
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error setting main button click:', e);
+                }
+                return false;
+            },
+            enable: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.enable();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error enabling main button:', e);
+                }
+                return false;
+            },
+            disable: function() {
+                try {
+                    if (Telegram.WebApp?.MainButton) {
+                        Telegram.WebApp.MainButton.disable();
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error disabling main button:', e);
+                }
+                return false;
+            }
+        };
+
+        // Логика страницы
         function renderUserInfo(user) {
             const greetingEl = document.getElementById('greeting');
             const userContainer = document.getElementById('user-container');
@@ -103,7 +214,7 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             const tg = initTelegramApp();
             const user = getUserData();
             
@@ -127,7 +238,7 @@ header('Content-Type: text/html; charset=utf-8');
             // Обработчик изменения выбора роли
             const roleSelect = document.getElementById('role');
             if (roleSelect) {
-                roleSelect.addEventListener('change', () => {
+                roleSelect.addEventListener('change', function() {
                     document.getElementById('role-error').style.display = 'none';
                 });
             }
