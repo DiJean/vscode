@@ -122,10 +122,10 @@ header('Content-Type: text/html; charset=utf-8');
                         
                         // Перенаправляем в зависимости от роли
                         if (role === 'client') {
-                            window.location.href = 'client/client-form.php';
+                            window.location.href = '/webapp/client/client-form.php';
                         } else {
                             // Для исполнителя другая страница
-                            window.location.href = 'performer/dashboard.php';
+                            window.location.href = '/webapp/doer/dashboard.php';
                         }
                     });
                     
