@@ -80,6 +80,11 @@ header('Content-Type: text/html; charset=utf-8');
             min-width: 100px;
         }
         
+        /* Исправление для table-responsive */
+        .table-responsive {
+            overflow: visible !important;
+        }
+        
         /* Скрываем менее важные колонки на мобильных */
         @media (max-width: 768px) {
             #deals-table th:nth-child(4),
@@ -92,6 +97,14 @@ header('Content-Type: text/html; charset=utf-8');
             /* Увеличим ширину для статуса */
             .status-cell {
                 min-width: 80px;
+            }
+            
+            /* Фиксируем колонку действий */
+            #deals-table td:last-child {
+                position: sticky;
+                right: 0;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 1;
             }
         }
     </style>
@@ -124,12 +137,13 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
         
         <div class="deals-container">
+            <!-- УБРАН overflow-hidden ИЗ table-responsive -->
             <div class="table-responsive rounded-3">
                 <table class="table table-hover align-middle mb-0" id="deals-table">
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>Заказ</th>
+                            <th>Клиент</th>
                             <th>Услуги</th>
                             <th>Создана</th>
                             <th>Исполнение</th>
@@ -338,7 +352,7 @@ header('Content-Type: text/html; charset=utf-8');
                         if (id === '69') return 'Уход';
                         if (id === '71') return 'Цветы';
                         if (id === '73') return 'Ремонт';
-                        if (id === '75') return 'Церковная служба';
+                        if (id === '75') return 'Церковная';
                         return id;
                     }).join(', ');
                 }

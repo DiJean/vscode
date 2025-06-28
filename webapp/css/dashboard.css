@@ -1,3 +1,36 @@
+/* Убираем overflow: hidden из table-responsive */
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* Улучшаем отображение таблицы */
+.deals-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+#deals-table {
+    width: 100%;
+    min-width: 800px; /* Минимальная ширина таблицы */
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+#deals-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(106, 17, 203, 0.7);
+}
+
+#deals-table td {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Остальные стили без изменений */
 .dashboard .header {
     display: flex;
     justify-content: space-between;
@@ -64,34 +97,6 @@
 
 #refresh-btn:hover {
     background: #5a0db3;
-}
-
-.deals-container {
-    overflow-x: auto;
-    margin-bottom: 20px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-#deals-table {
-    width: 100%;
-    border-collapse: collapse;
-    color: white;
-}
-
-#deals-table th, #deals-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#deals-table th {
-    background: rgba(106, 17, 203, 0.5);
-    font-weight: 600;
-}
-
-#deals-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.05);
 }
 
 .status {
@@ -161,47 +166,7 @@
     padding: 20px;
     font-style: italic;
 }
-/* Существующие стили остаются без изменений */
 
-/* Добавляем новые стили для колонки статуса */
-.status-cell {
-    min-width: 110px;
-}
-
-.status-badge {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    display: inline-block;
-    text-align: center;
-}
-
-.status-new {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-}
-
-.status-processing {
-    background: rgba(0, 123, 255, 0.2);
-    color: #007bff;
-}
-
-.status-closed {
-    background: rgba(40, 167, 69, 0.2);
-    color: #28a745;
-}
-
-/* Адаптация для мобильных */
-@media (max-width: 768px) {
-    .status-cell {
-        min-width: 90px;
-    }
-    
-    .status-badge {
-        font-size: 0.75rem;
-        padding: 4px 8px;
-    }
-}
 @media (max-width: 768px) {
     .controls {
         flex-direction: column;
@@ -209,6 +174,7 @@
     
     #deals-table {
         font-size: 0.9rem;
+        min-width: 100%;
     }
     
     #deals-table th, #deals-table td {
