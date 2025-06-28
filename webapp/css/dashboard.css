@@ -161,7 +161,47 @@
     padding: 20px;
     font-style: italic;
 }
+/* Существующие стили остаются без изменений */
 
+/* Добавляем новые стили для колонки статуса */
+.status-cell {
+    min-width: 110px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+}
+
+.status-new {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-processing {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+}
+
+.status-closed {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+/* Адаптация для мобильных */
+@media (max-width: 768px) {
+    .status-cell {
+        min-width: 90px;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+}
 @media (max-width: 768px) {
     .controls {
         flex-direction: column;

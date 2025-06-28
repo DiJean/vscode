@@ -22,6 +22,7 @@ header('Content-Type: text/html; charset=utf-8');
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 0.85rem;
+            display: inline-block;
         }
         
         .status-new {
@@ -74,19 +75,23 @@ header('Content-Type: text/html; charset=utf-8');
             min-width: 60px;
         }
         
-        /* Убедимся, что кнопки видны */
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
+        /* Убедимся, что статус виден */
+        .status-cell {
+            min-width: 100px;
         }
         
         /* Скрываем менее важные колонки на мобильных */
         @media (max-width: 768px) {
             #deals-table th:nth-child(4),
-            #deals-table td:nth-child(4),
+            #deals-table td:nth-child(4), /* Создана */
             #deals-table th:nth-child(5),
-            #deals-table td:nth-child(5) {
+            #deals-table td:nth-child(5) { /* Исполнение */
                 display: none;
+            }
+            
+            /* Увеличим ширину для статуса */
+            .status-cell {
+                min-width: 80px;
             }
         }
     </style>
@@ -129,7 +134,7 @@ header('Content-Type: text/html; charset=utf-8');
                             <th>Создана</th>
                             <th>Исполнение</th>
                             <th>Город</th>
-                            <th>Статус</th>
+                            <th class="status-cell">Статус</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -366,7 +371,9 @@ header('Content-Type: text/html; charset=utf-8');
                         <td>${createdDate}</td>
                         <td>${serviceDate}</td>
                         <td>${deal.UF_CRM_685D2956BF4C8 || '-'}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td class="status-cell">
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </td>
                         <td>
                             <a href="deal-details.php?id=${deal.ID}" 
                                class="btn btn-sm btn-primary action-btn">
