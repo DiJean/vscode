@@ -114,7 +114,9 @@ header('Content-Type: text/html; charset=utf-8');
                             'UF_CRM_685D2956D0916',
                             'UF_CRM_1751022940',
                             'UF_CRM_685D2956D7C70',
-                            'UF_CRM_685D2956DF40F'
+                            'UF_CRM_685D2956DF40F',
+                            'UF_CRM_1751129816', // Широта
+                            'UF_CRM_1751129854'  // Долгота
                         ]
                     })
                 });
@@ -359,7 +361,7 @@ header('Content-Type: text/html; charset=utf-8');
             loadDeals();
         }
         
-        // Просмотр деталей сделки - ИСПРАВЛЕННАЯ ВЕРСИЯ
+        // Просмотр деталей сделки
         async function viewDealDetails(dealId) {
             try {
                 // Показываем индикатор загрузки
@@ -398,13 +400,6 @@ header('Content-Type: text/html; charset=utf-8');
                     }).join(', ');
                 }
                 
-                // Статус
-                let statusText = '';
-                if (deal.STAGE_ID === 'NEW') statusText = 'Новая';
-                else if (deal.STAGE_ID === 'PROCESSING') statusText = 'В работе';
-                else if (deal.STAGE_ID === 'CLOSED') statusText = 'Завершена';
-                else statusText = deal.STAGE_ID;
-                
                 // Формируем сообщение для popup
                 let message = `<b>Заявка #${deal.ID}</b>\n\n`;
                 message += `<b>Клиент:</b> ${deal.TITLE.replace('Заявка от ', '')}\n`;
@@ -412,7 +407,7 @@ header('Content-Type: text/html; charset=utf-8');
                 message += `<b>Дата заявки:</b> ${createdDate}\n`;
                 message += `<b>Желаемая дата:</b> ${serviceDate}\n`;
                 message += `<b>Город:</b> ${deal.UF_CRM_685D2956BF4C8 || '-'}\n`;
-                message += `<b>Статус:</b> ${statusText}\n`;
+                message += `<b>Статус:</b> ${deal.STAGE_ID || '-'}\n`;
                 message += `<b>Исполнитель:</b> ${performerName}\n`;
                 
                 // Дополнительные поля
@@ -421,7 +416,11 @@ header('Content-Type: text/html; charset=utf-8');
                 if (deal.UF_CRM_685D2956D7C70) message += `<b>Ряд:</b> ${deal.UF_CRM_685D2956D7C70}\n`;
                 if (deal.UF_CRM_685D2956DF40F) message += `<b>Участок:</b> ${deal.UF_CRM_685D2956DF40F}\n`;
                 
-                // Комментарии (обрабатываем отдельно)
+                // Координаты
+                if (deal.UF_CRM_1751129816) message += `<b>Широта:</b> ${deal.UF_CRM_1751129816}\n`;
+                if (deal.UF_CRM_1751129854) message += `<b>Долгота:</b> ${deal.UF_CRM_1751129854}\n`;
+                
+                // Комментарии
                 if (deal.COMMENTS) {
                     const comments = deal.COMMENTS.length > 200 ? 
                         deal.COMMENTS.substring(0, 200) + '...' : 
@@ -443,9 +442,10 @@ header('Content-Type: text/html; charset=utf-8');
                 });
                 
             } catch (error) {
+                console.error('Ошибка просмотра заявки:', error);
                 tg.showPopup({
                     title: 'Ошибка',
-                    message: 'Не удалось загрузить детали заявки',
+                    message: `Не удалось загрузить детали заявки: ${error.message}`,
                     buttons: [{id: 'ok', type: 'ok'}]
                 });
             } finally {
