@@ -73,6 +73,22 @@ header('Content-Type: text/html; charset=utf-8');
         #deals-table td:last-child {
             min-width: 60px;
         }
+        
+        /* Убедимся, что кнопки видны */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Скрываем менее важные колонки на мобильных */
+        @media (max-width: 768px) {
+            #deals-table th:nth-child(4),
+            #deals-table td:nth-child(4),
+            #deals-table th:nth-child(5),
+            #deals-table td:nth-child(5) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -108,7 +124,7 @@ header('Content-Type: text/html; charset=utf-8');
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>Клиент</th>
+                            <th>Заказ</th>
                             <th>Услуги</th>
                             <th>Создана</th>
                             <th>Исполнение</th>
@@ -336,7 +352,7 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
                 
-                // СДЕЛАЕМ ID КЛИКАБЕЛЬНЫМ
+                // СДЕЛАЕМ ID И КНОПКУ ПРОСМОТРА КЛИКАБЕЛЬНЫМИ
                 dealsList.innerHTML += `
                     <tr>
                         <td>
