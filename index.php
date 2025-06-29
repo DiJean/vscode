@@ -3,17 +3,18 @@ header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор роли</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
-    
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         .role-card {
@@ -26,17 +27,17 @@ header('Content-Type: text/html; charset=utf-8');
             transition: all 0.3s;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .role-card:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-5px);
         }
-        
+
         .role-icon {
             font-size: 3rem;
             margin-bottom: 15px;
         }
-        
+
         .desktop-warning {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
@@ -46,11 +47,12 @@ header('Content-Type: text/html; charset=utf-8');
         }
     </style>
 </head>
+
 <body class="theme-beige">
     <div class="container py-4">
         <div class="greeting mb-4" id="greeting">Здравствуйте.</div>
         <div id="user-container" class="mb-4"></div>
-        
+
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="role-card" data-role="client">
@@ -67,7 +69,7 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
             </div>
         </div>
-        
+
         <div class="desktop-warning text-center mt-4" id="desktop-warning" style="display: none;">
             ⚠️ Для лучшего опыта используйте это приложение в мобильном клиенте Telegram
         </div>
@@ -82,37 +84,37 @@ header('Content-Type: text/html; charset=utf-8');
                 showFallbackView();
                 return;
             }
-            
+
             const tg = Telegram.WebApp;
-            
+
             try {
                 tg.ready();
-                
+
                 if (tg.isExpanded !== true && tg.expand) {
                     tg.expand();
                 }
-                
+
                 tg.backgroundColor = '#6a11cb';
                 if (tg.setHeaderColor) {
                     tg.setHeaderColor('#6a11cb');
                 }
-                
+
                 let user = null;
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     user = tg.initDataUnsafe.user;
                 }
-                
+
                 let userHtml = '';
-                
+
                 if (user) {
                     const firstName = user.first_name || '';
                     const lastName = user.last_name || '';
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
-                    
+
                     const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
                     document.getElementById('greeting').textContent = greeting;
-                    
+
                     userHtml = `
                         <div class="d-flex flex-column align-items-center">
                             <div class="avatar mb-3">
@@ -133,15 +135,15 @@ header('Content-Type: text/html; charset=utf-8');
                         </div>
                     `;
                 }
-                
+
                 document.getElementById('user-container').innerHTML = userHtml;
-                
+
                 document.querySelectorAll('.role-card').forEach(card => {
                     card.addEventListener('click', function() {
                         const role = this.getAttribute('data-role');
                         localStorage.setItem('selectedRole', role);
                         sessionStorage.setItem('selectedRole', role);
-                        
+
                         // ИЗМЕНЕНА ЛОГИКА ПЕРЕХОДА ДЛЯ КЛИЕНТА
                         if (role === 'client') {
                             window.location.href = '/webapp/client/my-services.php';
@@ -150,17 +152,17 @@ header('Content-Type: text/html; charset=utf-8');
                         }
                     });
                 });
-                
+
                 if (tg.isDesktop) {
                     document.getElementById('desktop-warning').style.display = 'block';
                 }
-                
+
             } catch (e) {
                 console.error('Ошибка инициализации Telegram WebApp:', e);
                 showFallbackView();
             }
         }
-        
+
         function showFallbackView() {
             document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
             document.getElementById('user-container').innerHTML = `
@@ -171,7 +173,7 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
             `;
         }
-        
+
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
@@ -179,4 +181,5 @@ header('Content-Type: text/html; charset=utf-8');
         }
     </script>
 </body>
+
 </html>

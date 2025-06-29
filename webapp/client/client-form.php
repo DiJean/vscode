@@ -81,7 +81,7 @@ header('Content-Type: text/html; charset=utf-8');
             <form id="service-form">
                 <div class="mb-3">
                     <label class="form-label required">Имя и фамилия</label>
-                    <input type="text" id="full-name" class="form-control" readonly>
+                    <input type="text" id="full-name" class="form-control">
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -171,7 +171,7 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/webapp/js/bitrix-integration.js"></script>
+    <script src="/webapp/js/bitrix-integration.js?<?= time() ?>"></script>
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
@@ -328,7 +328,8 @@ header('Content-Type: text/html; charset=utf-8');
                 }
                 if (tg && tg.showProgress) tg.showProgress();
 
-                const response = await processServiceRequest(formData);
+                // Исправлено: вызов через глобальный объект
+                const response = await BitrixCRM.processServiceRequest(formData);
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(response));
 
                 if (response.success) {
@@ -400,9 +401,10 @@ header('Content-Type: text/html; charset=utf-8');
                 el.style.display = 'none';
             });
 
-            // Проверка телефона (10 цифр после +7)
-            if (!formData.phone || formData.phone.length !== 11 || formData.phone[0] !== '7') {
-                document.getElementById('phone-error').textContent = 'Введите 10 цифр номера телефона после +7';
+            // Улучшенная проверка телефона
+            const phoneRegex = /^7\d{10}$/;
+            if (!phoneRegex.test(formData.phone)) {
+                document.getElementById('phone-error').textContent = 'Введите 10 цифр номера телефона после +7 (например: 79650035577)';
                 document.getElementById('phone-error').style.display = 'block';
                 isValid = false;
             }

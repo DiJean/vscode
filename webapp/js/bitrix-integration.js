@@ -117,7 +117,9 @@ async function createDeal(contactId, data) {
 
 export async function processServiceRequest(data) {
     try {
-        if (!data.phone || data.phone.length !== 11) {
+        // Улучшенная проверка телефона
+        const phoneRegex = /^7\d{10}$/;
+        if (!phoneRegex.test(data.phone)) {
             throw new Error('Некорректный номер телефона');
         }
         
@@ -207,4 +209,13 @@ export async function findPerformerByTgId(tgId) {
         console.error('Ошибка поиска исполнителя:', error);
         return null;
     }
+}
+
+// Добавлен глобальный экспорт для доступа из HTML
+if (typeof window !== 'undefined') {
+    window.BitrixCRM = {
+        processServiceRequest,
+        getUserRequests,
+        findPerformerByTgId
+    };
 }

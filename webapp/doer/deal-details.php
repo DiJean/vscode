@@ -419,8 +419,19 @@ header('Content-Type: text/html; charset=utf-8');
         });
 
         function handlePhotoUpload(file, previewId) {
-            if (!file.type.match('image.*')) {
-                alert('Пожалуйста, выберите изображение!');
+            if (!file || !file.type.match('image.*')) {
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: 'Ошибка',
+                        message: 'Пожалуйста, выберите изображение!',
+                        buttons: [{
+                            id: 'ok',
+                            type: 'ok'
+                        }]
+                    });
+                } else {
+                    alert('Пожалуйста, выберите изображение!');
+                }
                 return;
             }
 
@@ -446,7 +457,18 @@ header('Content-Type: text/html; charset=utf-8');
             const btn = this;
 
             if (!beforePhotoFile || !afterPhotoFile) {
-                alert('Загрузите оба фото!');
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: 'Ошибка',
+                        message: 'Загрузите оба фото!',
+                        buttons: [{
+                            id: 'ok',
+                            type: 'ok'
+                        }]
+                    });
+                } else {
+                    alert('Загрузите оба фото!');
+                }
                 return;
             }
 
@@ -467,33 +489,41 @@ header('Content-Type: text/html; charset=utf-8');
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Заказ успешно завершен!');
+                    if (tg && tg.showPopup) {
+                        tg.showPopup({
+                            title: 'Успех',
+                            message: 'Заказ успешно завершен!',
+                            buttons: [{
+                                id: 'ok',
+                                type: 'ok'
+                            }]
+                        });
+                    } else {
+                        alert('Заказ успешно завершен!');
+                    }
                     location.reload();
                 } else {
                     throw new Error(result.error || 'Не удалось завершить заказ');
                 }
             } catch (error) {
-                alert('Ошибка: ' + error.message);
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: 'Ошибка',
+                        message: 'Ошибка: ' + error.message,
+                        buttons: [{
+                            id: 'ok',
+                            type: 'ok'
+                        }]
+                    });
+                } else {
+                    alert('Ошибка: ' + error.message);
+                }
                 btn.disabled = false;
                 btn.textContent = 'Завершить заказ';
             }
         });
 
         document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-    <script>
-        // В функции handlePhotoUpload
-        if (!file.type.match('image.*')) {
-            tg.showPopup({
-                title: 'Ошибка',
-                message: 'Пожалуйста, выберите изображение!',
-                buttons: [{
-                    id: 'ok',
-                    type: 'ok'
-                }]
-            });
-            return;
-        }
     </script>
 </body>
 
