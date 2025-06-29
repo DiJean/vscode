@@ -65,6 +65,85 @@ header('Content-Type: text/html; charset=utf-8');
             opacity: 0.9;
             transform: translateY(-2px);
         }
+        
+        .completion-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+        }
+        
+        .photo-upload-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .photo-upload {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        .photo-preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+        }
+        
+        .upload-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .complete-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .complete-btn:disabled {
+            background: rgba(255, 46, 99, 0.5);
+            cursor: not-allowed;
+        }
+        
+        .complete-btn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -82,6 +161,36 @@ header('Content-Type: text/html; charset=utf-8');
             </div>
         </div>
         
+        <div class="completion-section" id="completion-section" style="display: none;">
+            <h3 class="mb-4">Завершение заказа</h3>
+            
+            <div class="photo-upload-container">
+                <div class="photo-upload">
+                    <div class="photo-preview" id="before-preview">
+                        <span>Фото до работ</span>
+                    </div>
+                    <label class="upload-btn">
+                        Загрузить фото "До"
+                        <input type="file" id="before-photo" accept="image/*" style="display: none;">
+                    </label>
+                </div>
+                
+                <div class="photo-upload">
+                    <div class="photo-preview" id="after-preview">
+                        <span>Фото после работ</span>
+                    </div>
+                    <label class="upload-btn">
+                        Загрузить фото "После"
+                        <input type="file" id="after-photo" accept="image/*" style="display: none;">
+                    </label>
+                </div>
+            </div>
+            
+            <button id="complete-deal-btn" class="complete-btn" disabled>
+                Завершить заказ
+            </button>
+        </div>
+        
         <a href="dashboard.php" class="back-btn">← Назад к списку заявок</a>
     </div>
 
@@ -95,6 +204,8 @@ header('Content-Type: text/html; charset=utf-8');
         let user = null;
         let contactId = null;
         let performerName = "";
+        let beforePhotoFile = null;
+        let afterPhotoFile = null;
         
         function getUrlParameter(name) {
             name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -178,6 +289,11 @@ header('Content-Type: text/html; charset=utf-8');
                 
                 renderDealDetails(deal);
                 
+                // Показываем секцию завершения если исполнитель и статус "В работе"
+                if (performerContact && deal.STAGE_ID === 'EXECUTING') {
+                    document.getElementById('completion-section').style.display = 'block';
+                }
+                
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
                 document.getElementById('deal-container').innerHTML = `
@@ -215,7 +331,7 @@ header('Content-Type: text/html; charset=utf-8');
             
             let statusText = deal.STAGE_ID || 'Неизвестно';
             
-            // СООТВЕТСТВИЕ СТАТУСОВ
+            // Соответствие статусов
             if (statusText === 'NEW') statusText = 'Новый заказ';
             else if (statusText === 'PREPARATION') statusText = 'Подготовка';
             else if (statusText === 'PREPAYMENT_INVOICE') statusText = 'Оплата';
@@ -235,10 +351,6 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="detail-value">${deal.TITLE.replace('Заявка от ', '')}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Статус</div>
-                    <div class="detail-value">${statusText}</div>
-                </div>
-                <div class="detail-item">
                     <div class="detail-label">Дата создания</div>
                     <div class="detail-value">${createdDate}</div>
                 </div>
@@ -254,7 +366,10 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="detail-label">Город</div>
                     <div class="detail-value">${deal.UF_CRM_685D2956BF4C8 || '-'}</div>
                 </div>
-                
+                <div class="detail-item">
+                    <div class="detail-label">Статус</div>
+                    <div class="detail-value">${statusText}</div>
+                </div>
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
                     <div class="detail-value">${performerName || '-'}</div>
@@ -281,6 +396,80 @@ header('Content-Type: text/html; charset=utf-8');
                 </div>
             `;
         }
+
+        // Обработчики загрузки фото
+        document.getElementById('before-photo').addEventListener('change', function(e) {
+            handlePhotoUpload(e.target.files[0], 'before-preview');
+            beforePhotoFile = e.target.files[0];
+            checkCompletionReady();
+        });
+
+        document.getElementById('after-photo').addEventListener('change', function(e) {
+            handlePhotoUpload(e.target.files[0], 'after-preview');
+            afterPhotoFile = e.target.files[0];
+            checkCompletionReady();
+        });
+
+        function handlePhotoUpload(file, previewId) {
+            if (!file.type.match('image.*')) {
+                alert('Пожалуйста, выберите изображение!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(previewId);
+                preview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function checkCompletionReady() {
+            const completeBtn = document.getElementById('complete-deal-btn');
+            completeBtn.disabled = !(beforePhotoFile && afterPhotoFile);
+        }
+
+        // Обработчик завершения сделки
+        document.getElementById('complete-deal-btn').addEventListener('click', async function() {
+            const dealId = getUrlParameter('id');
+            const btn = this;
+            
+            if (!beforePhotoFile || !afterPhotoFile) {
+                alert('Загрузите оба фото!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Отправка...';
+
+            try {
+                const formData = new FormData();
+                formData.append('deal_id', dealId);
+                formData.append('before_photo', beforePhotoFile);
+                formData.append('after_photo', afterPhotoFile);
+
+                const response = await fetch('complete_deal.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Заказ успешно завершен!');
+                    location.reload();
+                } else {
+                    throw new Error(result.error || 'Не удалось завершить заказ');
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Завершить заказ';
+            }
+        });
         
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
