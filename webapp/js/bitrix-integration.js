@@ -31,7 +31,8 @@
                         'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
                         'UF_CRM_685D295664A8A',
                         'UF_CRM_685D2956BF4C8',
-                        'UF_CRM_685D2956C64E0'
+                        'UF_CRM_685D2956C64E0',
+                        'UF_CRM_1751128612' // ID исполнителя
                     ],
                     order: { "DATE_CREATE": "DESC" }
                 })
@@ -45,6 +46,28 @@
         }
     }
 
+    async function getPerformersInfo(performerIds) {
+        try {
+            // Уникальные ID исполнителей
+            const uniqueIds = [...new Set(performerIds)];
+            
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    filter: { 'ID': uniqueIds },
+                    select: ['ID', 'NAME', 'LAST_NAME']
+                })
+            });
+            
+            const data = await response.json();
+            return data.result || [];
+        } catch (error) {
+            console.error('Ошибка загрузки исполнителей:', error);
+            return [];
+        }
+    }
+
     async function getUserRequests(tgUserId) {
         try {
             const contact = await findContactByTgId(tgUserId);
@@ -54,25 +77,6 @@
         } catch (error) {
             console.error('Ошибка получения заявок:', error);
             return [];
-        }
-    }
-
-    async function findPerformerByTgId(tgId) {
-        try {
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    filter: {'UF_CRM_1751128872': String(tgId)},
-                    select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
-                })
-            });
-            
-            const data = await response.json();
-            return data.result && data.result.length > 0 ? data.result[0] : null;
-        } catch (error) {
-            console.error('Ошибка поиска исполнителя:', error);
-            return null;
         }
     }
 
@@ -226,6 +230,6 @@
     window.BitrixCRM = {
         processServiceRequest,
         getUserRequests,
-        findPerformerByTgId
+        getPerformersInfo
     };
 })();

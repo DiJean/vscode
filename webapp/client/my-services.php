@@ -18,6 +18,67 @@ $version = time();
     <script src="https://telegram.org/js/telegram-web-app.js?<?= $version ?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/my-services.css?<?= $version ?>">
+    <style>
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .requests-table th {
+            background-color: rgba(106, 17, 203, 0.3);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .requests-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .requests-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .requests-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .request-num {
+            font-weight: bold;
+            color: #6a11cb;
+        }
+
+        .request-service {
+            font-weight: 500;
+        }
+
+        .request-date {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .request-performer {
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .requests-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .requests-table th,
+            .requests-table td {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -26,7 +87,7 @@ $version = time();
         <a href="/webapp/client/client-form.php?v=<?= $version ?>" class="btn-create">+ Создать новую заявку</a>
         <div class="requests-list" id="requests-list">
             <div class="request-item">
-                <div class="request-service">Загрузка...</div>
+                <div class="request-service">Загрузка заявок...</div>
             </div>
         </div>
     </div>
@@ -96,7 +157,32 @@ $version = time();
         function loadRequests(tgUserId) {
             BitrixCRM.getUserRequests(tgUserId)
                 .then(deals => {
-                    renderRequests(deals);
+                    // Собираем ID всех исполнителей
+                    const performerIds = deals
+                        .map(deal => deal.UF_CRM_1751128612)
+                        .filter(id => id && id > 0);
+
+                    // Если есть исполнители - получаем их данные
+                    if (performerIds.length > 0) {
+                        return BitrixCRM.getPerformersInfo(performerIds)
+                            .then(performers => {
+                                return {
+                                    deals,
+                                    performers
+                                };
+                            });
+                    }
+
+                    return {
+                        deals,
+                        performers: []
+                    };
+                })
+                .then(({
+                    deals,
+                    performers
+                }) => {
+                    renderRequests(deals, performers);
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки заявок:', error);
@@ -104,13 +190,25 @@ $version = time();
                 });
         }
 
-        function renderRequests(deals) {
-            let html = '';
-
+        function renderRequests(deals, performers = []) {
             if (!deals || deals.length === 0) {
                 showNoRequests();
                 return;
             }
+
+            let html = `
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>№ заявки</th>
+                            <th>Услуги</th>
+                            <th>Дата создания</th>
+                            <th>Статус</th>
+                            <th>Исполнитель</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
 
             deals.forEach(deal => {
                 const date = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
@@ -149,14 +247,32 @@ $version = time();
                     statusClass = 'status-canceled';
                 }
 
+                // Исполнитель
+                let performerInfo = 'Не назначен';
+                if (deal.UF_CRM_1751128612) {
+                    const performer = performers.find(p => p.ID == deal.UF_CRM_1751128612);
+                    if (performer) {
+                        performerInfo = `${performer.NAME || ''} ${performer.LAST_NAME || ''}`.trim() || 'Исполнитель';
+                    } else {
+                        performerInfo = `ID: ${deal.UF_CRM_1751128612}`;
+                    }
+                }
+
                 html += `
-                    <div class="request-item">
-                        <div class="request-service">${serviceNames}</div>
-                        <div class="request-date">Создано: ${date}</div>
-                        <div class="request-status ${statusClass}">${statusText}</div>
-                    </div>
+                    <tr>
+                        <td class="request-num">#${deal.ID}</td>
+                        <td class="request-service">${serviceNames}</td>
+                        <td class="request-date">${date}</td>
+                        <td><span class="request-status ${statusClass}">${statusText}</span></td>
+                        <td class="request-performer">${performerInfo}</td>
+                    </tr>
                 `;
             });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
 
             document.getElementById('requests-list').innerHTML = html;
         }
