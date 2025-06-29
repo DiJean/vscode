@@ -23,7 +23,6 @@ header('Content-Type: text/html; charset=utf-8');
             border-radius: 20px;
             font-size: 0.85rem;
             display: inline-block;
-            color: white;
         }
         
         .status-new {
@@ -33,7 +32,7 @@ header('Content-Type: text/html; charset=utf-8');
         
         .status-processing {
             background: rgba(0, 123, 255, 0.2);
-            color: #007bff;
+            color: #fff;
         }
         
         .status-closed {
