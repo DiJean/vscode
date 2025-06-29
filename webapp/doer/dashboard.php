@@ -23,6 +23,7 @@ header('Content-Type: text/html; charset=utf-8');
             border-radius: 20px;
             font-size: 0.85rem;
             display: inline-block;
+            color: white;
         }
         
         .status-new {
