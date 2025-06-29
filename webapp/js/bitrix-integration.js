@@ -26,6 +26,7 @@ async function findContactByPhone(phone) {
     }
 }
 
+// В функции createContact
 async function createContact(data) {
     try {
         const contactData = {
@@ -36,7 +37,7 @@ async function createContact(data) {
                 EMAIL: [{ VALUE: data.email, VALUE_TYPE: 'WORK' }],
                 TYPE_ID: 'CLIENT',
                 SOURCE_ID: 'REPEAT_SALE',
-                UF_CRM_TG_USER_ID: data.tgUserId // Добавлено для уведомлений
+                UF_CRM_1751128872: String(data.tgUserId) // Используем правильное поле
             }
         };
         
@@ -54,6 +55,7 @@ async function createContact(data) {
     }
 }
 
+// В функции updateContact
 async function updateContact(contactId, data) {
     try {
         const contactData = {
@@ -62,7 +64,7 @@ async function updateContact(contactId, data) {
                 NAME: data.firstName,
                 LAST_NAME: data.lastName,
                 EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                UF_CRM_TG_USER_ID: data.tgUserId // Обновлено для уведомлений
+                UF_CRM_1751128872: String(data.tgUserId) // Используем правильное поле
             }
         };
         
