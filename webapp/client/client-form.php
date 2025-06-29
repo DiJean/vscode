@@ -13,7 +13,59 @@ header('Content-Type: text/html; charset=utf-8');
     <link rel="stylesheet" href="/webapp/css/client-form.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        .service-checkbox {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
+        .service-checkbox:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .service-checkbox input {
+            margin-right: 10px;
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .form-input:read-only {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 
 <body>
@@ -156,10 +208,24 @@ header('Content-Type: text/html; charset=utf-8');
                     tg.expand();
                 }
 
+                // Получаем данные пользователя из WebApp
                 user = tg.initDataUnsafe?.user || {};
+
+                // Если в WebApp нет данных, пробуем получить из localStorage
+                if (!user.id) {
+                    const storedUser = localStorage.getItem('telegramUser');
+                    if (storedUser) {
+                        user = JSON.parse(storedUser);
+                        debugLog('Пользователь восстановлен из localStorage');
+                    }
+                } else {
+                    // Сохраняем пользователя в localStorage
+                    localStorage.setItem('telegramUser', JSON.stringify(user));
+                }
+
                 const firstName = user.first_name || '';
                 const lastName = user.last_name || '';
-                const fullName = `${firstName} ${lastName}`.trim();
+                const fullName = `${firstName} ${lastName}`.trim() || 'Клиент';
 
                 debugLog(`Пользователь Telegram: ${fullName} (ID: ${user.id || 'нет'})`);
 
@@ -175,7 +241,7 @@ header('Content-Type: text/html; charset=utf-8');
                                     `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold" style="width:80px;height:80px;font-size:2rem;">${firstName.charAt(0) || 'К'}</div>`
                                 }
                             </div>
-                            <div class="user-name fs-5">${fullName || 'Клиент'}</div>
+                            <div class="user-name fs-5">${fullName}</div>
                         </div>
                     `;
                 }
@@ -197,7 +263,7 @@ header('Content-Type: text/html; charset=utf-8');
                     }
                 });
 
-                // Устанавливаем начальное значение: +7 (пользователь будет вводить только цифры)
+                // Устанавливаем начальное значение: +7
                 phoneMask.unmaskedValue = '7';
                 phoneMask.updateValue();
 
@@ -210,7 +276,8 @@ header('Content-Type: text/html; charset=utf-8');
                 });
 
                 // Установка минимальной даты
-                document.getElementById('service-date').min = new Date().toISOString().split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('service-date').min = today;
 
                 if (tg.MainButton) {
                     tg.MainButton.setText("Отправить заявку");
