@@ -481,6 +481,20 @@ header('Content-Type: text/html; charset=utf-8');
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
+    <script>
+        // В функции handlePhotoUpload
+        if (!file.type.match('image.*')) {
+            tg.showPopup({
+                title: 'Ошибка',
+                message: 'Пожалуйста, выберите изображение!',
+                buttons: [{
+                    id: 'ok',
+                    type: 'ok'
+                }]
+            });
+            return;
+        }
+    </script>
 </body>
 
 </html>
