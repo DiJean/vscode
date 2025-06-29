@@ -66,6 +66,21 @@ $version = time();
             font-size: 0.9rem;
         }
 
+        .details-btn {
+            padding: 8px 16px;
+            background: rgba(106, 17, 203, 0.5);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .details-btn:hover {
+            background: rgba(106, 17, 203, 0.8);
+        }
+
         @media (max-width: 768px) {
             .requests-table {
                 display: block;
@@ -76,6 +91,11 @@ $version = time();
             .requests-table td {
                 padding: 10px;
                 font-size: 0.9rem;
+            }
+
+            .details-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -205,6 +225,7 @@ $version = time();
                             <th>Дата создания</th>
                             <th>Статус</th>
                             <th>Исполнитель</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -265,6 +286,9 @@ $version = time();
                         <td class="request-date">${date}</td>
                         <td><span class="request-status ${statusClass}">${statusText}</span></td>
                         <td class="request-performer">${performerInfo}</td>
+                        <td>
+                            <button class="details-btn" data-id="${deal.ID}">Детали</button>
+                        </td>
                     </tr>
                 `;
             });
@@ -275,6 +299,14 @@ $version = time();
             `;
 
             document.getElementById('requests-list').innerHTML = html;
+
+            // Добавляем обработчики для кнопок детализации
+            document.querySelectorAll('.details-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dealId = this.getAttribute('data-id');
+                    window.location.href = `deal-details.php?id=${dealId}&v=${version}`;
+                });
+            });
         }
 
         function showNoRequests() {

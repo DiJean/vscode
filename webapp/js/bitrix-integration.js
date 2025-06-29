@@ -1,6 +1,14 @@
 (function() {
     const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
 
+    // Словарь для преобразования ID услуг в названия
+    const serviceNames = {
+        '69': 'Уход',
+        '71': 'Цветы',
+        '73': 'Ремонт',
+        '75': 'Церковная служба'
+    };
+
     async function findContactByTgId(tgId) {
         try {
             const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
@@ -39,6 +47,24 @@
             });
             
             const data = await response.json();
+            
+            // Преобразуем ID услуг в названия
+            if (data.result) {
+                data.result.forEach(deal => {
+                    if (deal.UF_CRM_685D2956C64E0) {
+                        const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) 
+                            ? deal.UF_CRM_685D2956C64E0 
+                            : [deal.UF_CRM_685D2956C64E0];
+                        
+                        deal.services = serviceIds.map(id => 
+                            serviceNames[id] || id
+                        ).join(', ');
+                    } else {
+                        deal.services = 'Услуга не указана';
+                    }
+                });
+            }
+            
             return data.result || [];
         } catch (error) {
             console.error('Ошибка загрузки сделок:', error);
@@ -68,6 +94,55 @@
         }
     }
 
+    async function getDealDetails(dealId) {
+        try {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    id: dealId,
+                    select: [
+                        'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
+                        'UF_CRM_685D295664A8A', // Желаемая дата услуги
+                        'UF_CRM_685D2956BF4C8', // Город
+                        'UF_CRM_685D2956C64E0', // Услуги
+                        'UF_CRM_685D2956D0916', // Кладбище
+                        'UF_CRM_1751022940',    // Сектор
+                        'UF_CRM_685D2956D7C70', // Ряд
+                        'UF_CRM_685D2956DF40F', // Участок
+                        'UF_CRM_1751128612'      // Исполнитель
+                    ]
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.result) {
+                const deal = data.result;
+                
+                // Преобразуем услуги
+                if (deal.UF_CRM_685D2956C64E0) {
+                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) 
+                        ? deal.UF_CRM_685D2956C64E0 
+                        : [deal.UF_CRM_685D2956C64E0];
+                    
+                    deal.services = serviceIds.map(id => 
+                        serviceNames[id] || id
+                    ).join(', ');
+                } else {
+                    deal.services = 'Услуга не указана';
+                }
+                
+                return deal;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Ошибка получения деталей заявки:', error);
+            return null;
+        }
+    }
+
     async function getUserRequests(tgUserId) {
         try {
             const contact = await findContactByTgId(tgUserId);
@@ -87,7 +162,7 @@
                     NAME: data.firstName,
                     LAST_NAME: data.lastName,
                     PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
                     TYPE_ID: 'CLIENT',
                     SOURCE_ID: 'REPEAT_SALE',
                     UF_CRM_1751128872: String(data.tgUserId)
@@ -115,7 +190,7 @@
                 fields: {
                     NAME: data.firstName,
                     LAST_NAME: data.lastName,
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
                     UF_CRM_1751128872: String(data.tgUserId)
                 }
             };
@@ -141,7 +216,7 @@
                     TITLE: `Заявка от ${data.fullName}`,
                     CONTACT_ID: contactId,
                     PHONE: [{VALUE: data.phone, VALUE_TYPE: 'MOBILE'}],
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'MOBILE'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
                     UF_CRM_1751128872: String(data.tgUserId),
                     UF_CRM_685D295664A8A: data.serviceDate,
                     UF_CRM_685D2956BF4C8: data.city,
@@ -230,6 +305,7 @@
     window.BitrixCRM = {
         processServiceRequest,
         getUserRequests,
-        getPerformersInfo
+        getPerformersInfo,
+        getDealDetails
     };
 })();
