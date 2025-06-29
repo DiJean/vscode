@@ -80,8 +80,8 @@
                 fields: {
                     TITLE: `Заявка от ${data.fullName}`,
                     CONTACT_ID: contactId,
-                    PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
+                    PHONE: [{VALUE: data.phone, VALUE_TYPE: 'MOBILE'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'MOBILE'}],
                     UF_CRM_1751128872: String(data.tgUserId),
                     UF_CRM_685D295664A8A: data.serviceDate,
                     UF_CRM_685D2956BF4C8: data.city,

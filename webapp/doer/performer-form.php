@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,56 +10,10 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация исполнителя</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/webapp/css/style.css">
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/performer-form.css?<?= $version ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .form-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 25px;
-            margin-top: 20px;
-        }
-
-        .location-btn {
-            width: 100%;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: white;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-        }
-
-        .location-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .coords-container {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-error {
-            display: none;
-            color: #ff6b6b;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        .debug-info {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85rem;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-    </style>
 </head>
 
 <body class="performer-form">
@@ -137,6 +92,7 @@ header('Content-Type: text/html; charset=utf-8');
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const version = '<?= $version ?>';
 
         let tg = null;
         let user = null;
@@ -153,6 +109,7 @@ header('Content-Type: text/html; charset=utf-8');
 
         async function initApp() {
             debugLog('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
+            debugLog(`Версия: ${version}`);
 
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 debugLog('Telegram WebApp API недоступно');
@@ -296,14 +253,14 @@ header('Content-Type: text/html; charset=utf-8');
             debugLog('=== ОТПРАВКА ФОРМЫ ===');
 
             const formData = {
-                firstName: document.getElementById('first-name').value || '',
-                lastName: document.getElementById('last-name').value || '',
-                secondName: document.getElementById('second-name').value || '',
+                firstName: document.getElementById('first-name')?.value || '',
+                lastName: document.getElementById('last-name')?.value || '',
+                secondName: document.getElementById('second-name')?.value || '',
                 phone: phoneMask?.unmaskedValue || '',
-                email: document.getElementById('email').value || '',
-                city: document.getElementById('city').value || '',
-                latitude: document.getElementById('latitude').value || '',
-                longitude: document.getElementById('longitude').value || '',
+                email: document.getElementById('email')?.value || '',
+                city: document.getElementById('city')?.value || '',
+                latitude: document.getElementById('latitude')?.value || '',
+                longitude: document.getElementById('longitude')?.value || '',
                 tgUserId: user?.id || null
             };
 
@@ -432,12 +389,12 @@ header('Content-Type: text/html; charset=utf-8');
                             VALUE: data.email,
                             VALUE_TYPE: 'WORK'
                         }],
-                        TYPE_ID: "1", // Тип контакта: контактное лицо
+                        TYPE_ID: "1",
                         SOURCE_ID: 'REPEAT_SALE',
-                        UF_CRM_685D2956061DB: data.city, // Город
-                        UF_CRM_1751129816: data.latitude, // Широта
-                        UF_CRM_1751129854: data.longitude, // Долгота
-                        UF_CRM_1751128872: String(data.tgUserId) // Telegram ID (строка)
+                        UF_CRM_685D2956061DB: data.city,
+                        UF_CRM_1751129816: data.latitude,
+                        UF_CRM_1751129854: data.longitude,
+                        UF_CRM_1751128872: String(data.tgUserId)
                     }
                 };
 

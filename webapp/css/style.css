@@ -1,11 +1,8 @@
 :root {
-    /* Основные цвета */
     --primary-color: #6a11cb;
     --secondary-color: #2575fc;
     --accent-color: #ff2e63;
     --background-color: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    
-    /* Производные цвета */
     --primary-light: rgba(106, 17, 203, 0.15);
     --primary-medium: rgba(106, 17, 203, 0.25);
     --primary-dark: rgba(106, 17, 203, 0.9);
@@ -51,8 +48,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .greeting {
@@ -190,7 +194,8 @@ body {
     color: var(--accent-color);
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
     width: 100%;
     padding: 14px 18px;
     border-radius: 16px;
@@ -201,13 +206,15 @@ body {
     transition: all 0.3s ease;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
     outline: none;
     border-color: var(--border-medium);
     background: var(--primary-medium);
 }
 
-.form-input::placeholder, .form-textarea::placeholder {
+.form-input::placeholder,
+.form-textarea::placeholder {
     color: rgba(255, 255, 255, 0.7);
 }
 
@@ -256,32 +263,32 @@ body {
     .container {
         padding: 30px 15px;
     }
-    
+
     .greeting {
         font-size: 2rem;
     }
-    
+
     .user-name {
         font-size: 1.5rem;
     }
-    
+
     .username {
         font-size: 1rem;
     }
-    
+
     .welcome-text {
         font-size: 1.2rem;
     }
-    
+
     .role-label {
         font-size: 1.1rem;
     }
-    
+
     .role-select {
         padding: 12px;
         font-size: 1rem;
     }
-    
+
     .services-container {
         grid-template-columns: 1fr;
     }
@@ -291,44 +298,46 @@ body {
     .greeting {
         font-size: 1.8rem;
     }
-    
+
     .avatar {
         width: 80px;
         height: 80px;
         font-size: 2rem;
     }
-    
+
     .user-name {
         font-size: 1.3rem;
     }
-    
+
     .welcome-text {
         font-size: 1.1rem;
     }
-    
+
     .form-container {
         padding: 15px;
     }
-    
+
     .form-group {
         margin-bottom: 15px;
     }
-    
-    .form-input, .form-textarea {
+
+    .form-input,
+    .form-textarea {
         padding: 12px 15px;
     }
 }
 
-/* Стили для индикатора загрузки */
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loader {
     display: inline-block;
     width: 20px;
     height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
+    border: 3px solid rgba(255, 255, 255, .3);
     border-radius: 50%;
     border-top-color: var(--text-color);
     animation: spin 1s ease-in-out infinite;
@@ -336,7 +345,6 @@ body {
     vertical-align: middle;
 }
 
-/* Цветовые темы */
 .theme-blue {
     --primary-color: #1a73e8;
     --secondary-color: #4285f4;
@@ -361,11 +369,12 @@ body {
     --primary-color: #f57c00;
     --secondary-color: #fb8c00;
 }
+
 .theme-beige {
     --primary-color: #654321;
     --secondary-color: #FFF44F;
 }
-/* Добавить в конец файла */
+
 .photo-upload-container {
     display: flex;
     gap: 15px;
@@ -434,4 +443,33 @@ body {
 .complete-btn:hover:not(:disabled) {
     opacity: 0.9;
     transform: translateY(-2px);
+}
+
+.role-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.role-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.role-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.desktop-warning {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 0.9rem;
 }

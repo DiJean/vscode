@@ -84,20 +84,22 @@
     overflow-y: auto;
 }
 
-.service-checkbox {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.date-picker {
     cursor: pointer;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.input-group .btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     transition: all 0.3s;
 }
 
-.service-checkbox:hover {
+.input-group .btn:hover {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.service-checkbox input {
-    margin-right: 10px;
+.input-group .btn svg {
+    fill: white;
 }

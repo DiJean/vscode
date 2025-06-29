@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,38 +10,8 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор роли</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/webapp/css/style.css">
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .role-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .role-card:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-5px);
-        }
-
-        .role-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .desktop-warning {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.9rem;
-        }
-    </style>
 </head>
 
 <body class="theme-beige">
@@ -73,6 +44,8 @@ header('Content-Type: text/html; charset=utf-8');
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        const version = '<?= $version ?>';
+
         function initApp() {
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
@@ -139,9 +112,9 @@ header('Content-Type: text/html; charset=utf-8');
                         sessionStorage.setItem('selectedRole', role);
 
                         if (role === 'client') {
-                            window.location.href = '/webapp/client/my-services.php';
+                            window.location.href = '/webapp/client/my-services.php?v=' + version;
                         } else {
-                            window.location.href = '/webapp/doer/dashboard.php';
+                            window.location.href = '/webapp/doer/dashboard.php?v=' + version;
                         }
                     });
                 });

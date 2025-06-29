@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,137 +10,9 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Детали заявки</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/webapp/css/style.css">
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .detail-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-
-        .detail-item {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .detail-label {
-            font-weight: bold;
-            opacity: 0.8;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-        }
-
-        .back-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .back-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
-        .completion-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 16px;
-        }
-
-        .photo-upload-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .photo-upload {
-            flex: 1;
-            min-width: 150px;
-            text-align: center;
-        }
-
-        .photo-preview {
-            width: 100%;
-            height: 150px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-bottom: 10px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .photo-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
-        }
-
-        .upload-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px dashed rgba(255, 255, 255, 0.3);
-        }
-
-        .upload-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .complete-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .complete-btn:disabled {
-            background: rgba(255, 46, 99, 0.5);
-            cursor: not-allowed;
-        }
-
-        .complete-btn:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-    </style>
 </head>
 
 <body>
@@ -159,25 +32,26 @@ header('Content-Type: text/html; charset=utf-8');
 
         <div class="completion-section" id="completion-section" style="display: none;">
             <h3 class="mb-4">Завершение заказа</h3>
-
-            <div class="photo-upload">
-                <div class="photo-preview" id="before-preview">
-                    <span>Фото до работ</span>
+            <div class="photo-upload-container">
+                <div class="photo-upload">
+                    <div class="photo-preview" id="before-preview">
+                        <span>Фото до работ</span>
+                    </div>
+                    <label class="upload-btn">
+                        Загрузить фото "До"
+                        <input type="file" id="before-photo" accept="image/*" capture="camera" style="display: none;">
+                    </label>
                 </div>
-                <label class="upload-btn">
-                    Загрузить фото "До"
-                    <input type="file" id="before-photo" accept="image/*" capture="camera" style="display: none;">
-                </label>
-            </div>
 
-            <div class="photo-upload">
-                <div class="photo-preview" id="after-preview">
-                    <span>Фото после работ</span>
+                <div class="photo-upload">
+                    <div class="photo-preview" id="after-preview">
+                        <span>Фото после работ</span>
+                    </div>
+                    <label class="upload-btn">
+                        Загрузить фото "После"
+                        <input type="file" id="after-photo" accept="image/*" capture="camera" style="display: none;">
+                    </label>
                 </div>
-                <label class="upload-btn">
-                    Загрузить фото "После"
-                    <input type="file" id="after-photo" accept="image/*" capture="camera" style="display: none;">
-                </label>
             </div>
 
             <button id="complete-deal-btn" class="complete-btn" disabled>
@@ -192,6 +66,7 @@ header('Content-Type: text/html; charset=utf-8');
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const version = '<?= $version ?>';
 
         let tg = null;
         let user = null;

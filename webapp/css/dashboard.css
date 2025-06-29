@@ -1,9 +1,7 @@
-/* Убираем overflow: hidden из table-responsive */
 .table-responsive {
     overflow: visible !important;
 }
 
-/* Улучшаем отображение таблицы */
 .deals-container {
     overflow-x: auto;
     border-radius: 12px;
@@ -14,7 +12,7 @@
 
 #deals-table {
     width: 100%;
-    min-width: 800px; /* Минимальная ширина таблицы */
+    min-width: 800px;
     border-collapse: separate;
     border-spacing: 0;
 }
@@ -30,7 +28,6 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Остальные стили без изменений */
 .dashboard .header {
     display: flex;
     justify-content: space-between;
@@ -76,7 +73,8 @@
     flex-grow: 1;
 }
 
-.filters select, .filters input {
+.filters select,
+.filters input {
     padding: 10px 15px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -161,7 +159,9 @@
     cursor: not-allowed;
 }
 
-.loading, .empty, .error {
+.loading,
+.empty,
+.error {
     text-align: center;
     padding: 20px;
     font-style: italic;
@@ -171,22 +171,107 @@
     .controls {
         flex-direction: column;
     }
-    
+
     #deals-table {
         font-size: 0.9rem;
         min-width: 100%;
     }
-    
-    #deals-table th, #deals-table td {
+
+    #deals-table th,
+    #deals-table td {
         padding: 8px 10px;
     }
-    
+
     .action-btn {
         padding: 4px 8px;
         font-size: 0.8rem;
     }
-    
-    /* Убедимся, что кнопки видны на мобильных */
+
+    #deals-table td:last-child {
+        position: sticky;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1;
+    }
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: inline-block;
+}
+
+.status-new {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-processing {
+    background: rgba(0, 123, 255, 0.2);
+    color: #fff;
+}
+
+.status-closed {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.action-btn {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.deals-container {
+    overflow-x: auto;
+}
+
+#deals-table a {
+    color: white;
+    transition: all 0.2s;
+}
+
+#deals-table a:hover {
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+#deals-table th,
+#deals-table td {
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+#deals-table td:first-child,
+#deals-table td:last-child {
+    min-width: 60px;
+}
+
+.status-cell {
+    min-width: 100px;
+}
+
+.table-responsive {
+    overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+
+    #deals-table th:nth-child(4),
+    #deals-table td:nth-child(4),
+    #deals-table th:nth-child(5),
+    #deals-table td:nth-child(5) {
+        display: none;
+    }
+
+    .status-cell {
+        min-width: 80px;
+    }
+
     #deals-table td:last-child {
         position: sticky;
         right: 0;

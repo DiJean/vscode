@@ -1,200 +1,38 @@
-<?php
-header('Content-Type: text/html; charset=utf-8');
-?>
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация исполнителя</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
-    <link rel="stylesheet" href="/webapp/css/style.css">
-    <link rel="stylesheet" href="/webapp/css/client-form.css">
-    <link rel="stylesheet" href="/webapp/css/performer-form.css">
-</head>
-<body class="performer-form">
-    <div class="container">
-        <div class="greeting" id="greeting">Регистрация исполнителя</div>
-        <div id="user-container"></div>
-        
-        <div class="form-container">
-            <form id="performer-form">
-                <!-- Форма без изменений -->
-            </form>
-        </div>
-        
-        <!-- Блок для отладки -->
-        <div id="debug-info"></div>
-    </div>
+.location-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
 
-    <script>
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
-        
-        // Основные переменные
-        let tg = null;
-        let user = null;
-        let phoneMask = null;
-        
-        // Отладочная функция
-        function debugLog(message) {
-            console.log(message);
-            const debugInfo = document.getElementById('debug-info');
-            if (debugInfo) {
-                debugInfo.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
-            }
-        }
-        
-        // Основная функция инициализации (без изменений)
-        // ... initApp() без изменений ...
-        
-        // Получение геолокации (без изменений)
-        // ... getLocation() без изменений ...
-        
-        // Отправка формы
-        async function submitForm() {
-            debugLog('Начало отправки формы');
-            
-            const formData = {
-                firstName: document.getElementById('first-name')?.value || '',
-                lastName: document.getElementById('last-name')?.value || '',
-                secondName: document.getElementById('second-name')?.value || '',
-                phone: phoneMask?.unmaskedValue || '',
-                email: document.getElementById('email')?.value || '',
-                city: document.getElementById('city')?.value || '',
-                latitude: document.getElementById('latitude')?.value || '',
-                longitude: document.getElementById('longitude')?.value || '',
-                tgUserId: user?.id || null
-            };
-            
-            debugLog('Данные формы: ' + JSON.stringify(formData));
-            
-            if (!validateForm(formData)) {
-                debugLog('Валидация формы не пройдена');
-                return;
-            }
-            
-            try {
-                debugLog('Попытка сохранения исполнителя');
-                if (tg.showProgress) tg.showProgress();
-                
-                // Сохраняем исполнителя в Bitrix24
-                const result = await savePerformer(formData);
-                
-                if (result.success) {
-                    debugLog('Успешная регистрация, переход в дашборд');
-                    tg.showPopup({
-                        title: 'Успех',
-                        message: 'Регистрация завершена успешно!',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.php';
-                    }, 2000);
-                } else {
-                    debugLog(`Ошибка регистрации: ${result.errorMessage}`);
-                    tg.showPopup({
-                        title: 'Ошибка регистрации',
-                        message: result.errorMessage || 'Не удалось зарегистрироваться',
-                        buttons: [{id: 'ok', type: 'ok'}]
-                    });
-                }
-            } catch (error) {
-                debugLog(`Непредвиденная ошибка: ${error.message}`);
-                console.error(error);
-                tg.showPopup({
-                    title: 'Ошибка',
-                    message: 'Произошла непредвиденная ошибка',
-                    buttons: [{id: 'ok', type: 'ok'}]
-                });
-            } finally {
-                if (tg.hideProgress) tg.hideProgress();
-            }
-        }
-        
-        // Валидация формы (без изменений)
-        // ... validateForm() без изменений ...
-        
-        // Сохранение исполнителя в Bitrix24 - ИСПРАВЛЕННАЯ ФУНКЦИЯ
-        async function savePerformer(data) {
-            debugLog(`Сохранение исполнителя: ${JSON.stringify(data)}`);
-            
-            try {
-                const contactData = {
-                    fields: {
-                        NAME: data.firstName,
-                        LAST_NAME: data.lastName,
-                        SECOND_NAME: data.secondName || '',
-                        PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                        EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                        UF_CRM_685D2956061DB: data.city,
-                        UF_CRM_1751129816: data.latitude,
-                        UF_CRM_1751129854: data.longitude,
-                        UF_CRM_1751128872: String(data.tgUserId),
-                        TYPE_ID: 'EMPLOYEE'  // Важно указать тип контакта
-                    }
-                };
-                
-                debugLog(`Данные для Bitrix24: ${JSON.stringify(contactData)}`);
-                
-                // Реальный запрос к Bitrix24 API
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(contactData)
-                });
-                
-                const result = await response.json();
-                debugLog(`Ответ от Bitrix24: ${JSON.stringify(result)}`);
-                
-                // Проверка на ошибки Bitrix
-                if (result.error) {
-                    throw new Error(result.error_description || `Ошибка Bitrix: ${result.error}`);
-                }
-                
-                if (!result.result) {
-                    throw new Error('Не удалось создать контакт в Bitrix24');
-                }
-                
-                return { 
-                    success: true, 
-                    contactId: result.result,
-                    message: 'Контакт успешно создан в Bitrix24'
-                };
-                
-            } catch (error) {
-                debugLog(`Ошибка сохранения: ${error.message}`);
-                return {
-                    success: false,
-                    errorMessage: `Ошибка при сохранении: ${error.message}`
-                };
-            }
-        }
-        
-        function showFallbackView() {
-            const greeting = document.getElementById('greeting');
-            const userContainer = document.getElementById('user-container');
-            
-            if (greeting) {
-                greeting.textContent = 'Регистрация исполнителя';
-            }
-            
-            if (userContainer) {
-                userContainer.innerHTML = `
-                    <div class="welcome-text">
-                        Для регистрации откройте приложение в Telegram
-                    </div>
-                `;
-            }
-        }
-        
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', () => {
-            debugLog('Страница загружена');
-            initApp();
-        });
-    </script>
-</body>
-</html>
+.location-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.coords-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.form-error {
+    display: none;
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.debug-info {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    max-height: 200px;
+    overflow-y: auto;
+}

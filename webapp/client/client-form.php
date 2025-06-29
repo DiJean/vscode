@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,63 +10,10 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма заявки</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/webapp/css/style.css">
-    <link rel="stylesheet" href="/webapp/css/client-form.css">
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/client-form.css?<?= $version ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .service-checkbox {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .service-checkbox:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .service-checkbox input {
-            margin-right: 10px;
-        }
-
-        .back-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 20px;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .debug-info {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85rem;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .form-input:read-only {
-            background: rgba(255, 255, 255, 0.1);
-            cursor: not-allowed;
-        }
-    </style>
 </head>
 
 <body>
@@ -136,7 +84,15 @@ header('Content-Type: text/html; charset=utf-8');
 
                 <div class="mb-3">
                     <label class="form-label required">Желаемая дата услуги</label>
-                    <input type="date" id="service-date" class="form-control" required min="<?= date('Y-m-d') ?>">
+                    <div class="input-group">
+                        <input type="text" id="service-date" class="form-control date-picker" readonly required>
+                        <button type="button" class="btn btn-outline-light" id="date-picker-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z" />
+                                <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+                            </svg>
+                        </button>
+                    </div>
                     <div class="form-error" id="date-error">Выберите дату</div>
                 </div>
 
@@ -171,10 +127,11 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/webapp/js/bitrix-integration.js?<?= time() ?>"></script>
+    <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const version = '<?= $version ?>';
 
         let tg = null;
         let user = null;
@@ -213,8 +170,58 @@ header('Content-Type: text/html; charset=utf-8');
             });
         }
 
+        function initDatePicker() {
+            const dateInput = document.getElementById('service-date');
+            const dateBtn = document.getElementById('date-picker-btn');
+
+            // Проверка поддержки input type="date"
+            const isDateInputSupported = () => {
+                const input = document.createElement('input');
+                input.setAttribute('type', 'date');
+                const notADateValue = 'not-a-date';
+                input.setAttribute('value', notADateValue);
+                return input.value !== notADateValue;
+            };
+
+            if (isDateInputSupported()) {
+                // Используем нативный date picker
+                const nativeInput = document.createElement('input');
+                nativeInput.type = 'date';
+                nativeInput.className = 'form-control';
+                nativeInput.id = 'service-date';
+                nativeInput.min = new Date().toISOString().split('T')[0];
+                nativeInput.required = true;
+
+                dateInput.replaceWith(nativeInput);
+            } else {
+                // Кастомный date picker для мобильных устройств
+                dateBtn.addEventListener('click', () => {
+                    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.showDatePicker) {
+                        const today = new Date();
+                        Telegram.WebApp.showDatePicker({
+                            min_date: Math.floor(today.getTime() / 1000),
+                            initial_date: Math.floor(today.getTime() / 1000),
+                        }, (selected) => {
+                            if (selected) {
+                                const date = new Date(selected * 1000);
+                                const formattedDate = date.toISOString().split('T')[0];
+                                dateInput.value = formattedDate;
+                            }
+                        });
+                    } else {
+                        // Fallback для браузеров
+                        const today = new Date().toISOString().split('T')[0];
+                        dateInput.type = 'date';
+                        dateInput.min = today;
+                        dateInput.focus();
+                    }
+                });
+            }
+        }
+
         async function initApp() {
             debugLog('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
+            debugLog(`Версия: ${version}`);
 
             // Проверка загрузки BitrixCRM
             if (!isBitrixReady()) {
@@ -312,12 +319,8 @@ header('Content-Type: text/html; charset=utf-8');
                 });
             }
 
-            // Установка минимальной даты
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('service-date');
-            if (dateInput) {
-                dateInput.min = today;
-            }
+            // Инициализация date picker
+            initDatePicker();
 
             // Инициализация кнопки Telegram
             if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.MainButton) {

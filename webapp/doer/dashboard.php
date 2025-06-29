@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+$version = time();
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,95 +10,9 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд исполнителя</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/webapp/css/style.css">
-    <link rel="stylesheet" href="/webapp/css/dashboard.css">
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/dashboard.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: inline-block;
-        }
-
-        .status-new {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-        }
-
-        .status-processing {
-            background: rgba(0, 123, 255, 0.2);
-            color: #fff;
-        }
-
-        .status-closed {
-            background: rgba(40, 167, 69, 0.2);
-            color: #28a745;
-        }
-
-        .action-btn {
-            padding: 5px 10px;
-            font-size: 0.9rem;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-        }
-
-        .deals-container {
-            overflow-x: auto;
-        }
-
-        #deals-table a {
-            color: white;
-            transition: all 0.2s;
-        }
-
-        #deals-table a:hover {
-            text-decoration: underline;
-            opacity: 0.9;
-        }
-
-        #deals-table th,
-        #deals-table td {
-            white-space: nowrap;
-            min-width: 80px;
-        }
-
-        #deals-table td:first-child,
-        #deals-table td:last-child {
-            min-width: 60px;
-        }
-
-        .status-cell {
-            min-width: 100px;
-        }
-
-        .table-responsive {
-            overflow: visible !important;
-        }
-
-        @media (max-width: 768px) {
-
-            #deals-table th:nth-child(4),
-            #deals-table td:nth-child(4),
-            #deals-table th:nth-child(5),
-            #deals-table td:nth-child(5) {
-                display: none;
-            }
-
-            .status-cell {
-                min-width: 80px;
-            }
-
-            #deals-table td:last-child {
-                position: sticky;
-                right: 0;
-                background: rgba(0, 0, 0, 0.7);
-                z-index: 1;
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -170,6 +85,7 @@ header('Content-Type: text/html; charset=utf-8');
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const version = '<?= $version ?>';
 
         let tg = null;
         let user = null;
