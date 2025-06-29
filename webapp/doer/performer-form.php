@@ -419,7 +419,8 @@ header('Content-Type: text/html; charset=utf-8');
                         SECOND_NAME: data.secondName || '',
                         PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                         EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                        TYPE_ID: "EMPLOYEE"
+                        TYPE_ID: "1", // Тип контакта для исполнителя
+                        SOURCE_ID: 'REPEAT_SALE' // Источник для всех контактов
                     }
                 };
                 

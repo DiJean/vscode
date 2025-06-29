@@ -27,7 +27,7 @@ async function findContactByPhone(phone) {
     }
 }
 
-// Создание нового контакта
+// Создание нового контакта (КЛИЕНТ)
 async function createContact(data) {
     try {
         const contactData = {
@@ -35,7 +35,9 @@ async function createContact(data) {
                 NAME: data.firstName,
                 LAST_NAME: data.lastName,
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}]
+                EMAIL: [{ VALUE: data.email, VALUE_TYPE: 'WORK' }],
+                TYPE_ID: 'CLIENT', // Тип контакта для клиента
+                SOURCE_ID: 'REPEAT_SALE' // Источник для всех контактов
             }
         };
         
