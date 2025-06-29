@@ -14,7 +14,7 @@ async function findContactByPhone(phone) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 filter: {'PHONE': phone},
-                select: ['ID', 'NAME', 'LAST_NAME', 'EMAIL']
+                select: ['ID', 'NAME', 'LAST_NAME', 'EMAIL', 'UF_CRM_1751128872']
             })
         });
         
@@ -26,7 +26,6 @@ async function findContactByPhone(phone) {
     }
 }
 
-// В функции createContact
 async function createContact(data) {
     try {
         const contactData = {
@@ -34,10 +33,10 @@ async function createContact(data) {
                 NAME: data.firstName,
                 LAST_NAME: data.lastName,
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                EMAIL: [{ VALUE: data.email, VALUE_TYPE: 'WORK' }],
+                EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
                 TYPE_ID: 'CLIENT',
                 SOURCE_ID: 'REPEAT_SALE',
-                UF_CRM_1751128872: String(data.tgUserId) // Используем правильное поле
+                UF_CRM_1751128872: String(data.tgUserId)
             }
         };
         
@@ -55,7 +54,6 @@ async function createContact(data) {
     }
 }
 
-// В функции updateContact
 async function updateContact(contactId, data) {
     try {
         const contactData = {
@@ -64,7 +62,7 @@ async function updateContact(contactId, data) {
                 NAME: data.firstName,
                 LAST_NAME: data.lastName,
                 EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                UF_CRM_1751128872: String(data.tgUserId) // Используем правильное поле
+                UF_CRM_1751128872: String(data.tgUserId)
             }
         };
         
@@ -90,7 +88,7 @@ async function createDeal(contactId, data) {
                 CONTACT_ID: contactId,
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                 EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                UF_CRM_TG_USER_ID: data.tgUserId, // Добавлено для уведомлений
+                UF_CRM_1751128872: String(data.tgUserId),
                 UF_CRM_685D295664A8A: data.serviceDate,
                 UF_CRM_685D2956BF4C8: data.city,
                 UF_CRM_685D2956C64E0: data.services,
@@ -119,6 +117,19 @@ async function createDeal(contactId, data) {
 
 export async function processServiceRequest(data) {
     try {
+        if (!data.phone || data.phone.length !== 11) {
+            throw new Error('Некорректный номер телефона');
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            throw new Error('Некорректный email');
+        }
+        
+        if (!data.services || data.services.length === 0) {
+            throw new Error('Не выбрано ни одной услуги');
+        }
+        
         const existingContact = await findContactByPhone(data.phone);
         let contactId;
         
