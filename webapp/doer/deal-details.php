@@ -354,6 +354,10 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="detail-value">#${deal.ID}</div>
                 </div>
                 <div class="detail-item">
+                    <div class="detail-label">Статус</div>
+                    <div class="detail-value">${statusText}</div>
+                </div>
+                <div class="detail-item">
                     <div class="detail-label">Заказ</div>
                     <div class="detail-value">${deal.TITLE.replace('Заявка от ', '')}</div>
                 </div>
@@ -373,10 +377,7 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="detail-label">Город</div>
                     <div class="detail-value">${deal.UF_CRM_685D2956BF4C8 || '-'}</div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Статус</div>
-                    <div class="detail-value">${statusText}</div>
-                </div>
+                
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
                     <div class="detail-value">${performerName || '-'}</div>
