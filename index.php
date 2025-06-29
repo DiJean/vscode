@@ -46,7 +46,7 @@ header('Content-Type: text/html; charset=utf-8');
         }
     </style>
 </head>
-<body>
+<body class="theme-beige">
     <div class="container py-4">
         <div class="greeting mb-4" id="greeting">Здравствуйте.</div>
         <div id="user-container" class="mb-4"></div>
