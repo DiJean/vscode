@@ -7,19 +7,11 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Форма заявки</title>
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
     <link rel="stylesheet" href="/webapp/css/client-form.css">
-    
-    <!-- IMask для телефона -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <style>
         .service-checkbox {
             background: rgba(255, 255, 255, 0.1);
@@ -159,9 +151,7 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script src="/webapp/js/telegram-api.js"></script>
     <script src="/webapp/js/bitrix-integration.js"></script>
     
@@ -255,7 +245,8 @@ header('Content-Type: text/html; charset=utf-8');
                 row: document.getElementById('row').value,
                 plot: document.getElementById('plot').value,
                 additionalInfo: document.getElementById('additional-info').value,
-                username: user?.username || null
+                username: user?.username || null,
+                tgUserId: user?.id || null // Добавлено для уведомлений
             };
             
             if (!validateForm(formData)) {
@@ -268,17 +259,14 @@ header('Content-Type: text/html; charset=utf-8');
                 const response = await processServiceRequest(formData);
                 
                 if (response.success) {
-                    // Сохраняем email для будущих запросов
                     localStorage.setItem('clientEmail', formData.email);
                     
-                    // Показываем уведомление об успехе
                     tg.showPopup({
                         title: 'Успешно!',
                         message: 'Заявка успешно создана',
                         buttons: [{id: 'ok', type: 'ok'}]
                     });
                     
-                    // Возвращаем на страницу заявок
                     setTimeout(() => {
                         window.location.href = 'my-services.php';
                     }, 1500);

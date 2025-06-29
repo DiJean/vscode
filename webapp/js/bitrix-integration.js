@@ -7,7 +7,6 @@ const SERVICE_IDS = {
     75: 'Церковная служба'
 };
 
-// Функция поиска контакта по телефону
 async function findContactByPhone(phone) {
     try {
         const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
@@ -27,7 +26,6 @@ async function findContactByPhone(phone) {
     }
 }
 
-// Создание нового контакта (КЛИЕНТ)
 async function createContact(data) {
     try {
         const contactData = {
@@ -36,8 +34,9 @@ async function createContact(data) {
                 LAST_NAME: data.lastName,
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                 EMAIL: [{ VALUE: data.email, VALUE_TYPE: 'WORK' }],
-                TYPE_ID: 'CLIENT', // Тип контакта для клиента
-                SOURCE_ID: 'REPEAT_SALE' // Источник для всех контактов
+                TYPE_ID: 'CLIENT',
+                SOURCE_ID: 'REPEAT_SALE',
+                UF_CRM_TG_USER_ID: data.tgUserId // Добавлено для уведомлений
             }
         };
         
@@ -55,7 +54,6 @@ async function createContact(data) {
     }
 }
 
-// Обновление существующего контакта
 async function updateContact(contactId, data) {
     try {
         const contactData = {
@@ -63,7 +61,8 @@ async function updateContact(contactId, data) {
             fields: {
                 NAME: data.firstName,
                 LAST_NAME: data.lastName,
-                EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}]
+                EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
+                UF_CRM_TG_USER_ID: data.tgUserId // Обновлено для уведомлений
             }
         };
         
@@ -81,7 +80,6 @@ async function updateContact(contactId, data) {
     }
 }
 
-// Создание сделки
 async function createDeal(contactId, data) {
     try {
         const dealData = {
@@ -90,8 +88,7 @@ async function createDeal(contactId, data) {
                 CONTACT_ID: contactId,
                 PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                 EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                
-                // Пользовательские поля
+                UF_CRM_TG_USER_ID: data.tgUserId, // Добавлено для уведомлений
                 UF_CRM_685D295664A8A: data.serviceDate,
                 UF_CRM_685D2956BF4C8: data.city,
                 UF_CRM_685D2956C64E0: data.services,
@@ -99,8 +96,6 @@ async function createDeal(contactId, data) {
                 UF_CRM_1751022940: data.sector,
                 UF_CRM_685D2956D7C70: data.row,
                 UF_CRM_685D2956DF40F: data.plot,
-                
-                // Комментарий
                 COMMENTS: `Telegram: @${data.username || 'отсутствует'}\n` +
                           `Дополнительная информация: ${data.additionalInfo || 'не указано'}`
             }
@@ -120,27 +115,33 @@ async function createDeal(contactId, data) {
     }
 }
 
-// Основная функция обработки заявки
 export async function processServiceRequest(data) {
     try {
-        // Поиск существующего контакта
         const existingContact = await findContactByPhone(data.phone);
         let contactId;
         
         if (existingContact) {
-            // Обновление существующего контакта
             contactId = existingContact.ID;
-            await updateContact(contactId, data);
+            await updateContact(contactId, {
+                firstName: data.fullName.split(' ')[0],
+                lastName: data.fullName.split(' ')[1] || '',
+                email: data.email,
+                tgUserId: data.tgUserId
+            });
         } else {
-            // Создание нового контакта
-            contactId = await createContact(data);
+            contactId = await createContact({
+                firstName: data.fullName.split(' ')[0],
+                lastName: data.fullName.split(' ')[1] || '',
+                phone: data.phone,
+                email: data.email,
+                tgUserId: data.tgUserId
+            });
         }
         
         if (!contactId) {
             throw new Error('Не удалось создать/обновить контакт');
         }
         
-        // Создание сделки
         const dealId = await createDeal(contactId, {
             ...data,
             sector: data.sector || ''
@@ -158,7 +159,6 @@ export async function processServiceRequest(data) {
     }
 }
 
-// Получение списка заявок пользователя
 export async function getUserRequests(email) {
     const filter = {
         filter: {'EMAIL': email},
@@ -177,7 +177,6 @@ export async function getUserRequests(email) {
     }).then(response => response.json());
 }
 
-// Поиск исполнителя по Telegram ID
 export async function findPerformerByTgId(tgId) {
     try {
         const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {

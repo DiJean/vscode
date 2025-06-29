@@ -7,18 +7,10 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация исполнителя</title>
-    
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
-    
-    <!-- IMask для телефона -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <style>
         .form-container {
             background: rgba(255, 255, 255, 0.1);
@@ -26,7 +18,6 @@ header('Content-Type: text/html; charset=utf-8');
             padding: 25px;
             margin-top: 20px;
         }
-        
         .location-btn {
             width: 100%;
             padding: 10px;
@@ -37,25 +28,21 @@ header('Content-Type: text/html; charset=utf-8');
             margin-bottom: 15px;
             transition: all 0.3s;
         }
-        
         .location-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
-        
         .coords-container {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
         }
-        
         .form-error {
             display: none;
             color: #ff6b6b;
             font-size: 0.9rem;
             margin-top: 5px;
         }
-        
         .debug-info {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
@@ -139,7 +126,6 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="debug-info" id="debug-info"></div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -419,15 +405,15 @@ header('Content-Type: text/html; charset=utf-8');
                         SECOND_NAME: data.secondName || '',
                         PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
                         EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
-                        TYPE_ID: "1", // Тип контакта для исполнителя
-                        SOURCE_ID: 'REPEAT_SALE' // Источник для всех контактов
+                        TYPE_ID: "1",
+                        SOURCE_ID: 'REPEAT_SALE',
+                        UF_CRM_685D2956061DB: data.city,
+                        UF_CRM_1751129816: data.latitude,
+                        UF_CRM_1751129854: data.longitude,
+                        UF_CRM_1751128872: String(data.tgUserId),
+                        UF_CRM_TG_USER_ID: data.tgUserId // Добавлено для уведомлений
                     }
                 };
-                
-                if (data.city) contactData.fields.UF_CRM_685D2956061DB = data.city;
-                if (data.latitude) contactData.fields.UF_CRM_1751129816 = data.latitude;
-                if (data.longitude) contactData.fields.UF_CRM_1751129854 = data.longitude;
-                if (data.tgUserId) contactData.fields.UF_CRM_1751128872 = String(data.tgUserId);
                 
                 debugLog('Отправляемые данные: ' + JSON.stringify(contactData));
                 
@@ -441,8 +427,7 @@ header('Content-Type: text/html; charset=utf-8');
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(result));
                 
                 if (result.error) {
-                    let errorMessage = result.error_description || 'Ошибка при создании контакта';
-                    throw new Error(`Bitrix24: ${errorMessage} (${result.error})`);
+                    throw new Error(result.error_description || `Ошибка Bitrix: ${result.error}`);
                 }
                 
                 if (!result.result) {
