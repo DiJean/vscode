@@ -362,6 +362,6 @@ body {
     --secondary-color: #fb8c00;
 }
 .theme-beige {
-    --primary-color: #654321;
+    --primary-color: #654321 !important;
     --secondary-color: #FFF44F;
 }
