@@ -192,65 +192,65 @@ header('Content-Type: text/html; charset=utf-8');
         async function initApp() {
             debugLog('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
 
-            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                debugLog('Telegram WebApp API недоступно');
-                showFallbackView();
-                return;
+            // Основной способ получения данных - из главной страницы
+            const storedUser = sessionStorage.getItem('telegramUser') || localStorage.getItem('telegramUser');
+            if (storedUser) {
+                user = JSON.parse(storedUser);
+                debugLog('Пользователь восстановлен из хранилища');
             }
 
-            tg = Telegram.WebApp;
+            // Если в хранилище нет данных, пробуем получить из WebApp
+            if (!user && typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                tg = Telegram.WebApp;
+                try {
+                    tg.ready();
+                    user = tg.initDataUnsafe?.user || {};
+                    debugLog('Пользователь получен из WebApp');
 
-            try {
-                tg.ready();
-                tg.enableClosingConfirmation();
-
-                if (tg.isExpanded !== true && typeof tg.expand === 'function') {
-                    tg.expand();
-                }
-
-                // Получаем данные пользователя из WebApp
-                user = tg.initDataUnsafe?.user || {};
-
-                // Если в WebApp нет данных, пробуем получить из localStorage
-                if (!user.id) {
-                    const storedUser = localStorage.getItem('telegramUser');
-                    if (storedUser) {
-                        user = JSON.parse(storedUser);
-                        debugLog('Пользователь восстановлен из localStorage');
-                    }
-                } else {
-                    // Сохраняем пользователя в localStorage
+                    // Сохраняем для будущего использования
+                    sessionStorage.setItem('telegramUser', JSON.stringify(user));
                     localStorage.setItem('telegramUser', JSON.stringify(user));
+                } catch (e) {
+                    debugLog('Ошибка получения данных из WebApp: ' + e.message);
                 }
+            }
 
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const fullName = `${firstName} ${lastName}`.trim() || 'Клиент';
+            // Если данные все еще не получены - создаем пустой объект
+            if (!user) {
+                user = {};
+                debugLog('Данные пользователя не найдены');
+            }
 
-                debugLog(`Пользователь Telegram: ${fullName} (ID: ${user.id || 'нет'})`);
+            const firstName = user.first_name || '';
+            const lastName = user.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim() || 'Клиент';
 
-                document.getElementById('greeting').textContent = 'Оформление заявки';
+            debugLog(`Имя пользователя: ${fullName}`);
+            debugLog(`Telegram ID: ${user.id || 'не задан'}`);
 
-                const userContainer = document.getElementById('user-container');
-                if (userContainer) {
-                    userContainer.innerHTML = `
-                        <div class="d-flex flex-column align-items-center">
-                            <div class="avatar mb-3">
-                                ${user.photo_url ? 
-                                    `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle" style="width:80px;height:80px;">` : 
-                                    `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold" style="width:80px;height:80px;font-size:2rem;">${firstName.charAt(0) || 'К'}</div>`
-                                }
-                            </div>
-                            <div class="user-name fs-5">${fullName}</div>
+            document.getElementById('greeting').textContent = 'Оформление заявки';
+
+            const userContainer = document.getElementById('user-container');
+            if (userContainer) {
+                userContainer.innerHTML = `
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="avatar mb-3">
+                            ${user.photo_url ? 
+                                `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle" style="width:80px;height:80px;">` : 
+                                `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold" style="width:80px;height:80px;font-size:2rem;">${firstName.charAt(0) || 'К'}</div>`
+                            }
                         </div>
-                    `;
-                }
+                        <div class="user-name fs-5">${fullName}</div>
+                    </div>
+                `;
+            }
 
-                // Устанавливаем имя пользователя в поле (только для чтения)
-                document.getElementById('full-name').value = fullName;
+            // Устанавливаем имя пользователя в поле (только для чтения)
+            document.getElementById('full-name').value = fullName;
 
-                // Инициализация маски телефона с предзаполненным +7
-                const phoneInput = document.getElementById('phone');
+            // Инициализация маски телефона с предзаполненным +7
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
                 phoneMask = new IMask(phoneInput, {
                     mask: '+{7} (000) 000-00-00',
                     lazy: false,
@@ -274,20 +274,21 @@ header('Content-Type: text/html; charset=utf-8');
                         phoneMask.updateValue();
                     }
                 });
+            }
 
-                // Установка минимальной даты
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('service-date').min = today;
+            // Установка минимальной даты
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('service-date');
+            if (dateInput) {
+                dateInput.min = today;
+            }
 
-                if (tg.MainButton) {
-                    tg.MainButton.setText("Отправить заявку");
-                    tg.MainButton.onClick(submitForm);
-                    tg.MainButton.show();
-                }
-
-            } catch (e) {
-                debugLog(`Ошибка инициализации: ${e.message}`);
-                showFallbackView();
+            // Инициализация кнопки Telegram
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.MainButton) {
+                tg = Telegram.WebApp;
+                tg.MainButton.setText("Отправить заявку");
+                tg.MainButton.onClick(submitForm);
+                tg.MainButton.show();
             }
         }
 
@@ -321,11 +322,11 @@ header('Content-Type: text/html; charset=utf-8');
             try {
                 debugLog('Попытка отправки данных в Bitrix24');
 
-                if (tg.MainButton) {
+                if (tg && tg.MainButton) {
                     tg.MainButton.setText("Отправка...");
                     tg.MainButton.disable();
                 }
-                if (tg.showProgress) tg.showProgress();
+                if (tg && tg.showProgress) tg.showProgress();
 
                 const response = await processServiceRequest(formData);
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(response));
@@ -333,14 +334,18 @@ header('Content-Type: text/html; charset=utf-8');
                 if (response.success) {
                     localStorage.setItem('userEmail', formData.email);
 
-                    tg.showPopup({
-                        title: 'Успешно!',
-                        message: 'Заявка успешно создана',
-                        buttons: [{
-                            id: 'ok',
-                            type: 'ok'
-                        }]
-                    });
+                    if (tg && tg.showPopup) {
+                        tg.showPopup({
+                            title: 'Успешно!',
+                            message: 'Заявка успешно создана',
+                            buttons: [{
+                                id: 'ok',
+                                type: 'ok'
+                            }]
+                        });
+                    } else {
+                        alert('Заявка успешно создана');
+                    }
 
                     setTimeout(() => {
                         window.location.href = 'my-services.php';
@@ -349,28 +354,36 @@ header('Content-Type: text/html; charset=utf-8');
                     const errorMsg = response.error || 'Не удалось отправить заявку. Попробуйте позже.';
                     debugLog(`Ошибка создания заявки: ${errorMsg}`);
 
+                    if (tg && tg.showPopup) {
+                        tg.showPopup({
+                            title: 'Ошибка',
+                            message: errorMsg,
+                            buttons: [{
+                                id: 'ok',
+                                type: 'ok'
+                            }]
+                        });
+                    } else {
+                        alert('Ошибка: ' + errorMsg);
+                    }
+                }
+            } catch (error) {
+                debugLog(`Критическая ошибка: ${error.message}`);
+                if (tg && tg.showPopup) {
                     tg.showPopup({
                         title: 'Ошибка',
-                        message: errorMsg,
+                        message: 'Произошла ошибка при отправке данных: ' + error.message,
                         buttons: [{
                             id: 'ok',
                             type: 'ok'
                         }]
                     });
+                } else {
+                    alert('Ошибка: ' + error.message);
                 }
-            } catch (error) {
-                debugLog(`Критическая ошибка: ${error.message}`);
-                tg.showPopup({
-                    title: 'Ошибка',
-                    message: 'Произошла ошибка при отправке данных: ' + error.message,
-                    buttons: [{
-                        id: 'ok',
-                        type: 'ok'
-                    }]
-                });
             } finally {
-                if (tg.hideProgress) tg.hideProgress();
-                if (tg.MainButton) {
+                if (tg && tg.hideProgress) tg.hideProgress();
+                if (tg && tg.MainButton) {
                     tg.MainButton.setText("Отправить заявку");
                     tg.MainButton.enable();
                 }
