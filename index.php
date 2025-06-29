@@ -56,14 +56,14 @@ header('Content-Type: text/html; charset=utf-8');
                 <div class="role-card" data-role="client">
                     <div class="role-icon">👤</div>
                     <h3>Клиент</h3>
-                    <p>Хочу заказать услуги</p>
+                    <p>Хочу заказать услугу</p>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="role-card" data-role="performer">
                     <div class="role-icon">👷</div>
                     <h3>Исполнитель</h3>
-                    <p>Хочу выполнять заказы</p>
+                    <p>Готов выполнять заказы</p>
                 </div>
             </div>
         </div>
