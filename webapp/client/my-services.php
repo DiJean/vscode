@@ -63,13 +63,34 @@ $version = time();
             // Сохраняем для будущего использования
             localStorage.setItem('tgUserId', tgUserId);
 
-            if (typeof BitrixCRM !== 'undefined' && BitrixCRM.getUserRequests) {
-                loadRequests(tgUserId);
-            } else {
+            // Загружаем BitrixCRM и затем запрашиваем данные
+            loadBitrixIntegration().then(() => {
+                if (typeof BitrixCRM !== 'undefined' && BitrixCRM.getUserRequests) {
+                    loadRequests(tgUserId);
+                } else {
+                    showError();
+                }
+            }).catch(error => {
+                console.error('Ошибка загрузки BitrixCRM:', error);
                 showError();
-            }
+            });
         } else {
             showNoRequests();
+        }
+
+        function loadBitrixIntegration() {
+            return new Promise((resolve, reject) => {
+                if (typeof BitrixCRM !== 'undefined') {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = '/webapp/js/bitrix-integration.js?<?= $version ?>';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
         }
 
         function loadRequests(tgUserId) {
@@ -86,14 +107,28 @@ $version = time();
         function renderRequests(deals) {
             let html = '';
 
-            if (deals.length === 0) {
+            if (!deals || deals.length === 0) {
                 showNoRequests();
                 return;
             }
 
             deals.forEach(deal => {
                 const date = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
-                const service = deal.UF_CRM_685D2956C64E0 || 'Услуга не указана';
+
+                // Преобразуем услуги в читаемый вид
+                let serviceNames = 'Услуга не указана';
+                if (deal.UF_CRM_685D2956C64E0) {
+                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) ?
+                        deal.UF_CRM_685D2956C64E0 : [deal.UF_CRM_685D2956C64E0];
+
+                    serviceNames = serviceIds.map(id => {
+                        if (id === '69') return 'Уход';
+                        if (id === '71') return 'Цветы';
+                        if (id === '73') return 'Ремонт';
+                        if (id === '75') return 'Церковная служба';
+                        return id;
+                    }).join(', ');
+                }
 
                 let statusClass = '';
                 let statusText = deal.STAGE_ID || 'Новый';
@@ -116,7 +151,7 @@ $version = time();
 
                 html += `
                     <div class="request-item">
-                        <div class="request-service">${service}</div>
+                        <div class="request-service">${serviceNames}</div>
                         <div class="request-date">Создано: ${date}</div>
                         <div class="request-status ${statusClass}">${statusText}</div>
                     </div>
@@ -138,15 +173,14 @@ $version = time();
 
         function showError() {
             document.getElementById('requests-list').innerHTML = `
-                <div class="request-item">
-                    <div class="request-service">Ошибка загрузки данных</div>
-                    <div class="request-date">Попробуйте обновить страницу</div>
+                <div class="no-requests">
+                    <div class="no-requests-icon">⚠️</div>
+                    <h3>Ошибка загрузки данных</h3>
+                    <p>Попробуйте обновить страницу или зайти позже</p>
                 </div>
             `;
         }
     </script>
-
-    <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 </body>
 
 </html>
