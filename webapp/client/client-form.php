@@ -13,54 +13,7 @@ header('Content-Type: text/html; charset=utf-8');
     <link rel="stylesheet" href="/webapp/css/client-form.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .service-checkbox {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
 
-        .service-checkbox:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .service-checkbox input {
-            margin-right: 10px;
-        }
-
-        .back-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 20px;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .debug-info {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85rem;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-    </style>
 </head>
 
 <body>
@@ -83,7 +36,7 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="col-md-6">
                         <label class="form-label required">Телефон</label>
                         <input type="tel" id="phone" class="form-control" placeholder="+7 (999) 999-99-99" required>
-                        <div class="form-error" id="phone-error">Введите корректный номер телефона (11 цифр)</div>
+                        <div class="form-error" id="phone-error">Введите 10 цифр номера телефона</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label required">Email</label>
@@ -227,9 +180,10 @@ header('Content-Type: text/html; charset=utf-8');
                     `;
                 }
 
+                // Устанавливаем имя пользователя в поле (только для чтения)
                 document.getElementById('full-name').value = fullName;
 
-                // Инициализация маски телефона
+                // Инициализация маски телефона с предзаполненным +7
                 const phoneInput = document.getElementById('phone');
                 phoneMask = new IMask(phoneInput, {
                     mask: '+{7} (000) 000-00-00',
@@ -243,8 +197,13 @@ header('Content-Type: text/html; charset=utf-8');
                     }
                 });
 
+                // Устанавливаем начальное значение: +7 (пользователь будет вводить только цифры)
+                phoneMask.unmaskedValue = '7';
+                phoneMask.updateValue();
+
+                // При фокусе сохраняем +7, если поле пустое
                 phoneInput.addEventListener('focus', function() {
-                    if (!this.value.trim()) {
+                    if (phoneMask.unmaskedValue === '') {
                         phoneMask.unmaskedValue = '7';
                         phoneMask.updateValue();
                     }
@@ -361,8 +320,9 @@ header('Content-Type: text/html; charset=utf-8');
                 el.style.display = 'none';
             });
 
-            // Проверка телефона (11 цифр)
-            if (!formData.phone || formData.phone.length !== 11) {
+            // Проверка телефона (10 цифр после +7)
+            if (!formData.phone || formData.phone.length !== 11 || formData.phone[0] !== '7') {
+                document.getElementById('phone-error').textContent = 'Введите 10 цифр номера телефона после +7';
                 document.getElementById('phone-error').style.display = 'block';
                 isValid = false;
             }
