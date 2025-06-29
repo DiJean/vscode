@@ -8,13 +8,8 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор роли</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         .role-card {
@@ -75,7 +70,6 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -144,7 +138,6 @@ header('Content-Type: text/html; charset=utf-8');
                         localStorage.setItem('selectedRole', role);
                         sessionStorage.setItem('selectedRole', role);
 
-                        // ИЗМЕНЕНА ЛОГИКА ПЕРЕХОДА ДЛЯ КЛИЕНТА
                         if (role === 'client') {
                             window.location.href = '/webapp/client/my-services.php';
                         } else {

@@ -8,16 +8,10 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд исполнителя</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
     <link rel="stylesheet" href="/webapp/css/dashboard.css">
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <style>
         .status-badge {
             padding: 5px 10px;
@@ -50,7 +44,6 @@ header('Content-Type: text/html; charset=utf-8');
             background-color: rgba(255, 255, 255, 0.05) !important;
         }
 
-        /* Новые стили */
         .deals-container {
             overflow-x: auto;
         }
@@ -76,34 +69,27 @@ header('Content-Type: text/html; charset=utf-8');
             min-width: 60px;
         }
 
-        /* Убедимся, что статус виден */
         .status-cell {
             min-width: 100px;
         }
 
-        /* Исправление для table-responsive */
         .table-responsive {
             overflow: visible !important;
         }
 
-        /* Скрываем менее важные колонки на мобильных */
         @media (max-width: 768px) {
 
             #deals-table th:nth-child(4),
             #deals-table td:nth-child(4),
-            /* Создана */
             #deals-table th:nth-child(5),
             #deals-table td:nth-child(5) {
-                /* Исполнение */
                 display: none;
             }
 
-            /* Увеличим ширину для статуса */
             .status-cell {
                 min-width: 80px;
             }
 
-            /* Фиксируем колонку действий */
             #deals-table td:last-child {
                 position: sticky;
                 right: 0;
@@ -146,7 +132,6 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
 
         <div class="deals-container">
-            <!-- УБРАН overflow-hidden ИЗ table-responsive -->
             <div class="table-responsive rounded-3">
                 <table class="table table-hover align-middle mb-0" id="deals-table">
                     <thead class="table-dark">
@@ -181,7 +166,6 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -382,7 +366,6 @@ header('Content-Type: text/html; charset=utf-8');
                 let statusClass = '';
                 let statusText = deal.STAGE_ID || '';
 
-                // СООТВЕТСТВИЕ СТАТУСОВ
                 if (statusText === 'NEW') {
                     statusText = 'Новый заказ';
                     statusClass = 'status-new';
@@ -406,7 +389,6 @@ header('Content-Type: text/html; charset=utf-8');
                     statusClass = 'status-closed';
                 }
 
-                // СДЕЛАЕМ ID И КНОПКУ ПРОСМОТРА КЛИКАБЕЛЬНЫМИ
                 dealsList.innerHTML += `
                     <tr>
                         <td>

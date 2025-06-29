@@ -8,15 +8,9 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Детали заявки</title>
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Наши стили -->
     <link rel="stylesheet" href="/webapp/css/style.css">
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <style>
         .detail-card {
             background: rgba(255, 255, 255, 0.1);
@@ -166,7 +160,6 @@ header('Content-Type: text/html; charset=utf-8');
         <div class="completion-section" id="completion-section" style="display: none;">
             <h3 class="mb-4">Завершение заказа</h3>
 
-            <!-- Измененные поля загрузки файлов -->
             <div class="photo-upload">
                 <div class="photo-preview" id="before-preview">
                     <span>Фото до работ</span>
@@ -195,7 +188,6 @@ header('Content-Type: text/html; charset=utf-8');
         <a href="dashboard.php" class="back-btn">← Назад к списку заявок</a>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -296,7 +288,6 @@ header('Content-Type: text/html; charset=utf-8');
 
                 renderDealDetails(deal);
 
-                // Показываем секцию завершения если исполнитель и статус "В работе"
                 if (performerContact && deal.STAGE_ID === 'EXECUTING') {
                     document.getElementById('completion-section').style.display = 'block';
                 }
@@ -338,7 +329,6 @@ header('Content-Type: text/html; charset=utf-8');
 
             let statusText = deal.STAGE_ID || 'Неизвестно';
 
-            // Соответствие статусов
             if (statusText === 'NEW') statusText = 'Новый заказ';
             else if (statusText === 'PREPARATION') statusText = 'Подготовка';
             else if (statusText === 'PREPAYMENT_INVOICE') statusText = 'Оплата';
@@ -405,7 +395,6 @@ header('Content-Type: text/html; charset=utf-8');
             `;
         }
 
-        // Обработчики загрузки фото
         document.getElementById('before-photo').addEventListener('change', function(e) {
             handlePhotoUpload(e.target.files[0], 'before-preview');
             beforePhotoFile = e.target.files[0];
@@ -451,7 +440,6 @@ header('Content-Type: text/html; charset=utf-8');
             completeBtn.disabled = !(beforePhotoFile && afterPhotoFile);
         }
 
-        // Обработчик завершения сделки
         document.getElementById('complete-deal-btn').addEventListener('click', async function() {
             const dealId = getUrlParameter('id');
             const btn = this;

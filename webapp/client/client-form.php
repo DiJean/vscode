@@ -81,7 +81,7 @@ header('Content-Type: text/html; charset=utf-8');
             <form id="service-form">
                 <div class="mb-3">
                     <label class="form-label required">Имя и фамилия</label>
-                    <input type="text" id="full-name" class="form-control">
+                    <input type="text" id="full-name" class="form-control" readonly>
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -189,8 +189,44 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
 
+        function isBitrixReady() {
+            if (typeof BitrixCRM === 'undefined') {
+                debugLog('BitrixCRM не загружен!');
+                return false;
+            }
+
+            if (typeof BitrixCRM.processServiceRequest !== 'function') {
+                debugLog('Функция processServiceRequest недоступна!');
+                return false;
+            }
+
+            return true;
+        }
+
+        async function loadBitrixModule() {
+            return new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = `/webapp/js/bitrix-integration.js?${Date.now()}`;
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
+            });
+        }
+
         async function initApp() {
             debugLog('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
+
+            // Проверка загрузки BitrixCRM
+            if (!isBitrixReady()) {
+                debugLog('Попытка перезагрузки модуля BitrixCRM...');
+                const reloadSuccess = await loadBitrixModule();
+
+                if (!reloadSuccess || !isBitrixReady()) {
+                    debugLog('КРИТИЧЕСКАЯ ОШИБКА: Не удалось загрузить BitrixCRM');
+                    alert('Системная ошибка. Пожалуйста, перезагрузите страницу.');
+                    return;
+                }
+            }
 
             // Основной способ получения данных - из главной страницы
             const storedUser = sessionStorage.getItem('telegramUser') || localStorage.getItem('telegramUser');
@@ -295,6 +331,12 @@ header('Content-Type: text/html; charset=utf-8');
         async function submitForm() {
             debugLog('=== ОТПРАВКА ФОРМЫ ===');
 
+            if (!isBitrixReady()) {
+                debugLog('ОШИБКА: BitrixCRM недоступен при отправке');
+                alert('Системная ошибка. Попробуйте перезагрузить страницу.');
+                return;
+            }
+
             const formData = {
                 fullName: document.getElementById('full-name').value,
                 phone: phoneMask?.unmaskedValue || '',
@@ -328,7 +370,6 @@ header('Content-Type: text/html; charset=utf-8');
                 }
                 if (tg && tg.showProgress) tg.showProgress();
 
-                // Исправлено: вызов через глобальный объект
                 const response = await BitrixCRM.processServiceRequest(formData);
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(response));
 
@@ -401,7 +442,6 @@ header('Content-Type: text/html; charset=utf-8');
                 el.style.display = 'none';
             });
 
-            // Улучшенная проверка телефона
             const phoneRegex = /^7\d{10}$/;
             if (!phoneRegex.test(formData.phone)) {
                 document.getElementById('phone-error').textContent = 'Введите 10 цифр номера телефона после +7 (например: 79650035577)';
@@ -409,26 +449,22 @@ header('Content-Type: text/html; charset=utf-8');
                 isValid = false;
             }
 
-            // Проверка email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(formData.email)) {
                 document.getElementById('email-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Проверка услуг
             if (formData.services.length === 0) {
                 document.getElementById('services-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Проверка города
             if (!formData.city.trim()) {
                 document.getElementById('city-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Проверка даты
             if (!formData.serviceDate) {
                 document.getElementById('date-error').textContent = 'Выберите дату';
                 document.getElementById('date-error').style.display = 'block';
