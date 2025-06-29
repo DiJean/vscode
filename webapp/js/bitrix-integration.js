@@ -1,14 +1,14 @@
 (function() {
     const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
 
-    async function findContactByPhone(phone) {
+    async function findContactByTgId(tgId) {
         try {
             const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    filter: {'PHONE': phone},
-                    select: ['ID', 'NAME', 'LAST_NAME', 'EMAIL', 'UF_CRM_1751128872']
+                    filter: {'UF_CRM_1751128872': String(tgId)},
+                    select: ['ID']
                 })
             });
             
@@ -16,6 +16,62 @@
             return data.result && data.result.length > 0 ? data.result[0] : null;
         } catch (error) {
             console.error('Ошибка поиска контакта:', error);
+            return null;
+        }
+    }
+
+    async function getDealsByContactId(contactId) {
+        try {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    filter: {'CONTACT_ID': contactId},
+                    select: [
+                        'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID',
+                        'UF_CRM_685D295664A8A',
+                        'UF_CRM_685D2956BF4C8',
+                        'UF_CRM_685D2956C64E0'
+                    ],
+                    order: { "DATE_CREATE": "DESC" }
+                })
+            });
+            
+            const data = await response.json();
+            return data.result || [];
+        } catch (error) {
+            console.error('Ошибка загрузки сделок:', error);
+            return [];
+        }
+    }
+
+    async function getUserRequests(tgUserId) {
+        try {
+            const contact = await findContactByTgId(tgUserId);
+            if (!contact) return [];
+            
+            return await getDealsByContactId(contact.ID);
+        } catch (error) {
+            console.error('Ошибка получения заявок:', error);
+            return [];
+        }
+    }
+
+    async function findPerformerByTgId(tgId) {
+        try {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    filter: {'UF_CRM_1751128872': String(tgId)},
+                    select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
+                })
+            });
+            
+            const data = await response.json();
+            return data.result && data.result.length > 0 ? data.result[0] : null;
+        } catch (error) {
+            console.error('Ошибка поиска исполнителя:', error);
             return null;
         }
     }
@@ -125,7 +181,7 @@
                 throw new Error('Не выбрано ни одной услуги');
             }
             
-            const existingContact = await findContactByPhone(data.phone);
+            const existingContact = await findContactByTgId(data.tgUserId);
             let contactId;
             
             if (existingContact) {
@@ -164,43 +220,6 @@
         } catch (error) {
             console.error('Ошибка обработки заявки:', error);
             return { success: false, error: error.message };
-        }
-    }
-
-    async function getUserRequests(email) {
-        const filter = {
-            filter: {'EMAIL': email},
-            select: [
-                'ID', 'TITLE', 'DATE_CREATE', 'STATUS_ID', 
-                'UF_CRM_1749802456', 'UF_CRM_1749802469',
-                'UF_CRM_1749802574', 'COMMENTS'
-            ],
-            order: { "DATE_CREATE": "DESC" }
-        };
-        
-        return fetch(`${BITRIX_WEBHOOK}crm.lead.list`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(filter),
-        }).then(response => response.json());
-    }
-
-    async function findPerformerByTgId(tgId) {
-        try {
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    filter: {'UF_CRM_1751128872': String(tgId)},
-                    select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
-                })
-            });
-            
-            const data = await response.json();
-            return data.result && data.result.length > 0 ? data.result[0] : null;
-        } catch (error) {
-            console.error('Ошибка поиска исполнителя:', error);
-            return null;
         }
     }
 

@@ -253,6 +253,11 @@ $version = time();
                     // Сохраняем для будущего использования
                     sessionStorage.setItem('telegramUser', JSON.stringify(user));
                     localStorage.setItem('telegramUser', JSON.stringify(user));
+
+                    // Сохраняем Telegram User ID
+                    if (user.id) {
+                        localStorage.setItem('tgUserId', user.id);
+                    }
                 } catch (e) {
                     debugLog('Ошибка получения данных из WebApp: ' + e.message);
                 }
@@ -377,7 +382,10 @@ $version = time();
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(response));
 
                 if (response.success) {
-                    localStorage.setItem('userEmail', formData.email);
+                    // Сохраняем Telegram User ID для будущих запросов
+                    if (formData.tgUserId) {
+                        localStorage.setItem('tgUserId', formData.tgUserId);
+                    }
 
                     if (tg && tg.showPopup) {
                         tg.showPopup({

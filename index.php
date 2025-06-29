@@ -69,6 +69,11 @@ $version = time();
                 let user = null;
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     user = tg.initDataUnsafe.user;
+
+                    // Сохраняем Telegram User ID
+                    if (user.id) {
+                        localStorage.setItem('tgUserId', user.id);
+                    }
                 }
 
                 let userHtml = '';
