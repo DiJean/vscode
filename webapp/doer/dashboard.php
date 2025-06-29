@@ -123,9 +123,13 @@ header('Content-Type: text/html; charset=utf-8');
             <div class="col-md-4">
                 <select class="form-select" id="status-filter">
                     <option value="">Все статусы</option>
-                    <option value="NEW">Новые</option>
-                    <option value="PROCESSING">В работе</option>
-                    <option value="CLOSED">Завершённые</option>
+                    <option value="NEW">Новый заказ</option>
+                    <option value="PREPARATION">Подготовка</option>
+                    <option value="PREPAYMENT_INVOICE">Оплата</option>
+                    <option value="EXECUTING">В работе</option>
+                    <option value="WON">Успешно завершена</option>
+                    <option value="LOSE">Не нашли участок</option>
+                    <option value="APOLOGY">Анализ неудачи</option>
                 </select>
             </div>
             <div class="col-md-5">
@@ -360,14 +364,27 @@ header('Content-Type: text/html; charset=utf-8');
                 let statusClass = '';
                 let statusText = deal.STAGE_ID || '';
                 
+                // СООТВЕТСТВИЕ СТАТУСОВ
                 if (statusText === 'NEW') {
-                    statusText = 'Новая';
+                    statusText = 'Новый заказ';
                     statusClass = 'status-new';
-                } else if (statusText === 'PROCESSING') {
+                } else if (statusText === 'PREPARATION') {
+                    statusText = 'Подготовка';
+                    statusClass = 'status-processing';
+                } else if (statusText === 'PREPAYMENT_INVOICE') {
+                    statusText = 'Оплата';
+                    statusClass = 'status-processing';
+                } else if (statusText === 'EXECUTING') {
                     statusText = 'В работе';
                     statusClass = 'status-processing';
-                } else if (statusText === 'CLOSED') {
-                    statusText = 'Завершена';
+                } else if (statusText === 'WON') {
+                    statusText = 'Успешно завершена';
+                    statusClass = 'status-closed';
+                } else if (statusText === 'LOSE') {
+                    statusText = 'Не нашли участок';
+                    statusClass = 'status-closed';
+                } else if (statusText === 'APOLOGY') {
+                    statusText = 'Анализ неудачи';
                     statusClass = 'status-closed';
                 }
                 

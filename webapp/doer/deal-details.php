@@ -214,9 +214,15 @@ header('Content-Type: text/html; charset=utf-8');
             }
             
             let statusText = deal.STAGE_ID || 'Неизвестно';
-            if (statusText === 'NEW') statusText = 'Новая';
-            else if (statusText === 'PROCESSING') statusText = 'В работе';
-            else if (statusText === 'CLOSED') statusText = 'Завершена';
+            
+            // СООТВЕТСТВИЕ СТАТУСОВ
+            if (statusText === 'NEW') statusText = 'Новый заказ';
+            else if (statusText === 'PREPARATION') statusText = 'Подготовка';
+            else if (statusText === 'PREPAYMENT_INVOICE') statusText = 'Оплата';
+            else if (statusText === 'EXECUTING') statusText = 'В работе';
+            else if (statusText === 'WON') statusText = 'Успешно завершена';
+            else if (statusText === 'LOSE') statusText = 'Не нашли участок';
+            else if (statusText === 'APOLOGY') statusText = 'Анализ неудачи';
             
             const dealContainer = document.getElementById('deal-container');
             dealContainer.innerHTML = `
