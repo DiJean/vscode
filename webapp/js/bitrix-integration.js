@@ -6,7 +6,9 @@
         '69': 'Уход',
         '71': 'Цветы',
         '73': 'Ремонт',
-        '75': 'Церковная служба'
+        '75': 'Церковная служба',
+        '77': 'Установка памятника',
+        '79': 'Благоустройство'
     };
 
     async function findContactByTgId(tgId) {
@@ -51,17 +53,7 @@
             // Преобразуем ID услуг в названия
             if (data.result) {
                 data.result.forEach(deal => {
-                    if (deal.UF_CRM_685D2956C64E0) {
-                        const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) 
-                            ? deal.UF_CRM_685D2956C64E0 
-                            : [deal.UF_CRM_685D2956C64E0];
-                        
-                        deal.services = serviceIds.map(id => 
-                            serviceNames[id] || id
-                        ).join(', ');
-                    } else {
-                        deal.services = 'Услуга не указана';
-                    }
+                    deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
                 });
             }
             
@@ -70,6 +62,24 @@
             console.error('Ошибка загрузки сделок:', error);
             return [];
         }
+    }
+
+    // Функция преобразования ID услуг в названия
+    function mapServices(serviceField) {
+        if (!serviceField) return 'Услуга не указана';
+        
+        let serviceIds = [];
+        if (Array.isArray(serviceField)) {
+            serviceIds = serviceField;
+        } else if (typeof serviceField === 'string') {
+            serviceIds = serviceField.split(',');
+        } else {
+            serviceIds = [String(serviceField)];
+        }
+        
+        return serviceIds.map(id => 
+            serviceNames[id] || `Услуга #${id}`
+        ).join(', ');
     }
 
     async function getPerformersInfo(performerIds) {
@@ -119,20 +129,7 @@
             
             if (data.result) {
                 const deal = data.result;
-                
-                // Преобразуем услуги
-                if (deal.UF_CRM_685D2956C64E0) {
-                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) 
-                        ? deal.UF_CRM_685D2956C64E0 
-                        : [deal.UF_CRM_685D2956C64E0];
-                    
-                    deal.services = serviceIds.map(id => 
-                        serviceNames[id] || id
-                    ).join(', ');
-                } else {
-                    deal.services = 'Услуга не указана';
-                }
-                
+                deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
                 return deal;
             }
             
@@ -162,7 +159,7 @@
                     NAME: data.firstName,
                     LAST_NAME: data.lastName,
                     PHONE: [{VALUE: data.phone, VALUE_TYPE: 'WORK'}],
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
                     TYPE_ID: 'CLIENT',
                     SOURCE_ID: 'REPEAT_SALE',
                     UF_CRM_1751128872: String(data.tgUserId)
@@ -190,7 +187,7 @@
                 fields: {
                     NAME: data.firstName,
                     LAST_NAME: data.lastName,
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'WORK'}],
                     UF_CRM_1751128872: String(data.tgUserId)
                 }
             };
@@ -216,7 +213,7 @@
                     TITLE: `Заявка от ${data.fullName}`,
                     CONTACT_ID: contactId,
                     PHONE: [{VALUE: data.phone, VALUE_TYPE: 'MOBILE'}],
-                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'HOME'}],
+                    EMAIL: [{VALUE: data.email, VALUE_TYPE: 'MOBILE'}],
                     UF_CRM_1751128872: String(data.tgUserId),
                     UF_CRM_685D295664A8A: data.serviceDate,
                     UF_CRM_685D2956BF4C8: data.city,
@@ -306,6 +303,7 @@
         processServiceRequest,
         getUserRequests,
         getPerformersInfo,
-        getDealDetails
+        getDealDetails,
+        mapServices // Экспортируем для использования в других местах
     };
 })();
