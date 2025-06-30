@@ -18,87 +18,7 @@ $version = time();
     <script src="https://telegram.org/js/telegram-web-app.js?<?= $version ?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/my-services.css?<?= $version ?>">
-    <style>
-        .requests-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            overflow: hidden;
-        }
 
-        .requests-table th {
-            background-color: rgba(106, 17, 203, 0.3);
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        .requests-table td {
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .requests-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .requests-table tr:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .request-num {
-            font-weight: bold;
-            color: #6a11cb;
-        }
-
-        .request-service {
-            font-weight: 500;
-        }
-
-        .request-date {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-        }
-
-        .request-performer {
-            font-size: 0.9rem;
-        }
-
-        .details-btn {
-            padding: 8px 16px;
-            background: rgba(106, 17, 203, 0.5);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .details-btn:hover {
-            background: rgba(106, 17, 203, 0.8);
-        }
-
-        @media (max-width: 768px) {
-            .requests-table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            .requests-table th,
-            .requests-table td {
-                padding: 10px;
-                font-size: 0.9rem;
-            }
-
-            .details-btn {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-            }
-        }
-    </style>
 </head>
 
 <body>
@@ -234,23 +154,11 @@ $version = time();
             deals.forEach(deal => {
                 const date = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
 
-                // Преобразуем услуги в читаемый вид
-                let serviceNames = 'Услуга не указана';
-                if (deal.UF_CRM_685D2956C64E0) {
-                    const serviceIds = Array.isArray(deal.UF_CRM_685D2956C64E0) ?
-                        deal.UF_CRM_685D2956C64E0 : [deal.UF_CRM_685D2956C64E0];
-
-                    serviceNames = serviceIds.map(id => {
-                        if (id === '69') return 'Уход';
-                        if (id === '71') return 'Цветы';
-                        if (id === '73') return 'Ремонт';
-                        if (id === '75') return 'Церковная служба';
-                        return id;
-                    }).join(', ');
-                }
+                // ИСПРАВЛЕНИЕ: Используем поле services из BitrixCRM
+                const serviceNames = deal.services || 'Услуга не указана';
 
                 let statusClass = '';
-                let statusText = deal.STAGE_ID || 'Новый';
+                let statusText = deal.STAGE_ID || '';
 
                 if (statusText === 'NEW') {
                     statusText = 'Новая';
