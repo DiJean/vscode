@@ -54,7 +54,67 @@ try {
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
 
-// ... [остальные функции без изменений] ...
+// Функция загрузки файла в Bitrix24
+function uploadFileToBitrix($file)
+{
+    global $BITRIX_WEBHOOK, $FOLDER_ID;
+
+    $fileContent = file_get_contents($file['tmp_name']);
+    $fileEncoded = base64_encode($fileContent);
+
+    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
+    $params = [
+        'id' => $FOLDER_ID,
+        'data' => [
+            'NAME' => $file['name'],
+            'FILE_CONTENT' => $fileEncoded
+        ],
+        'generateUniqueName' => true
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+
+    if (!isset($result['result'])) {
+        throw new Exception('Ошибка загрузки файла: ' . json_encode($result));
+    }
+
+    return $result['result']['ID'];
+}
+
+// Функция обновления сделки
+function updateDeal($dealId, $beforeFileId, $afterFileId)
+{
+    global $BITRIX_WEBHOOK;
+
+    $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
+    $params = [
+        'id' => $dealId,
+        'fields' => [
+            'STAGE_ID' => 'WON', // Устанавливаем статус "Успешно завершена"
+            'UF_CRM_1751200529' => $beforeFileId, // ID фото "До"
+            'UF_CRM_1751200549' => $afterFileId, // ID фото "После"
+        ]
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+    return isset($result['result']) && $result['result'] === true;
+}
 
 // Функция получения информации о сделке
 function getDealInfo($dealId)
