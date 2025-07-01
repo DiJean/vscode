@@ -36,7 +36,7 @@ $version = time();
     <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
     <script>
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
         const version = '<?= $version ?>';
 
         function getUrlParameter(name) {

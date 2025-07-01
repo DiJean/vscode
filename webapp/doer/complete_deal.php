@@ -147,7 +147,7 @@ function uploadFileToBitrix($file)
     $fileEncoded = base64_encode($fileContent);
     $fileName = sanitizeFileName($file['name']);
 
-    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile';
+    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
     $params = [
         'id' => $FOLDER_ID,
         'data' => [
@@ -229,7 +229,7 @@ function sanitizeFileName($filename)
  */
 function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
-    $url = $BITRIX_WEBHOOK . 'crm.deal.update';
+    $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
     $params = [
         'id' => $dealId,
         'fields' => [
@@ -248,7 +248,7 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
  */
 function getDealInfo($dealId)
 {
-    $url = $BITRIX_WEBHOOK . 'crm.deal.get';
+    $url = $BITRIX_WEBHOOK . 'crm.deal.get.json';
     $params = [
         'id' => $dealId,
         'select' => [
@@ -293,7 +293,7 @@ function getContactInfo($contactId)
 {
     if (!$contactId) return [];
 
-    $url = $BITRIX_WEBHOOK . 'crm.contact.get';
+    $url = $BITRIX_WEBHOOK . 'crm.contact.get.json';
     $params = [
         'id' => $contactId,
         'select' => ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_1751128872'] // Telegram ID

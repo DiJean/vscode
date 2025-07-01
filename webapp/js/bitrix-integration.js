@@ -13,7 +13,7 @@
 
     async function findContactByTgId(tgId) {
         try {
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -32,7 +32,7 @@
 
     async function getDealsByContactId(contactId) {
         try {
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.list.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -87,7 +87,7 @@
             // Уникальные ID исполнителей
             const uniqueIds = [...new Set(performerIds)];
             
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -106,7 +106,7 @@
 
     async function getDealDetails(dealId) {
         try {
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -166,7 +166,7 @@
                 }
             };
             
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(contactData)
@@ -192,7 +192,7 @@
                 }
             };
             
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.update`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.update.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(contactData)
@@ -227,7 +227,7 @@
                 }
             };
             
-            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.add`, {
+            const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.add.json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(dealData)

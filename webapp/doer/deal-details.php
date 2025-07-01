@@ -63,7 +63,7 @@ $version = time();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
         const version = '<?= $version ?>';
 
         let tg = null;
@@ -82,7 +82,7 @@ $version = time();
 
         async function findPerformerByTgId(tgId) {
             try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list`, {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ $version = time();
 
         async function loadDealDetails(dealId) {
             try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get`, {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
