@@ -281,7 +281,7 @@ $version = time();
                 openCamera('after');
             });
         }
-        console.log('Deal ID:', dealId);
+
 
         function openCamera(type) {
             if (tg && tg.showCamera) {
