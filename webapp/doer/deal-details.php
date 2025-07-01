@@ -37,20 +37,20 @@ $version = time();
                     <div class="photo-preview" id="before-preview">
                         <span>Фото до работ</span>
                     </div>
-                    <label class="upload-btn">
+                    <button type="button" class="upload-btn" id="before-btn">
                         Загрузить фото "До"
-                        <input type="file" id="before-photo" accept="image/*" capture="camera" style="display: none;">
-                    </label>
+                    </button>
+                    <input type="file" id="before-photo" accept="image/*" style="display: none;">
                 </div>
 
                 <div class="photo-upload">
                     <div class="photo-preview" id="after-preview">
                         <span>Фото после работ</span>
                     </div>
-                    <label class="upload-btn">
+                    <button type="button" class="upload-btn" id="after-btn">
                         Загрузить фото "После"
-                        <input type="file" id="after-photo" accept="image/*" capture="camera" style="display: none;">
-                    </label>
+                    </button>
+                    <input type="file" id="after-photo" accept="image/*" style="display: none;">
                 </div>
             </div>
 
@@ -74,6 +74,7 @@ $version = time();
         let performerName = "";
         let beforePhotoFile = null;
         let afterPhotoFile = null;
+        let isAndroid = /Android/i.test(navigator.userAgent);
 
         function getUrlParameter(name) {
             name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -166,6 +167,9 @@ $version = time();
                 if (performerContact && deal.STAGE_ID === 'EXECUTING') {
                     document.getElementById('completion-section').style.display = 'block';
                 }
+
+                // Инициализация кнопок загрузки фото
+                initPhotoButtons();
 
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
@@ -270,44 +274,110 @@ $version = time();
             `;
         }
 
-        document.getElementById('before-photo').addEventListener('change', function(e) {
-            handlePhotoUpload(e.target.files[0], 'before-preview');
-            beforePhotoFile = e.target.files[0];
-            checkCompletionReady();
-        });
-
-        document.getElementById('after-photo').addEventListener('change', function(e) {
-            handlePhotoUpload(e.target.files[0], 'after-preview');
-            afterPhotoFile = e.target.files[0];
-            checkCompletionReady();
-        });
-
-        function handlePhotoUpload(file, previewId) {
-            if (!file || !file.type.match('image.*')) {
-                if (tg && tg.showPopup) {
-                    tg.showPopup({
-                        title: 'Ошибка',
-                        message: 'Пожалуйста, выберите изображение!',
-                        buttons: [{
-                            id: 'ok',
-                            type: 'ok'
-                        }]
-                    });
+        function initPhotoButtons() {
+            // Обработчики для кнопок загрузки фото
+            document.getElementById('before-btn').addEventListener('click', function() {
+                if (isAndroid && tg && tg.showCamera) {
+                    openTelegramCamera('before');
                 } else {
-                    alert('Пожалуйста, выберите изображение!');
+                    document.getElementById('before-photo').click();
                 }
+            });
+
+            document.getElementById('after-btn').addEventListener('click', function() {
+                if (isAndroid && tg && tg.showCamera) {
+                    openTelegramCamera('after');
+                } else {
+                    document.getElementById('after-photo').click();
+                }
+            });
+
+            // Обработчики для скрытых input-элементов
+            document.getElementById('before-photo').addEventListener('change', function(e) {
+                handlePhotoUpload(e.target.files[0], 'before');
+            });
+
+            document.getElementById('after-photo').addEventListener('change', function(e) {
+                handlePhotoUpload(e.target.files[0], 'after');
+            });
+        }
+
+        function openTelegramCamera(type) {
+            if (tg && tg.showCamera) {
+                const options = {
+                    source: 'camera',
+                    fileType: 'photo',
+                    cameraType: 'back'
+                };
+
+                tg.showCamera(options, (result) => {
+                    if (result && result.data) {
+                        // Преобразуем base64 в Blob
+                        const byteString = atob(result.data.split(',')[1]);
+                        const mimeString = result.data.split(',')[0].split(':')[1].split(';')[0];
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+
+                        const blob = new Blob([ab], {
+                            type: mimeString
+                        });
+                        const file = new File([blob], `${type}-photo.jpg`, {
+                            type: mimeString
+                        });
+
+                        handlePhotoUpload(file, type);
+                    }
+                });
+            } else {
+                // Fallback для Android без WebApp API
+                document.getElementById(`${type}-photo`).click();
+            }
+        }
+
+        function handlePhotoUpload(file, type) {
+            const previewId = `${type}-preview`;
+            const previewElement = document.getElementById(previewId);
+
+            if (!file || !file.type.match('image.*')) {
+                showError('Пожалуйста, выберите изображение!');
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const preview = document.getElementById(previewId);
-                preview.innerHTML = '';
+                previewElement.innerHTML = '';
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                preview.appendChild(img);
+                previewElement.appendChild(img);
+
+                if (type === 'before') {
+                    beforePhotoFile = file;
+                } else {
+                    afterPhotoFile = file;
+                }
+
+                checkCompletionReady();
             };
             reader.readAsDataURL(file);
+        }
+
+        function showError(message) {
+            if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: 'Ошибка',
+                    message: message,
+                    buttons: [{
+                        id: 'ok',
+                        type: 'ok'
+                    }]
+                });
+            } else {
+                alert(message);
+            }
         }
 
         function checkCompletionReady() {
@@ -320,18 +390,7 @@ $version = time();
             const btn = this;
 
             if (!beforePhotoFile || !afterPhotoFile) {
-                if (tg && tg.showPopup) {
-                    tg.showPopup({
-                        title: 'Ошибка',
-                        message: 'Загрузите оба фото!',
-                        buttons: [{
-                            id: 'ok',
-                            type: 'ok'
-                        }]
-                    });
-                } else {
-                    alert('Загрузите оба фото!');
-                }
+                showError('Загрузите оба фото!');
                 return;
             }
 
@@ -352,39 +411,34 @@ $version = time();
                 const result = await response.json();
 
                 if (result.success) {
-                    if (tg && tg.showPopup) {
-                        tg.showPopup({
-                            title: 'Успех',
-                            message: 'Заказ успешно завершен!',
-                            buttons: [{
-                                id: 'ok',
-                                type: 'ok'
-                            }]
-                        });
-                    } else {
-                        alert('Заказ успешно завершен!');
-                    }
-                    location.reload();
+                    showSuccess('Заказ успешно завершен!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
                 } else {
                     throw new Error(result.error || 'Не удалось завершить заказ');
                 }
             } catch (error) {
-                if (tg && tg.showPopup) {
-                    tg.showPopup({
-                        title: 'Ошибка',
-                        message: 'Ошибка: ' + error.message,
-                        buttons: [{
-                            id: 'ok',
-                            type: 'ok'
-                        }]
-                    });
-                } else {
-                    alert('Ошибка: ' + error.message);
-                }
+                showError('Ошибка: ' + error.message);
                 btn.disabled = false;
                 btn.textContent = 'Завершить заказ';
             }
         });
+
+        function showSuccess(message) {
+            if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: 'Успех',
+                    message: message,
+                    buttons: [{
+                        id: 'ok',
+                        type: 'ok'
+                    }]
+                });
+            } else {
+                alert(message);
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
