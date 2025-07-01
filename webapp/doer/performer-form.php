@@ -400,7 +400,6 @@ $version = time();
 
                 debugLog('Отправляемые данные: ' + JSON.stringify(contactData));
 
-                // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавляем .json к URL
                 const url = `${BITRIX_WEBHOOK}crm.contact.add.json`;
                 debugLog(`URL запроса: ${url}`);
 
@@ -412,7 +411,6 @@ $version = time();
                     body: JSON.stringify(contactData)
                 });
 
-                // Детальная обработка ответа
                 const httpStatus = response.status;
                 const responseText = await response.text();
 
@@ -455,61 +453,13 @@ $version = time();
             }
         }
 
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем функцию поиска исполнителя
-        async function findPerformerByTgId(tgId) {
-            try {
-                // Добавляем .json к URL
-                const url = `${BITRIX_WEBHOOK}crm.contact.list.json`;
-                debugLog(`URL поиска исполнителя: ${url}`);
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        filter: {
-                            'UF_CRM_1751128872': String(tgId)
-                        },
-                        select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
-                    })
-                });
-
-                const httpStatus = response.status;
-                const responseText = await response.text();
-
-                debugLog(`HTTP статус поиска: ${httpStatus}`);
-                debugLog(`Ответ поиска: ${responseText}`);
-
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    throw new Error('Некорректный JSON в ответе на поиск');
-                }
-
-                return data.result && data.result.length > 0 ? data.result[0] : null;
-            } catch (error) {
-                debugLog(`Ошибка поиска исполнителя: ${error.message}`);
-                return null;
-            }
-        }
-
         function showFallbackView() {
-            const greeting = document.getElementById('greeting');
-            const userContainer = document.getElementById('user-container');
-
-            if (greeting) {
-                greeting.textContent = 'Регистрация исполнителя';
-            }
-
-            if (userContainer) {
-                userContainer.innerHTML = `
-                    <div class="alert alert-warning">
-                        Для регистрации откройте приложение в Telegram
-                    </div>
-                `;
-            }
+            document.getElementById('greeting').textContent = 'Регистрация исполнителя';
+            document.getElementById('user-container').innerHTML = `
+                <div class="alert alert-warning">
+                    Для регистрации откройте приложение в Telegram
+                </div>
+            `;
         }
 
         document.addEventListener('DOMContentLoaded', initApp);

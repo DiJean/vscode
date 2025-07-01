@@ -119,10 +119,8 @@ function uploadFileToBitrix($file)
     $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
     $params = [
         'id' => $FOLDER_ID,
-        'data' => [
-            'NAME' => $fileName,
-            'FILE_CONTENT' => $fileEncoded
-        ],
+        'fileContent' => [$fileName, base64_decode($fileEncoded)],
+        'data' => ['NAME' => $fileName],
         'generateUniqueName' => true
     ];
 
@@ -144,12 +142,12 @@ function makeBitrixRequest($method, $params = [])
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query($params),
+        CURLOPT_POSTFIELDS => json_encode($params),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 30,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
     ]);
 
     $response = curl_exec($ch);
@@ -191,13 +189,22 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
     global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
+
+    $fields = [
+        'STAGE_ID' => 'WON'
+    ];
+
+    if ($beforeFileId) {
+        $fields['UF_CRM_1751200529'] = [$beforeFileId];
+    }
+
+    if ($afterFileId) {
+        $fields['UF_CRM_1751200549'] = [$afterFileId];
+    }
+
     $params = [
         'id' => $dealId,
-        'fields' => [
-            'STAGE_ID' => 'WON',
-            'UF_CRM_1751200529' => $beforeFileId,
-            'UF_CRM_1751200549' => $afterFileId,
-        ]
+        'fields' => $fields
     ];
 
     $response = makeBitrixRequest($url, $params);
@@ -215,7 +222,8 @@ function getDealInfo($dealId)
             'TITLE',
             'CONTACT_ID',
             'ASSIGNED_BY_ID',
-            'UF_CRM_1751128612'
+            'UF_CRM_1751128612',
+            'UF_CRM_1751128872'
         ]
     ];
 

@@ -163,8 +163,6 @@ $version = time();
 
                 if (performerContact && deal.STAGE_ID === 'EXECUTING') {
                     document.getElementById('completion-section').style.display = 'block';
-
-                    // Инициализация кнопок загрузки фото
                     initPhotoButtons();
                 }
 
@@ -272,7 +270,6 @@ $version = time();
         }
 
         function initPhotoButtons() {
-            // Обработчики для кнопок загрузки фото
             document.getElementById('before-btn').addEventListener('click', function() {
                 openCamera('before');
             });
@@ -282,10 +279,8 @@ $version = time();
             });
         }
 
-
         function openCamera(type) {
             if (tg && tg.showCamera) {
-                // Используем встроенную камеру Telegram WebApp
                 const options = {
                     source: 'camera',
                     fileType: 'photo',
@@ -298,7 +293,6 @@ $version = time();
                     }
                 });
             } else {
-                // Fallback для браузеров
                 openFileInput(type);
             }
         }
@@ -322,7 +316,6 @@ $version = time();
         }
 
         function processCameraResult(base64Data, type) {
-            // Преобразуем base64 в Blob
             const parts = base64Data.split(';base64,');
             const contentType = parts[0].split(':')[1];
             const raw = window.atob(parts[1]);
@@ -446,7 +439,6 @@ $version = time();
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
-
 </body>
 
 </html>
