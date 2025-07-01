@@ -281,6 +281,7 @@ $version = time();
                 openCamera('after');
             });
         }
+        console.log('Deal ID:', dealId);
 
         function openCamera(type) {
             if (tg && tg.showCamera) {
@@ -445,6 +446,7 @@ $version = time();
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
+
 </body>
 
 </html>
