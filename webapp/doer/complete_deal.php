@@ -98,7 +98,7 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
     $params = [
         'id' => $dealId,
         'fields' => [
-            'STAGE_ID' => 'WON', // Устанавливаем статус "Успешно завершена"
+            'STAGE_ID' => 'WON', // Устанавливаем статус "Успешно завершена---"
             'UF_CRM_1751200529' => $beforeFileId, // ID фото "До"
             'UF_CRM_1751200549' => $afterFileId, // ID фото "После"
         ]
