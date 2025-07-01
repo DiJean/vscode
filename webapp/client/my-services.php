@@ -18,7 +18,6 @@ $version = time();
     <script src="https://telegram.org/js/telegram-web-app.js?<?= $version ?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/my-services.css?<?= $version ?>">
-
 </head>
 
 <body>
@@ -48,23 +47,19 @@ $version = time();
             }
         }
 
-        // Получаем Telegram User ID
         let tgUserId = null;
         if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
             const tg = Telegram.WebApp;
             tgUserId = tg.initDataUnsafe?.user?.id;
         }
 
-        // Если не получили из WebApp, пробуем получить из localStorage
         if (!tgUserId) {
             tgUserId = localStorage.getItem('tgUserId');
         }
 
         if (tgUserId) {
-            // Сохраняем для будущего использования
             localStorage.setItem('tgUserId', tgUserId);
 
-            // Загружаем BitrixCRM и затем запрашиваем данные
             loadBitrixIntegration().then(() => {
                 if (typeof BitrixCRM !== 'undefined' && BitrixCRM.getUserRequests) {
                     loadRequests(tgUserId);
@@ -97,12 +92,10 @@ $version = time();
         function loadRequests(tgUserId) {
             BitrixCRM.getUserRequests(tgUserId)
                 .then(deals => {
-                    // Собираем ID всех исполнителей
                     const performerIds = deals
                         .map(deal => deal.UF_CRM_1751128612)
                         .filter(id => id && id > 0);
 
-                    // Если есть исполнители - получаем их данные
                     if (performerIds.length > 0) {
                         return BitrixCRM.getPerformersInfo(performerIds)
                             .then(performers => {
@@ -153,8 +146,6 @@ $version = time();
 
             deals.forEach(deal => {
                 const date = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
-
-                // ИСПРАВЛЕНИЕ: Используем поле services из BitrixCRM
                 const serviceNames = deal.services || 'Услуга не указана';
 
                 let statusClass = '';
@@ -176,7 +167,6 @@ $version = time();
                     statusClass = 'status-canceled';
                 }
 
-                // Исполнитель
                 let performerInfo = 'Не назначен';
                 if (deal.UF_CRM_1751128612) {
                     const performer = performers.find(p => p.ID == deal.UF_CRM_1751128612);
@@ -208,7 +198,6 @@ $version = time();
 
             document.getElementById('requests-list').innerHTML = html;
 
-            // Добавляем обработчики для кнопок детализации
             document.querySelectorAll('.details-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const dealId = this.getAttribute('data-id');

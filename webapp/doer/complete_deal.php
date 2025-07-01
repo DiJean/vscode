@@ -3,19 +3,16 @@ header('Content-Type: application/json');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Основные настройки
 $BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
-$FOLDER_ID = 1; // ID папки в Битрикс24 для загрузки файлов
-$TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN'; // Замените на реальный токен бота
-$MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+$FOLDER_ID = 1;
+$TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN';
+$MAX_FILE_SIZE = 5 * 1024 * 1024;
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-// Обработка входящих данных
 $dealId = $_POST['deal_id'] ?? null;
 $beforePhoto = $_FILES['before_photo'] ?? null;
 $afterPhoto = $_FILES['after_photo'] ?? null;
 
-// Валидация входных данных
 if (!$dealId) {
     sendErrorResponse('Не указан ID заявки');
 }
@@ -25,26 +22,17 @@ if (!$beforePhoto || !$afterPhoto) {
 }
 
 try {
-    // Валидация фото "До"
     validatePhoto($beforePhoto);
-
-    // Валидация фото "После"
     validatePhoto($afterPhoto);
 
-    // Загрузка фото "До"
     $beforeFileId = uploadFileToBitrix($beforePhoto);
-
-    // Загрузка фото "После"
     $afterFileId = uploadFileToBitrix($afterPhoto);
 
-    // Обновление сделки
     $updateResult = updateDeal($dealId, $beforeFileId, $afterFileId);
 
     if ($updateResult) {
-        // Получаем информацию о сделке для уведомления
         $dealInfo = getDealInfo($dealId);
 
-        // Отправляем уведомление исполнителю
         if (!empty($dealInfo['performer_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['performer_tg_id'],
@@ -52,15 +40,12 @@ try {
             );
         }
 
-        // Отправляем уведомление клиенту
         if (!empty($dealInfo['client_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['client_tg_id'],
                 "✅ Ваш заказ #{$dealId} завершен!\nИсполнитель: {$dealInfo['performer_name']}"
             );
         }
-
-        // Логирование успешного завершения
     } else {
         error_log("Deal update failed for ID: $dealId");
         sendErrorResponse('Не удалось обновить сделку');
@@ -72,9 +57,6 @@ try {
     sendErrorResponse($e->getMessage());
 }
 
-/**
- * Отправка ошибки в формате JSON
- */
 function sendErrorResponse($message)
 {
     http_response_code(400);
@@ -82,24 +64,18 @@ function sendErrorResponse($message)
     exit;
 }
 
-/**
- * Валидация загружаемого фото
- */
 function validatePhoto($file)
 {
     global $MAX_FILE_SIZE, $ALLOWED_MIME_TYPES;
 
-    // Проверка ошибок загрузки
     if ($file['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('Ошибка загрузки файла: ' . getUploadErrorMessage($file['error']));
     }
 
-    // Проверка размера файла
     if ($file['size'] > $MAX_FILE_SIZE) {
         throw new Exception('Размер файла превышает 5MB');
     }
 
-    // Проверка MIME-типа
     $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($fileInfo, $file['tmp_name']);
     finfo_close($fileInfo);
@@ -108,15 +84,11 @@ function validatePhoto($file)
         throw new Exception('Недопустимый формат файла. Разрешены: JPEG, PNG, WebP');
     }
 
-    // Дополнительная проверка изображения
     if (!@getimagesize($file['tmp_name'])) {
         throw new Exception('Файл не является изображением');
     }
 }
 
-/**
- * Получение понятного описания ошибки загрузки
- */
 function getUploadErrorMessage($errorCode)
 {
     $errors = [
@@ -132,9 +104,6 @@ function getUploadErrorMessage($errorCode)
     return $errors[$errorCode] ?? "Неизвестная ошибка ($errorCode)";
 }
 
-/**
- * Загрузка файла в Bitrix24
- */
 function uploadFileToBitrix($file)
 {
     global $BITRIX_WEBHOOK, $FOLDER_ID;
@@ -167,12 +136,9 @@ function uploadFileToBitrix($file)
     return $response['result']['ID'];
 }
 
-/**
- * Универсальный запрос к Bitrix API
- */
 function makeBitrixRequest($method, $params = [])
 {
-    $url = $method . '.json';
+    $url = $method;
     $ch = curl_init();
 
     curl_setopt_array($ch, [
@@ -215,20 +181,15 @@ function makeBitrixRequest($method, $params = [])
     return $result;
 }
 
-/**
- * Санитайзинг имени файла
- */
 function sanitizeFileName($filename)
 {
     $filename = preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $filename);
     return substr($filename, 0, 100);
 }
 
-/**
- * Обновление сделки
- */
 function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
+    global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
     $params = [
         'id' => $dealId,
@@ -243,11 +204,9 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
     return isset($response['result']) && $response['result'] === true;
 }
 
-/**
- * Получение информации о сделке
- */
 function getDealInfo($dealId)
 {
+    global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.deal.get.json';
     $params = [
         'id' => $dealId,
@@ -256,7 +215,7 @@ function getDealInfo($dealId)
             'TITLE',
             'CONTACT_ID',
             'ASSIGNED_BY_ID',
-            'UF_CRM_1751128612' // ID исполнителя (контакт)
+            'UF_CRM_1751128612'
         ]
     ];
 
@@ -269,10 +228,8 @@ function getDealInfo($dealId)
 
     $deal = $response['result'];
 
-    // Получаем информацию о клиенте
     $clientInfo = getContactInfo($deal['CONTACT_ID']);
 
-    // Получаем информацию об исполнителе
     $performerInfo = !empty($deal['UF_CRM_1751128612']) ?
         getContactInfo($deal['UF_CRM_1751128612']) :
         [];
@@ -286,17 +243,15 @@ function getDealInfo($dealId)
     ];
 }
 
-/**
- * Получение информации о контакте
- */
 function getContactInfo($contactId)
 {
     if (!$contactId) return [];
 
+    global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.contact.get.json';
     $params = [
         'id' => $contactId,
-        'select' => ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_1751128872'] // Telegram ID
+        'select' => ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_1751128872']
     ];
 
     try {
@@ -308,9 +263,6 @@ function getContactInfo($contactId)
     }
 }
 
-/**
- * Отправка уведомления в Telegram
- */
 function sendTelegramNotification($chatId, $message)
 {
     global $TELEGRAM_BOT_TOKEN;
