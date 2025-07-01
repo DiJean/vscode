@@ -1,5 +1,5 @@
 (function() {
-    const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+    const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
 
     // Словарь для преобразования ID услуг в названия
     const serviceNames = {

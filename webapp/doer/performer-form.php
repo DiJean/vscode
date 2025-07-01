@@ -400,7 +400,11 @@ $version = time();
 
                 debugLog('Отправляемые данные: ' + JSON.stringify(contactData));
 
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.add`, {
+                // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавляем .json к URL
+                const url = `${BITRIX_WEBHOOK}crm.contact.add.json`;
+                debugLog(`URL запроса: ${url}`);
+
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -408,8 +412,25 @@ $version = time();
                     body: JSON.stringify(contactData)
                 });
 
-                const result = await response.json();
+                // Детальная обработка ответа
+                const httpStatus = response.status;
+                const responseText = await response.text();
+
+                debugLog(`HTTP статус: ${httpStatus}`);
+                debugLog(`Ответ сервера: ${responseText}`);
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Некорректный JSON в ответе');
+                }
+
                 debugLog('Ответ от Bitrix24: ' + JSON.stringify(result));
+
+                if (httpStatus === 401) {
+                    throw new Error('Ошибка авторизации. Проверьте вебхук');
+                }
 
                 if (result.error) {
                     throw new Error(result.error_description || `Ошибка Bitrix: ${result.error}`);
@@ -431,6 +452,46 @@ $version = time();
                     success: false,
                     errorMessage: `Ошибка при сохранении: ${error.message}`
                 };
+            }
+        }
+
+        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем функцию поиска исполнителя
+        async function findPerformerByTgId(tgId) {
+            try {
+                // Добавляем .json к URL
+                const url = `${BITRIX_WEBHOOK}crm.contact.list.json`;
+                debugLog(`URL поиска исполнителя: ${url}`);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filter: {
+                            'UF_CRM_1751128872': String(tgId)
+                        },
+                        select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
+                    })
+                });
+
+                const httpStatus = response.status;
+                const responseText = await response.text();
+
+                debugLog(`HTTP статус поиска: ${httpStatus}`);
+                debugLog(`Ответ поиска: ${responseText}`);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Некорректный JSON в ответе на поиск');
+                }
+
+                return data.result && data.result.length > 0 ? data.result[0] : null;
+            } catch (error) {
+                debugLog(`Ошибка поиска исполнителя: ${error.message}`);
+                return null;
             }
         }
 
