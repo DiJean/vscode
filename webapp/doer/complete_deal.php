@@ -4,7 +4,7 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 // Основные настройки
-$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/gwr1en9g6spkiyj9/';
+$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/ugw0splnpwusjx89/';
 $FOLDER_ID = 1; // ID папки в Битрикс24 для загрузки файлов
 $TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN'; // Замените на реальный токен бота
 $MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
