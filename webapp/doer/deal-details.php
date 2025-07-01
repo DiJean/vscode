@@ -40,7 +40,6 @@ $version = time();
                     <button type="button" class="upload-btn" id="before-btn">
                         Загрузить фото "До"
                     </button>
-                    <input type="file" id="before-photo" accept="image/*" style="display: none;">
                 </div>
 
                 <div class="photo-upload">
@@ -50,7 +49,6 @@ $version = time();
                     <button type="button" class="upload-btn" id="after-btn">
                         Загрузить фото "После"
                     </button>
-                    <input type="file" id="after-photo" accept="image/*" style="display: none;">
                 </div>
             </div>
 
@@ -74,7 +72,6 @@ $version = time();
         let performerName = "";
         let beforePhotoFile = null;
         let afterPhotoFile = null;
-        let isAndroid = /Android/i.test(navigator.userAgent);
 
         function getUrlParameter(name) {
             name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -166,10 +163,10 @@ $version = time();
 
                 if (performerContact && deal.STAGE_ID === 'EXECUTING') {
                     document.getElementById('completion-section').style.display = 'block';
-                }
 
-                // Инициализация кнопок загрузки фото
-                initPhotoButtons();
+                    // Инициализация кнопок загрузки фото
+                    initPhotoButtons();
+                }
 
             } catch (e) {
                 console.error('Ошибка инициализации:', e);
@@ -277,33 +274,17 @@ $version = time();
         function initPhotoButtons() {
             // Обработчики для кнопок загрузки фото
             document.getElementById('before-btn').addEventListener('click', function() {
-                if (isAndroid && tg && tg.showCamera) {
-                    openTelegramCamera('before');
-                } else {
-                    document.getElementById('before-photo').click();
-                }
+                openCamera('before');
             });
 
             document.getElementById('after-btn').addEventListener('click', function() {
-                if (isAndroid && tg && tg.showCamera) {
-                    openTelegramCamera('after');
-                } else {
-                    document.getElementById('after-photo').click();
-                }
-            });
-
-            // Обработчики для скрытых input-элементов
-            document.getElementById('before-photo').addEventListener('change', function(e) {
-                handlePhotoUpload(e.target.files[0], 'before');
-            });
-
-            document.getElementById('after-photo').addEventListener('change', function(e) {
-                handlePhotoUpload(e.target.files[0], 'after');
+                openCamera('after');
             });
         }
 
-        function openTelegramCamera(type) {
+        function openCamera(type) {
             if (tg && tg.showCamera) {
+                // Используем встроенную камеру Telegram WebApp
                 const options = {
                     source: 'camera',
                     fileType: 'photo',
@@ -312,30 +293,52 @@ $version = time();
 
                 tg.showCamera(options, (result) => {
                     if (result && result.data) {
-                        // Преобразуем base64 в Blob
-                        const byteString = atob(result.data.split(',')[1]);
-                        const mimeString = result.data.split(',')[0].split(':')[1].split(';')[0];
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-
-                        for (let i = 0; i < byteString.length; i++) {
-                            ia[i] = byteString.charCodeAt(i);
-                        }
-
-                        const blob = new Blob([ab], {
-                            type: mimeString
-                        });
-                        const file = new File([blob], `${type}-photo.jpg`, {
-                            type: mimeString
-                        });
-
-                        handlePhotoUpload(file, type);
+                        processCameraResult(result.data, type);
                     }
                 });
             } else {
-                // Fallback для Android без WebApp API
-                document.getElementById(`${type}-photo`).click();
+                // Fallback для браузеров
+                openFileInput(type);
             }
+        }
+
+        function openFileInput(type) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+
+            if (/(iPhone|iPad|iPod)/i.test(navigator.userAgent)) {
+                input.capture = 'camera';
+            }
+
+            input.onchange = (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handlePhotoUpload(e.target.files[0], type);
+                }
+            };
+
+            input.click();
+        }
+
+        function processCameraResult(base64Data, type) {
+            // Преобразуем base64 в Blob
+            const parts = base64Data.split(';base64,');
+            const contentType = parts[0].split(':')[1];
+            const raw = window.atob(parts[1]);
+            const uInt8Array = new Uint8Array(raw.length);
+
+            for (let i = 0; i < raw.length; ++i) {
+                uInt8Array[i] = raw.charCodeAt(i);
+            }
+
+            const blob = new Blob([uInt8Array], {
+                type: contentType
+            });
+            const file = new File([blob], `${type}-photo.jpg`, {
+                type: contentType
+            });
+
+            handlePhotoUpload(file, type);
         }
 
         function handlePhotoUpload(file, type) {
