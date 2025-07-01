@@ -138,7 +138,7 @@ $version = time();
                 </div>
             `;
         }
-
+        console.log('Deal ID:', dealId);
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
             // Проверяем загружен ли BitrixCRM
