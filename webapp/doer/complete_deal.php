@@ -3,7 +3,8 @@ header('Content-Type: application/json');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+// Исправленный вебхук - убрана завершающая косая черта
+$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u';
 $FOLDER_ID = 1;
 $TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN';
 $MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -116,7 +117,7 @@ function uploadFileToBitrix($file)
     $fileEncoded = base64_encode($fileContent);
     $fileName = sanitizeFileName($file['name']);
 
-    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
+    $url = $BITRIX_WEBHOOK . '/disk.folder.uploadfile';
     $params = [
         'id' => $FOLDER_ID,
         'fileContent' => [$fileName, base64_decode($fileEncoded)],
@@ -188,7 +189,7 @@ function sanitizeFileName($filename)
 function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
     global $BITRIX_WEBHOOK;
-    $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
+    $url = $BITRIX_WEBHOOK . '/crm.deal.update';
 
     $fields = [
         'STAGE_ID' => 'WON'
@@ -214,7 +215,7 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
 function getDealInfo($dealId)
 {
     global $BITRIX_WEBHOOK;
-    $url = $BITRIX_WEBHOOK . 'crm.deal.get.json';
+    $url = $BITRIX_WEBHOOK . '/crm.deal.get';
     $params = [
         'id' => $dealId,
         'select' => [
@@ -256,7 +257,7 @@ function getContactInfo($contactId)
     if (!$contactId) return [];
 
     global $BITRIX_WEBHOOK;
-    $url = $BITRIX_WEBHOOK . 'crm.contact.get.json';
+    $url = $BITRIX_WEBHOOK . '/crm.contact.get';
     $params = [
         'id' => $contactId,
         'select' => ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_1751128872']

@@ -63,7 +63,7 @@ $version = time();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u';
         const version = '<?= $version ?>';
 
         let tg = null;
@@ -82,7 +82,7 @@ $version = time();
 
         async function findPerformerByTgId(tgId) {
             try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
+                const response = await fetch(`${BITRIX_WEBHOOK}/crm.contact.list.json`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -105,7 +105,7 @@ $version = time();
 
         async function loadDealDetails(dealId) {
             try {
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
+                const response = await fetch(`${BITRIX_WEBHOOK}/crm.deal.get.json`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -279,32 +279,66 @@ $version = time();
             });
         }
 
-        function openCamera(type) {
-            if (tg && tg.showCamera) {
-                const options = {
-                    source: 'camera',
-                    fileType: 'photo',
-                    cameraType: 'back'
-                };
+        function isAndroid() {
+            return /android/i.test(navigator.userAgent);
+        }
 
-                tg.showCamera(options, (result) => {
-                    if (result && result.data) {
-                        processCameraResult(result.data, type);
-                    }
-                });
-            } else {
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+
+        function openCamera(type) {
+            // Для Android используем специальный подход
+            if (isAndroid() && tg && tg.showCamera) {
+                openCameraForAndroid(type);
+            }
+            // Для iOS используем стандартный метод Telegram
+            else if (isIOS() && tg && tg.showCamera) {
+                openCameraForIOS(type);
+            }
+            // Для других платформ используем input
+            else {
                 openFileInput(type);
             }
+        }
+
+        function openCameraForAndroid(type) {
+            const options = {
+                source: 'camera',
+                fileType: 'photo',
+                cameraType: 'back'
+            };
+
+            // Обработчик для Android
+            tg.showCamera(options, (result) => {
+                if (result && result.data) {
+                    processCameraResult(result.data, type);
+                } else {
+                    // Если не сработало, используем fallback
+                    openFileInput(type);
+                }
+            });
+        }
+
+        function openCameraForIOS(type) {
+            const options = {
+                source: 'camera',
+                fileType: 'photo',
+                cameraType: 'back'
+            };
+
+            tg.showCamera(options, (result) => {
+                if (result && result.data) {
+                    processCameraResult(result.data, type);
+                }
+            });
         }
 
         function openFileInput(type) {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-
-            if (/(iPhone|iPad|iPod)/i.test(navigator.userAgent)) {
-                input.capture = 'camera';
-            }
+            input.capture = 'camera';
 
             input.onchange = (e) => {
                 if (e.target.files && e.target.files[0]) {
@@ -312,12 +346,13 @@ $version = time();
                 }
             };
 
+            // Запускаем клик по input
             input.click();
         }
 
         function processCameraResult(base64Data, type) {
             const parts = base64Data.split(';base64,');
-            const contentType = parts[0].split(':')[1];
+            const contentType = parts[0].split(':')[1] || 'image/jpeg';
             const raw = window.atob(parts[1]);
             const uInt8Array = new Uint8Array(raw.length);
 
@@ -328,6 +363,7 @@ $version = time();
             const blob = new Blob([uInt8Array], {
                 type: contentType
             });
+
             const file = new File([blob], `${type}-photo.jpg`, {
                 type: contentType
             });
