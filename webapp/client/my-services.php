@@ -151,8 +151,9 @@ $version = time();
                 let statusClass = '';
                 let statusText = deal.STAGE_ID || '';
 
+                // ИСПРАВЛЕННЫЕ НАЗВАНИЯ СТАТУСОВ
                 if (statusText === 'NEW') {
-                    statusText = 'Новая';
+                    statusText = 'Новая заявка';
                     statusClass = 'status-new';
                 } else if (statusText === 'PREPARATION' ||
                     statusText === 'PREPAYMENT_INVOICE' ||
