@@ -12,18 +12,19 @@ $version = time();
             // Создаем элементы для favicon
             const favicon = document.createElement('link');
             favicon.rel = 'icon';
-            favicon.href = '/webapp/icons/favicon.ico';
+            favicon.href = '/webapp/css/icons/favicon.png';
             favicon.type = 'image/x-icon';
 
             const appleIcon = document.createElement('link');
             appleIcon.rel = 'apple-touch-icon';
-            appleIcon.href = '/webapp/icons/icon-192x192.png';
+            appleIcon.href = '/webapp/css/icons/favicon.png';
 
             // Добавляем иконки в документ
             document.head.appendChild(favicon);
             document.head.appendChild(appleIcon);
         })();
     </script>
+    <link rel="manifest" href="/webapp/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд исполнителя</title>
