@@ -61,7 +61,7 @@ $version = time();
                 </select>
             </div>
             <div class="col-md-5">
-                <input type="text" class="form-control" id="search" placeholder="Поиск по клиенту или услуге...">
+                <input type="text" class="form-control" id="city-search" placeholder="Поиск по городу...">
             </div>
             <div class="col-md-3">
                 <button class="btn btn-primary w-100" id="refresh-btn">Обновить</button>
