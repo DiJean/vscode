@@ -12,6 +12,8 @@ $version = time();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="icon" href="/webapp/css/icons/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/webapp/icons/icon-192x192.png">
 
 </head>
 
