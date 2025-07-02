@@ -8,6 +8,16 @@ $version = time();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Скрипт установки иконки -->
+    <script>
+        (function() {
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.href = '/webapp/icons/favicon.ico';
+            favicon.type = 'image/x-icon';
+            document.head.appendChild(favicon);
+        })();
+    </script>
     <title>Выбор роли</title>
 
     <!-- Favicon -->
