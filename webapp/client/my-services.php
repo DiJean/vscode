@@ -43,7 +43,7 @@ $version = time();
             sessionStorage.setItem('selectedRole', 'client');
 
             if (userData.firstName) {
-                document.querySelector('.greeting').textContent = `Привет, ${userData.firstName}!`;
+                document.querySelector('.greeting').textContent = `Здравствуйте, ${userData.firstName}!`;
             }
         }
 

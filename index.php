@@ -84,7 +84,7 @@ $version = time();
                     const username = user.username ? `@${user.username}` : 'без username';
                     const fullName = `${firstName} ${lastName}`.trim();
 
-                    const greeting = fullName ? `Здравствуйте, ${fullName}!` : 'Здравствуйте.';
+                    const greeting = fullName ? `Здравствуйте, ${firstName}!` : 'Здравствуйте.';
                     document.getElementById('greeting').textContent = greeting;
 
                     userHtml = `
