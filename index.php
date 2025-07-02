@@ -19,7 +19,6 @@ $version = time();
     <div class="container py-4">
         <div class="user-greeting" id="user-container">
             <div class="greeting-text">Здравствуйте</div>
-            <div class="user-name" id="user-fullname">Гость</div>
             <div class="avatar mb-3" id="user-avatar">
                 <div class="avatar-letter">Г</div>
             </div>
