@@ -22,6 +22,7 @@ $version = time();
 
 <body>
     <div class="container">
+        <a href="/" class="btn-change-role">← Сменить роль</a>
         <div class="greeting">Мои заявки</div>
         <a href="/webapp/client/client-form.php?v=<?= $version ?>" class="btn-create">+ Создать новую заявку</a>
         <div class="requests-list" id="requests-list">
@@ -151,7 +152,6 @@ $version = time();
                 let statusClass = '';
                 let statusText = deal.STAGE_ID || '';
 
-                // ИСПРАВЛЕННЫЕ НАЗВАНИЯ СТАТУСОВ
                 if (statusText === 'NEW') {
                     statusText = 'Новая заявка';
                     statusClass = 'status-new';

@@ -18,7 +18,10 @@ $version = time();
 <body>
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Мои заявки</h1>
+            <div class="d-flex align-items-center">
+                <a href="/" class="btn-change-role me-3">← Сменить роль</a>
+                <h1 class="h3 mb-0">Мои заявки</h1>
+            </div>
             <div class="d-flex align-items-center" id="user-info">
                 <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
                 Загрузка...
@@ -261,7 +264,6 @@ $version = time();
 
                 if (serviceField) {
                     let serviceIds = [];
-
                     if (Array.isArray(serviceField)) {
                         serviceIds = serviceField.map(id => String(id));
                     } else if (typeof serviceField === 'string') {
