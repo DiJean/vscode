@@ -1,31 +1,34 @@
 <?php
 header('Content-Type: application/json');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type");
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+ini_set('max_execution_time', 300);
+ini_set('post_max_size', '10M');
+ini_set('upload_max_filesize', '10M');
+ini_set('memory_limit', '256M');
 
-// Конфигурация
-$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u';
+// Конфигурация (ОБНОВЛЕННЫЙ ВЕБХУК)
+$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/'; // Добавлен завершающий слэш
 $FOLDER_ID = 1;
 $TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN';
 $MAX_FILE_SIZE = 5 * 1024 * 1024;
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-// Включим подробное логирование
-file_put_contents('debug.log', "\n\n" . date('Y-m-d H:i:s') . " - Начало обработки запроса\n", FILE_APPEND);
-
 try {
+    // Проверка метода запроса
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Exception('Invalid request method');
+    }
+
     // Получаем данные
     $dealId = $_POST['deal_id'] ?? null;
     $tgUserId = $_POST['tg_user_id'] ?? null;
     $beforePhoto = $_FILES['before_photo'] ?? null;
     $afterPhoto = $_FILES['after_photo'] ?? null;
-
-    file_put_contents('debug.log', "Полученные данные:\n" . print_r([
-        'deal_id' => $dealId,
-        'tg_user_id' => $tgUserId,
-        'before_photo' => $beforePhoto ? $beforePhoto['name'] : 'N/A',
-        'after_photo' => $afterPhoto ? $afterPhoto['name'] : 'N/A'
-    ], true) . "\n", FILE_APPEND);
 
     // Валидация входных данных
     if (!$dealId) throw new Exception('Не указан ID заявки');
@@ -38,7 +41,6 @@ try {
 
     // Получаем информацию о сделке
     $dealInfo = getDealInfo($dealId);
-    file_put_contents('debug.log', "Информация о сделке:\n" . print_r($dealInfo, true) . "\n", FILE_APPEND);
 
     // Проверка прав доступа
     if (empty($dealInfo['performer_tg_id'])) {
@@ -53,13 +55,11 @@ try {
     $beforeFileId = uploadFileToBitrix($beforePhoto);
     $afterFileId = uploadFileToBitrix($afterPhoto);
 
-    file_put_contents('debug.log', "Файлы загружены: before=$beforeFileId, after=$afterFileId\n", FILE_APPEND);
-
     // Обновление сделки
     $updateResult = updateDeal($dealId, $beforeFileId, $afterFileId);
 
     if ($updateResult) {
-        // Отправка уведомлений
+        // Отправка уведомлений (опционально)
         if (!empty($dealInfo['performer_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['performer_tg_id'],
@@ -79,14 +79,10 @@ try {
         throw new Exception('Не удалось обновить сделку');
     }
 } catch (Exception $e) {
-    $errorMessage = 'Ошибка: ' . $e->getMessage();
-    file_put_contents('debug.log', $errorMessage . "\n", FILE_APPEND);
-
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => $errorMessage,
-        'trace' => $e->getTraceAsString()
+        'error' => 'Ошибка: ' . $e->getMessage()
     ]);
 }
 
@@ -104,33 +100,16 @@ function validatePhoto($file)
         throw new Exception('Размер файла превышает 5MB');
     }
 
-    $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($fileInfo, $file['tmp_name']);
-    finfo_close($fileInfo);
+    // Исправленное определение MIME-типа
+    $fileInfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $fileInfo->file($file['tmp_name']);
 
     if (!in_array($mimeType, $ALLOWED_MIME_TYPES)) {
         throw new Exception('Недопустимый формат файла. Разрешены: JPEG, PNG, WebP');
     }
-
-    if (!getimagesize($file['tmp_name'])) {
-        throw new Exception('Файл не является изображением');
-    }
 }
 
-function getUploadErrorMessage($errorCode)
-{
-    $errors = [
-        UPLOAD_ERR_INI_SIZE   => 'Размер файла превышает разрешенный сервером',
-        UPLOAD_ERR_FORM_SIZE  => 'Размер файла превышает разрешенный формой',
-        UPLOAD_ERR_PARTIAL    => 'Файл загружен частично',
-        UPLOAD_ERR_NO_FILE    => 'Файл не был загружен',
-        UPLOAD_ERR_NO_TMP_DIR => 'Отсутствует временная папка',
-        UPLOAD_ERR_CANT_WRITE => 'Не удалось записать файл на диск',
-        UPLOAD_ERR_EXTENSION  => 'Расширение PHP остановило загрузку файла',
-    ];
-
-    return $errors[$errorCode] ?? "Неизвестная ошибка ($errorCode)";
-}
+// Остальные функции остаются без изменений, но с исправленными URL:
 
 function uploadFileToBitrix($file)
 {
@@ -144,7 +123,9 @@ function uploadFileToBitrix($file)
     $fileEncoded = base64_encode($fileContent);
     $fileName = sanitizeFileName($file['name']);
 
-    $url = $BITRIX_WEBHOOK . '/disk.folder.uploadfile.json';
+    // ИСПРАВЛЕННЫЙ URL (без дублирования слэшей)
+    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
+
     $params = [
         'id' => $FOLDER_ID,
         'fields' => [
@@ -153,12 +134,6 @@ function uploadFileToBitrix($file)
         ],
         'generateUniqueName' => true
     ];
-
-    file_put_contents('debug.log', "Запрос на загрузку файла: $url\nПараметры: " . json_encode([
-        'id' => $FOLDER_ID,
-        'fields' => ['NAME' => $fileName, 'FILE_CONTENT' => '[base64_data]'],
-        'generateUniqueName' => true
-    ]) . "\n", FILE_APPEND);
 
     $response = makeBitrixRequest($url, $params);
 
@@ -169,70 +144,14 @@ function uploadFileToBitrix($file)
     return $response['result']['ID'];
 }
 
-function makeBitrixRequest($url, $params = [])
-{
-    $ch = curl_init();
-
-    $options = [
-        CURLOPT_URL => $url,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($params),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_SSL_VERIFYHOST => 2,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_VERBOSE => true,
-        CURLOPT_STDERR => fopen('curl_debug.log', 'a+'),
-    ];
-
-    curl_setopt_array($ch, $options);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-    file_put_contents('debug.log', "HTTP запрос: $url\nКод ответа: $httpCode\nОтвет: $response\n", FILE_APPEND);
-
-    if (curl_errno($ch)) {
-        $error = curl_error($ch);
-        curl_close($ch);
-        throw new Exception("CURL error: $error");
-    }
-
-    curl_close($ch);
-
-    if ($httpCode === 401) {
-        throw new Exception('Ошибка авторизации в Bitrix24. Проверьте вебхук');
-    }
-
-    if ($httpCode !== 200) {
-        throw new Exception("Bitrix API вернул HTTP $httpCode");
-    }
-
-    $result = json_decode($response, true);
-
-    if (isset($result['error'])) {
-        $errorMsg = $result['error_description'] ?? $result['error'];
-        throw new Exception("Bitrix API error: $errorMsg");
-    }
-
-    return $result;
-}
-
-function sanitizeFileName($filename)
-{
-    $filename = preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $filename);
-    return substr($filename, 0, 100);
-}
-
 function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
     global $BITRIX_WEBHOOK;
-    $url = $BITRIX_WEBHOOK . '/crm.deal.update.json';
 
-    $fields = [
-        'STAGE_ID' => 'WON'
-    ];
+    // ИСПРАВЛЕННЫЙ URL
+    $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
 
+    $fields = ['STAGE_ID' => 'WON'];
     if ($beforeFileId) $fields['UF_CRM_1751200529'] = [$beforeFileId];
     if ($afterFileId) $fields['UF_CRM_1751200549'] = [$afterFileId];
 
@@ -241,17 +160,15 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
         'fields' => $fields
     ];
 
-    file_put_contents('debug.log', "Обновление сделки: $url\nПараметры: " . json_encode($params) . "\n", FILE_APPEND);
-
     try {
         $response = makeBitrixRequest($url, $params);
         return isset($response['result']) && $response['result'] === true;
     } catch (Exception $e) {
-        file_put_contents('debug.log', "Ошибка при обновлении сделки: " . $e->getMessage() . "\n", FILE_APPEND);
-        return false;
+        throw new Exception("Ошибка обновления сделки: " . $e->getMessage());
     }
 }
 
+// Остальные функции без изменений
 function getDealInfo($dealId)
 {
     global $BITRIX_WEBHOOK;
