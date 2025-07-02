@@ -72,6 +72,7 @@ $version = time();
         let performerName = "";
         let beforePhotoFile = null;
         let afterPhotoFile = null;
+        let tgUserId = null; // Добавлено для хранения Telegram ID
 
         function getUrlParameter(name) {
             name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
@@ -89,7 +90,8 @@ $version = time();
                     },
                     body: JSON.stringify({
                         filter: {
-                            'UF_CRM_1751128872': String(tgId)
+                            'UF_CRM_1751128872': String(tgId),
+                            'TYPE_ID': '1' // Только контакты типа "Исполнитель"
                         },
                         select: ['ID', 'NAME', 'LAST_NAME']
                     })
@@ -120,7 +122,8 @@ $version = time();
                             'UF_CRM_685D2956D0916',
                             'UF_CRM_1751022940',
                             'UF_CRM_685D2956D7C70',
-                            'UF_CRM_685D2956DF40F'
+                            'UF_CRM_685D2956DF40F',
+                            'UF_CRM_1751128612' // ID исполнителя
                         ]
                     })
                 });
@@ -142,7 +145,9 @@ $version = time();
 
             try {
                 user = tg.initDataUnsafe?.user || {};
-                const performerContact = await findPerformerByTgId(user.id);
+                tgUserId = user.id; // Сохраняем Telegram ID
+
+                const performerContact = await findPerformerByTgId(tgUserId);
 
                 if (performerContact) {
                     contactId = performerContact.ID;
@@ -161,9 +166,13 @@ $version = time();
 
                 renderDealDetails(deal);
 
-                if (performerContact && deal.STAGE_ID === 'EXECUTING') {
+                // Проверяем, что текущий пользователь - исполнитель этой заявки
+                if (performerContact && deal.STAGE_ID === 'EXECUTING' &&
+                    String(deal.UF_CRM_1751128612) === String(contactId)) {
                     document.getElementById('completion-section').style.display = 'block';
                     initPhotoButtons();
+                } else {
+                    console.log('Пользователь не является исполнителем или статус не "В работе"');
                 }
 
             } catch (e) {
@@ -288,16 +297,16 @@ $version = time();
         }
 
         function openCamera(type) {
-            // Для Android используем специальный подход
+            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+                openFileInput(type);
+                return;
+            }
+
             if (isAndroid() && tg && tg.showCamera) {
                 openCameraForAndroid(type);
-            }
-            // Для iOS используем стандартный метод Telegram
-            else if (isIOS() && tg && tg.showCamera) {
+            } else if (isIOS() && tg && tg.showCamera) {
                 openCameraForIOS(type);
-            }
-            // Для других платформ используем input
-            else {
+            } else {
                 openFileInput(type);
             }
         }
@@ -309,12 +318,10 @@ $version = time();
                 cameraType: 'back'
             };
 
-            // Обработчик для Android
             tg.showCamera(options, (result) => {
                 if (result && result.data) {
                     processCameraResult(result.data, type);
                 } else {
-                    // Если не сработало, используем fallback
                     openFileInput(type);
                 }
             });
@@ -346,29 +353,22 @@ $version = time();
                 }
             };
 
-            // Запускаем клик по input
             input.click();
         }
 
         function processCameraResult(base64Data, type) {
-            const parts = base64Data.split(';base64,');
-            const contentType = parts[0].split(':')[1] || 'image/jpeg';
-            const raw = window.atob(parts[1]);
-            const uInt8Array = new Uint8Array(raw.length);
-
-            for (let i = 0; i < raw.length; ++i) {
-                uInt8Array[i] = raw.charCodeAt(i);
-            }
-
-            const blob = new Blob([uInt8Array], {
-                type: contentType
-            });
-
-            const file = new File([blob], `${type}-photo.jpg`, {
-                type: contentType
-            });
-
-            handlePhotoUpload(file, type);
+            fetch(base64Data)
+                .then(res => res.blob())
+                .then(blob => {
+                    const file = new File([blob], `${type}-photo.jpg`, {
+                        type: blob.type
+                    });
+                    handlePhotoUpload(file, type);
+                })
+                .catch(error => {
+                    console.error('Error processing camera result:', error);
+                    openFileInput(type);
+                });
         }
 
         function handlePhotoUpload(file, type) {
@@ -433,6 +433,7 @@ $version = time();
             try {
                 const formData = new FormData();
                 formData.append('deal_id', dealId);
+                formData.append('tg_user_id', tgUserId); // Добавлен Telegram ID
                 formData.append('before_photo', beforePhotoFile);
                 formData.append('after_photo', afterPhotoFile);
 

@@ -389,12 +389,12 @@ $version = time();
                             VALUE: data.email,
                             VALUE_TYPE: 'WORK'
                         }],
-                        TYPE_ID: "1",
+                        TYPE_ID: "1", // Тип контакта "Исполнитель"
                         SOURCE_ID: 'REPEAT_SALE',
                         UF_CRM_685D2956061DB: data.city,
                         UF_CRM_1751129816: data.latitude,
                         UF_CRM_1751129854: data.longitude,
-                        UF_CRM_1751128872: String(data.tgUserId)
+                        UF_CRM_1751128872: String(data.tgUserId) // Telegram ID
                     }
                 };
 

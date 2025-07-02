@@ -3,8 +3,7 @@ header('Content-Type: application/json');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Исправленный вебхук - убрана завершающая косая черта
-$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u';
 $FOLDER_ID = 1;
 $TELEGRAM_BOT_TOKEN = 'ВАШ_TELEGRAM_BOT_TOKEN';
 $MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -61,7 +60,11 @@ try {
 function sendErrorResponse($message)
 {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => $message]);
+    echo json_encode([
+        'success' => false,
+        'error' => $message,
+        'details' => error_get_last()
+    ]);
     exit;
 }
 
@@ -120,8 +123,10 @@ function uploadFileToBitrix($file)
     $url = $BITRIX_WEBHOOK . '/disk.folder.uploadfile';
     $params = [
         'id' => $FOLDER_ID,
-        'fileContent' => [$fileName, base64_decode($fileEncoded)],
-        'data' => ['NAME' => $fileName],
+        'fields' => [
+            'NAME' => $fileName,
+            'FILE_CONTENT' => $fileEncoded
+        ],
         'generateUniqueName' => true
     ];
 
@@ -135,9 +140,8 @@ function uploadFileToBitrix($file)
     return $response['result']['ID'];
 }
 
-function makeBitrixRequest($method, $params = [])
+function makeBitrixRequest($url, $params = [])
 {
-    $url = $method;
     $ch = curl_init();
 
     curl_setopt_array($ch, [
@@ -238,10 +242,7 @@ function getDealInfo($dealId)
     $deal = $response['result'];
 
     $clientInfo = getContactInfo($deal['CONTACT_ID']);
-
-    $performerInfo = !empty($deal['UF_CRM_1751128612']) ?
-        getContactInfo($deal['UF_CRM_1751128612']) :
-        [];
+    $performerInfo = getContactInfo($deal['UF_CRM_1751128612']);
 
     return [
         'deal_id' => $dealId,

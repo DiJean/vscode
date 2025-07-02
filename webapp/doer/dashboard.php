@@ -107,7 +107,8 @@ $version = time();
                     },
                     body: JSON.stringify({
                         filter: {
-                            'UF_CRM_1751128872': String(tgId)
+                            'UF_CRM_1751128872': String(tgId),
+                            'TYPE_ID': '1' // Только контакты типа "Исполнитель"
                         },
                         select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
                     })
@@ -202,7 +203,7 @@ $version = time();
                 const search = document.getElementById('search').value;
 
                 const filter = {
-                    'UF_CRM_1751128612': contactId
+                    'UF_CRM_1751128612': contactId // ID исполнителя в сделке
                 };
                 if (status) filter['STAGE_ID'] = status;
                 if (search) filter['%TITLE'] = search;
