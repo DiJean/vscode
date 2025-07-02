@@ -12,12 +12,81 @@ $version = time();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        .user-greeting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .greeting-text {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .user-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            border: 3px solid white;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-letter {
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .greeting-text {
+                font-size: 1.5rem;
+            }
+
+            .user-name {
+                font-size: 1.3rem;
+            }
+
+            .avatar {
+                width: 80px;
+                height: 80px;
+            }
+
+            .avatar-letter {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
 </head>
 
 <body class="theme-beige">
     <div class="container py-4">
-        <div class="greeting mb-4" id="greeting">Здравствуйте.</div>
-        <div id="user-container" class="mb-4"></div>
+        <div class="user-greeting" id="user-container">
+            <div class="greeting-text">Здравствуйте</div>
+            <div class="avatar mb-3" id="user-avatar">
+                <div class="avatar-letter">Г</div>
+            </div>
+            <div class="user-name" id="user-fullname">Гость</div>
+        </div>
 
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -76,39 +145,28 @@ $version = time();
                     }
                 }
 
-                let userHtml = '';
+                const avatarContainer = document.getElementById('user-avatar');
+                const fullNameElement = document.getElementById('user-fullname');
 
                 if (user) {
                     const firstName = user.first_name || '';
                     const lastName = user.last_name || '';
-                    const username = user.username ? `@${user.username}` : 'без username';
-                    const fullName = `${firstName} ${lastName}`.trim();
+                    const fullName = `${firstName} ${lastName}`.trim() || 'Пользователь';
 
-                    const greeting = fullName ? `Здравствуйте, ${firstName}!` : 'Здравствуйте.';
-                    document.getElementById('greeting').textContent = greeting;
+                    // Обновляем приветствие
+                    fullNameElement.textContent = fullName;
 
-                    userHtml = `
-                        <div class="d-flex flex-column align-items-center">
-                            <div class="avatar mb-3">
-                                ${user.photo_url ? 
-                                    `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle">` : 
-                                    `<div class="d-flex align-items-center justify-content-center h-100 fw-bold fs-3">${firstName.charAt(0) || 'Г'}</div>`
-                                }
-                            </div>
-                            <div class="user-name fs-4 mb-1">${fullName || 'Анонимный пользователь'}</div>
-                            <div class="username text-muted">${username}</div>
-                        </div>
-                    `;
+                    // Обновляем аватар
+                    if (user.photo_url) {
+                        avatarContainer.innerHTML = `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle">`;
+                    } else {
+                        const firstLetter = firstName.charAt(0) || 'П';
+                        avatarContainer.querySelector('.avatar-letter').textContent = firstLetter;
+                    }
                 } else {
-                    userHtml = `
-                        <div class="d-flex flex-column align-items-center">
-                            <div class="avatar mb-3 d-flex align-items-center justify-content-center fw-bold fs-3">Г</div>
-                            <div class="user-name fs-4">Гость</div>
-                        </div>
-                    `;
+                    avatarContainer.querySelector('.avatar-letter').textContent = 'Г';
+                    fullNameElement.textContent = 'Гость';
                 }
-
-                document.getElementById('user-container').innerHTML = userHtml;
 
                 document.querySelectorAll('.role-card').forEach(card => {
                     card.addEventListener('click', function() {
@@ -135,9 +193,9 @@ $version = time();
         }
 
         function showFallbackView() {
-            document.getElementById('greeting').textContent = 'Здравствуйте, Гость!';
             document.getElementById('user-container').innerHTML = `
                 <div class="text-center">
+                    <div class="greeting-text">Здравствуйте</div>
                     <div class="welcome-text">
                         Добро пожаловать в наше приложение.
                     </div>
