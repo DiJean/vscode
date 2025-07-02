@@ -12,70 +12,7 @@ $version = time();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        .user-greeting {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            margin-bottom: 30px;
-        }
 
-        .greeting-text {
-            font-size: 1.8rem;
-            font-weight: 500;
-            margin-bottom: 20px;
-        }
-
-        .user-name {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-
-        .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            border: 3px solid white;
-        }
-
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .avatar-letter {
-            font-size: 3rem;
-            font-weight: bold;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .greeting-text {
-                font-size: 1.5rem;
-            }
-
-            .user-name {
-                font-size: 1.3rem;
-            }
-
-            .avatar {
-                width: 80px;
-                height: 80px;
-            }
-
-            .avatar-letter {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
 </head>
 
 <body class="theme-beige">
