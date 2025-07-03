@@ -111,8 +111,8 @@
 }
 
 .status-processing {
-    background: rgba(0, 123, 255, 0.2);
-    color: #007bff;
+    background: green;
+    color: #ffffff;
 }
 
 .status-closed {
