@@ -215,7 +215,7 @@
                     body: JSON.stringify({
                         id: leadId,
                         fields: {
-                            [TG_FIELD_CODE]: tgUserId
+                            [UF_CRM_1751577211]: tgUserId
                         }
                     })
                 });
