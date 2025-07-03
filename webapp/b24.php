@@ -6,7 +6,138 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
     <style>
-        /* Стили остаются без изменений */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            font-family: monospace;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+
+        .panel-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .status-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .warning {
+            color: #fbbf24;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .steps {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            margin-bottom: 15px;
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .step:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 24px;
+            color: #818cf8;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .btn-icon {
+            margin-right: 8px;
+        }
+
+        .tgid-display {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
     </style>
     <script>
         // Конфигурация
@@ -49,6 +180,7 @@
         function initBitrixInterceptor() {
             if (!window.b24form) {
                 console.warn("b24form не доступен");
+                addDebugMessage("❌ Виджет Bitrix24 не загружен", "error");
                 return;
             }
 
@@ -80,6 +212,7 @@
 
                 originalB24form(params);
             };
+            console.log("Перехватчик виджета Bitrix24 инициализирован");
         }
 
         // Обновление лида в Bitrix24
@@ -129,7 +262,10 @@
         // Функция для добавления статуса в debug-панель
         function addDebugMessage(message, type = 'info') {
             const debugDiv = document.getElementById('debug-content');
-            if (!debugDiv) return;
+            if (!debugDiv) {
+                console.error("Debug panel not found");
+                return;
+            }
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `status-item ${type}`;
@@ -145,7 +281,35 @@
 
 <body>
     <div class="container">
-        <!-- HTML остается без изменений -->
+        <div class="header">
+            <h1>Bitrix24 + Telegram ID</h1>
+            <p>Поле для Telegram ID: <code>UF_CRM_1751577211</code></p>
+        </div>
+
+        <div class="debug-panel">
+            <div class="panel-title">
+                <h3>Статус интеграции</h3>
+                <button class="refresh-btn" onclick="location.reload()">Обновить</button>
+            </div>
+            <div id="debug-content">
+                <div class="status-item">Инициализация...</div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>Как работает:</h3>
+            <ol class="steps">
+                <li class="step">Вы заполняете форму через виджет</li>
+                <li class="step">Создается лид в Bitrix24</li>
+                <li class="step">Мы получаем ID созданного лида</li>
+                <li class="step">Отдельным запросом добавляем Telegram ID в поле <code>UF_CRM_1751577211</code></li>
+            </ol>
+
+            <div class="tgid-display">
+                <strong>Ваш Telegram ID:</strong>
+                <div id="tgid-value">Определение...</div>
+            </div>
+        </div>
 
         <!-- Bitrix24 Widget Loader -->
         <script>
@@ -163,19 +327,42 @@
                         addDebugMessage("❌ Ошибка проверки прав вебхука", "error");
                     });
 
-                // Инициализируем перехватчик перед загрузкой виджета
+                // Пытаемся инициализировать перехватчик сразу
                 initBitrixInterceptor();
+
+                // Периодическая проверка доступности b24form
+                const intervalId = setInterval(() => {
+                    if (window.b24form) {
+                        clearInterval(intervalId);
+                        initBitrixInterceptor();
+                    }
+                }, 300);
+
+                // Таймаут для остановки проверки
+                setTimeout(() => {
+                    clearInterval(intervalId);
+                    if (!window.b24form) {
+                        addDebugMessage("❌ Виджет Bitrix24 не загрузился", "error");
+                    }
+                }, 5000);
 
                 var s = d.createElement('script');
                 s.async = true;
                 s.src = u + '?' + (Date.now() / 60000 | 0);
+                s.onerror = function() {
+                    addDebugMessage("❌ Ошибка загрузки виджета Bitrix24", "error");
+                };
 
                 var h = d.getElementsByTagName('script')[0];
                 h.parentNode.insertBefore(s, h);
             })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
         </script>
 
-        <!-- Остальной HTML -->
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="back-btn">
+                <span class="btn-icon">←</span> На главную
+            </a>
+        </div>
     </div>
 
     <script>
@@ -184,17 +371,23 @@
             const tgUserId = getTelegramUserId();
             const tgidValue = document.getElementById('tgid-value');
 
-            if (tgUserId) {
-                tgidValue.textContent = tgUserId;
-                tgidValue.className = 'success';
-                addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
-                addDebugMessage(`ID будет добавлен в поле ${TG_FIELD_CODE}`, 'success');
-                localStorage.setItem('tgUserId', tgUserId);
+            // Проверка существования элемента перед установкой значения
+            if (tgidValue) {
+                if (tgUserId) {
+                    tgidValue.textContent = tgUserId;
+                    tgidValue.className = 'success';
+                    addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
+                    addDebugMessage(`ID будет добавлен в поле ${TG_FIELD_CODE}`, 'success');
+                    localStorage.setItem('tgUserId', tgUserId);
+                } else {
+                    tgidValue.textContent = 'Не обнаружен';
+                    tgidValue.className = 'error';
+                    addDebugMessage('❌ Telegram ID не обнаружен', 'error');
+                    addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
+                }
             } else {
-                tgidValue.textContent = 'Не обнаружен';
-                tgidValue.className = 'error';
-                addDebugMessage('❌ Telegram ID не обнаружен', 'error');
-                addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
+                console.error("Элемент 'tgid-value' не найден");
+                addDebugMessage("❌ Элемент для отображения Telegram ID не найден", "error");
             }
 
             addDebugMessage(`<a href="?debug_tg_id=TEST123">Протестировать с ID: TEST123</a>`, 'info');
