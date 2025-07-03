@@ -1,4 +1,5 @@
 <?php
+//работающая версия
 header('Content-Type: text/html; charset=utf-8');
 $version = time();
 ?>
