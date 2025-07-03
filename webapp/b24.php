@@ -147,6 +147,7 @@
         // Получение Telegram User ID
         function getTelegramUserId() {
             try {
+                // Попытка получить ID из WebApp
                 if (window.Telegram && Telegram.WebApp) {
                     const tg = Telegram.WebApp;
                     if (tg.initDataUnsafe?.user?.id) {
@@ -157,12 +158,14 @@
                     }
                 }
 
+                // Попытка получить ID из localStorage
                 const storedId = localStorage.getItem('tgUserId');
                 if (storedId) {
                     console.log("Telegram ID из localStorage:", storedId);
                     return storedId;
                 }
 
+                // Попытка получить ID из параметров URL
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.has('debug_tg_id')) {
                     return urlParams.get('debug_tg_id');
@@ -181,17 +184,20 @@
             if (!window.b24form) {
                 console.warn("b24form не доступен");
                 addDebugMessage("❌ Виджет Bitrix24 не загружен", "error");
-                return;
+                return false;
             }
 
             const originalB24form = window.b24form;
 
             window.b24form = function(params) {
+                // Сохраняем оригинальный callback
                 const originalCallback = params.callback;
 
+                // Создаем новый callback
                 params.callback = function(result) {
-                    console.log("Callback вызван с результатом:", result);
+                    console.log("Callback виджета вызван с результатом:", result);
 
+                    // Если лид успешно создан
                     if (result && result.result) {
                         const leadId = result.result;
                         const tgUserId = getTelegramUserId();
@@ -205,14 +211,18 @@
                         }
                     }
 
+                    // Вызываем оригинальный callback
                     if (originalCallback) {
                         originalCallback(result);
                     }
                 };
 
-                originalB24form(params);
+                // Вызываем оригинальную функцию
+                return originalB24form(params);
             };
-            console.log("Перехватчик виджета Bitrix24 инициализирован");
+
+            console.log("Перехватчик виджета Bitrix24 успешно установлен");
+            return true;
         }
 
         // Обновление лида в Bitrix24
@@ -313,7 +323,7 @@
 
         <!-- Bitrix24 Widget Loader -->
         <script>
-            (function(w, d, u) {
+            (function() {
                 // Проверка прав доступа вебхука
                 fetch(`${BITRIX_WEBHOOK}scope.json`)
                     .then(response => response.json())
@@ -327,35 +337,43 @@
                         addDebugMessage("❌ Ошибка проверки прав вебхука", "error");
                     });
 
-                // Пытаемся инициализировать перехватчик сразу
-                initBitrixInterceptor();
+                // Создаем элемент для виджета
+                const widgetScript = document.createElement('script');
+                widgetScript.async = true;
+                widgetScript.src = 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js';
 
-                // Периодическая проверка доступности b24form
-                const intervalId = setInterval(() => {
-                    if (window.b24form) {
-                        clearInterval(intervalId);
-                        initBitrixInterceptor();
-                    }
-                }, 300);
+                // Обработчик успешной загрузки
+                widgetScript.onload = function() {
+                    console.log("Виджет Bitrix24 загружен");
 
-                // Таймаут для остановки проверки
-                setTimeout(() => {
-                    clearInterval(intervalId);
-                    if (!window.b24form) {
-                        addDebugMessage("❌ Виджет Bitrix24 не загрузился", "error");
-                    }
-                }, 5000);
+                    // Периодическая проверка доступности b24form
+                    const checkInterval = setInterval(() => {
+                        if (window.b24form) {
+                            clearInterval(checkInterval);
+                            if (initBitrixInterceptor()) {
+                                addDebugMessage("✅ Перехватчик виджета установлен", "success");
+                            }
+                        }
+                    }, 300);
 
-                var s = d.createElement('script');
-                s.async = true;
-                s.src = u + '?' + (Date.now() / 60000 | 0);
-                s.onerror = function() {
-                    addDebugMessage("❌ Ошибка загрузки виджета Bitrix24", "error");
+                    // Таймаут для остановки проверки
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        if (!window.b24form) {
+                            addDebugMessage("❌ Функция b24form не появилась после загрузки виджета", "error");
+                        }
+                    }, 5000);
                 };
 
-                var h = d.getElementsByTagName('script')[0];
-                h.parentNode.insertBefore(s, h);
-            })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
+                // Обработчик ошибок
+                widgetScript.onerror = function() {
+                    addDebugMessage("❌ Ошибка загрузки виджета Bitrix24", "error");
+                    console.error("Ошибка загрузки виджета Bitrix24");
+                };
+
+                // Добавляем виджет на страницу
+                document.head.appendChild(widgetScript);
+            })();
         </script>
 
         <div style="text-align: center; margin-top: 30px;">
@@ -369,25 +387,26 @@
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', function() {
             const tgUserId = getTelegramUserId();
-            const tgidValue = document.getElementById('tgid-value');
+            const tgidElement = document.getElementById('tgid-value');
 
-            // Проверка существования элемента перед установкой значения
-            if (tgidValue) {
-                if (tgUserId) {
-                    tgidValue.textContent = tgUserId;
-                    tgidValue.className = 'success';
-                    addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
-                    addDebugMessage(`ID будет добавлен в поле ${TG_FIELD_CODE}`, 'success');
-                    localStorage.setItem('tgUserId', tgUserId);
-                } else {
-                    tgidValue.textContent = 'Не обнаружен';
-                    tgidValue.className = 'error';
-                    addDebugMessage('❌ Telegram ID не обнаружен', 'error');
-                    addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
-                }
-            } else {
-                console.error("Элемент 'tgid-value' не найден");
+            // Проверка существования элемента
+            if (!tgidElement) {
+                console.error("Элемент с id 'tgid-value' не найден");
                 addDebugMessage("❌ Элемент для отображения Telegram ID не найден", "error");
+                return;
+            }
+
+            if (tgUserId) {
+                tgidElement.textContent = tgUserId;
+                tgidElement.className = 'success';
+                addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
+                addDebugMessage(`ID будет добавлен в поле ${TG_FIELD_CODE}`, 'success');
+                localStorage.setItem('tgUserId', tgUserId);
+            } else {
+                tgidElement.textContent = 'Не обнаружен';
+                tgidElement.className = 'error';
+                addDebugMessage('❌ Telegram ID не обнаружен', 'error');
+                addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
             }
 
             addDebugMessage(`<a href="?debug_tg_id=TEST123">Протестировать с ID: TEST123</a>`, 'info');
