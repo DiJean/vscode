@@ -6,155 +6,156 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
     <link rel="stylesheet" href="/webapp/css/b24.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Конфигурация
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
-        const TG_FIELD_CODE = 'UF_CRM_1751577211';
+    // Конфигурация
+    const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+    const TG_FIELD_CODE = 'UF_CRM_1751577211';
 
-        // Функция для безопасного использования Telegram WebApp API
-        function useTelegramAPI(callback) {
-            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                try {
-                    const tg = Telegram.WebApp;
-                    callback(tg);
-                } catch (e) {
-                    console.error("Ошибка при работе с Telegram API:", e);
-                    addDebugMessage(`❌ Ошибка Telegram API: ${e.message}`, "error");
-                }
-            } else {
-                addDebugMessage("ℹ️ Telegram WebApp API недоступно", "info");
-            }
-        }
+    // Функция для безопасного использования Telegram WebApp API
+    function useTelegramAPI(callback) {
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    try {
+    const tg = Telegram.WebApp;
+    callback(tg);
+    } catch (e) {
+    console.error("Ошибка при работе с Telegram API:", e);
+    addDebugMessage(`❌ Ошибка Telegram API: ${e.message}`, "error");
+    }
+    } else {
+    addDebugMessage("ℹ️ Telegram WebApp API недоступно", "info");
+    }
+    }
 
-        // Получение Telegram User ID
-        function getTelegramUserId() {
-            try {
-                let userId = null;
+    // Получение Telegram User ID
+    function getTelegramUserId() {
+    try {
+    let userId = null;
 
-                useTelegramAPI(tg => {
-                    if (tg.initDataUnsafe?.user?.id) {
-                        userId = tg.initDataUnsafe.user.id.toString();
-                        console.log("Telegram ID из WebApp:", userId);
-                        localStorage.setItem('tgUserId', userId);
-                    }
-                });
+    useTelegramAPI(tg => {
+    if (tg.initDataUnsafe?.user?.id) {
+    userId = tg.initDataUnsafe.user.id.toString();
+    console.log("Telegram ID из WebApp:", userId);
+    localStorage.setItem('tgUserId', userId);
+    }
+    });
 
-                if (userId) return userId;
+    if (userId) return userId;
 
-                const storedId = localStorage.getItem('tgUserId');
-                if (storedId) {
-                    console.log("Telegram ID из localStorage:", storedId);
-                    return storedId;
-                }
+    const storedId = localStorage.getItem('tgUserId');
+    if (storedId) {
+    console.log("Telegram ID из localStorage:", storedId);
+    return storedId;
+    }
 
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('debug_tg_id')) {
-                    return urlParams.get('debug_tg_id');
-                }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('debug_tg_id')) {
+    return urlParams.get('debug_tg_id');
+    }
 
-                console.warn("Telegram ID не найден");
-                return null;
-            } catch (e) {
-                console.error("Ошибка получения Telegram ID:", e);
-                return null;
-            }
-        }
+    console.warn("Telegram ID не найден");
+    return null;
+    } catch (e) {
+    console.error("Ошибка получения Telegram ID:", e);
+    return null;
+    }
+    }
 
-        // Обновление лида в Bitrix24
-        async function updateLeadInBitrix(leadId, tgUserId) {
-            try {
-                if (isNaN(leadId)) {
-                    throw new Error(`Некорректный ID лида: ${leadId}`);
-                }
+    // Обновление лида в Bitrix24
+    async function updateLeadInBitrix(leadId, tgUserId) {
+    try {
+    if (isNaN(leadId)) {
+    throw new Error(`Некорректный ID лида: ${leadId}`);
+    }
 
-                const requestBody = {
-                    id: parseInt(leadId),
-                    fields: {
-                        [TG_FIELD_CODE]: tgUserId
-                    }
-                };
+    const requestBody = {
+    id: parseInt(leadId),
+    fields: {
+    [TG_FIELD_CODE]: tgUserId
+    }
+    };
 
-                console.log("Отправка запроса на обновление лида:", requestBody);
+    console.log("Отправка запроса на обновление лида:", requestBody);
 
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.update.json`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+    const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.update.json`, {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(requestBody)
+    });
 
-                const result = await response.json();
-                console.log("Ответ от Bitrix24:", result);
+    const result = await response.json();
+    console.log("Ответ от Bitrix24:", result);
 
-                if (result.error) {
-                    throw new Error(`Bitrix API Error: ${result.error} - ${result.error_description}`);
-                }
+    if (result.error) {
+    throw new Error(`Bitrix API Error: ${result.error} - ${result.error_description}`);
+    }
 
-                if (result.result) {
-                    addDebugMessage(`✅ Telegram ID добавлен в лид #${leadId}`, 'success');
-                } else {
-                    addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${JSON.stringify(result)}`, 'error');
-                }
-            } catch (error) {
-                console.error("Ошибка обновления лида:", error);
-                addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${error.message}`, 'error');
-            }
-        }
+    if (result.result) {
+    addDebugMessage(`✅ Telegram ID добавлен в лид #${leadId}`, 'success');
+    } else {
+    addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${JSON.stringify(result)}`, 'error');
+    }
+    } catch (error) {
+    console.error("Ошибка обновления лида:", error);
+    addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${error.message}`, 'error');
+    }
+    }
 
-        // Функция для добавления статуса в debug-панель
-        function addDebugMessage(message, type = 'info') {
-            const debugDiv = document.getElementById('debug-content');
-            if (!debugDiv) {
-                console.error("Debug panel not found");
-                return;
-            }
+    // Функция для добавления статуса в debug-панель
+    function addDebugMessage(message, type = 'info') {
+    const debugDiv = document.getElementById('debug-content');
+    if (!debugDiv) {
+    console.error("Debug panel not found");
+    return;
+    }
 
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `status-item ${type}`;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `status-item ${type}`;
 
-            const timestamp = new Date().toLocaleTimeString();
-            messageDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+    const timestamp = new Date().toLocaleTimeString();
+    messageDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
 
-            debugDiv.appendChild(messageDiv);
-            debugDiv.scrollTop = debugDiv.scrollHeight;
-        }
+    debugDiv.appendChild(messageDiv);
+    debugDiv.scrollTop = debugDiv.scrollHeight;
+    }
 
-        // Проверка прав вебхука
-        async function checkWebhookPermissions() {
-            try {
-                const response = await fetch(`${BITRIX_WEBHOOK}scope.json`);
-                const data = await response.json();
+    // Проверка прав вебхука
+    async function checkWebhookPermissions() {
+    try {
+    const response = await fetch(`${BITRIX_WEBHOOK}scope.json`);
+    const data = await response.json();
 
-                if (!data.result) {
-                    addDebugMessage("❌ Не удалось получить права вебхука", "error");
-                    return false;
-                }
+    if (!data.result) {
+    addDebugMessage("❌ Не удалось получить права вебхука", "error");
+    return false;
+    }
 
-                // Преобразуем права в массив
-                const permissions = Array.isArray(data.result) ? data.result : Object.keys(data.result);
-                addDebugMessage(`Права вебхука: ${JSON.stringify(permissions)}`, 'info');
+    // Преобразуем права в массив
+    const permissions = Array.isArray(data.result) ? data.result : Object.keys(data.result);
+    addDebugMessage(`Права вебхука: ${JSON.stringify(permissions)}`, 'info');
 
-                // Проверяем наличие прав CRM
-                if (permissions.includes('crm')) {
-                    addDebugMessage("✅ Вебхук имеет права CRM", "success");
-                    return true;
-                }
+    // Проверяем наличие прав CRM
+    if (permissions.includes('crm')) {
+    addDebugMessage("✅ Вебхук имеет права CRM", "success");
+    return true;
+    }
 
-                if (permissions.includes('lead')) {
-                    addDebugMessage("✅ Вебхук имеет права на лиды", "success");
-                    return true;
-                }
+    if (permissions.includes('lead')) {
+    addDebugMessage("✅ Вебхук имеет права на лиды", "success");
+    return true;
+    }
 
-                addDebugMessage("❌ У вебхука недостаточно прав для обновления лидов", "error");
-                return false;
+    addDebugMessage("❌ У вебхука недостаточно прав для обновления лидов", "error");
+    return false;
 
-            } catch (error) {
-                console.error("Ошибка проверки прав вебхука:", error);
-                addDebugMessage(`❌ Ошибка проверки прав вебхука: ${error.message}`, "error");
-                return false;
-            }
-        }
+    } catch (error) {
+    console.error("Ошибка проверки прав вебхука:", error);
+    addDebugMessage(`❌ Ошибка проверки прав вебхука: ${error.message}`, "error");
+    return false;
+    }
+    }
     </script>
 </head>
 
