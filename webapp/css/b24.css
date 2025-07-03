@@ -130,3 +130,9 @@ body {
     border-radius: 10px;
     margin-top: 20px;
 }
+
+/* Стили для виджета Bitrix24 */
+.b24-form-container {
+    min-height: 500px;
+    margin: 20px 0;
+}
