@@ -161,7 +161,7 @@ $version = time();
             document.addEventListener('DOMContentLoaded', initApp);
         }
     </script>
-    //Bitrix24 widget
+
     <script>
         (function(w, d, u) {
             var s = d.createElement('script');
@@ -171,6 +171,7 @@ $version = time();
             h.parentNode.insertBefore(s, h);
         })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
     </script>
+
 </body>
 
 </html>
