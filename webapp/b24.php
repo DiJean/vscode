@@ -286,6 +286,41 @@
             debugDiv.appendChild(messageDiv);
             debugDiv.scrollTop = debugDiv.scrollHeight;
         }
+
+        // Проверка прав вебхука
+        async function checkWebhookPermissions() {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}scope.json`);
+                const data = await response.json();
+
+                addDebugMessage(`Права вебхука: ${JSON.stringify(data.result)}`, 'info');
+
+                if (!data.result) {
+                    addDebugMessage("❌ Не удалось получить права вебхука", "error");
+                    return;
+                }
+
+                // Проверяем права на CRM
+                if (data.result.crm) {
+                    addDebugMessage("✅ Вебхук имеет права CRM", "success");
+                    return true;
+                }
+
+                // Проверяем права на лиды (если есть отдельное право)
+                if (data.result.lead) {
+                    addDebugMessage("✅ Вебхук имеет права на лиды", "success");
+                    return true;
+                }
+
+                addDebugMessage("❌ У вебхука недостаточно прав для обновления лидов", "error");
+                return false;
+
+            } catch (error) {
+                console.error("Ошибка проверки прав вебхука:", error);
+                addDebugMessage(`❌ Ошибка проверки прав вебхука: ${error.message}`, "error");
+                return false;
+            }
+        }
     </script>
 </head>
 
@@ -323,19 +358,14 @@
 
         <!-- Bitrix24 Widget Loader -->
         <script>
-            (function() {
-                // Проверка прав доступа вебхука
-                fetch(`${BITRIX_WEBHOOK}scope.json`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.result || !data.result.lead) {
-                            addDebugMessage("❌ У вебхука недостаточно прав для обновления лидов", "error");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Ошибка проверки прав вебхука:", error);
-                        addDebugMessage("❌ Ошибка проверки прав вебхука", "error");
-                    });
+            (async function() {
+                // Проверка прав вебхука
+                const hasPermissions = await checkWebhookPermissions();
+
+                if (!hasPermissions) {
+                    addDebugMessage("❌ Интеграция не будет работать: недостаточно прав", "error");
+                    return;
+                }
 
                 // Создаем элемент для виджета
                 const widgetScript = document.createElement('script');
@@ -345,6 +375,7 @@
                 // Обработчик успешной загрузки
                 widgetScript.onload = function() {
                     console.log("Виджет Bitrix24 загружен");
+                    addDebugMessage("✅ Виджет Bitrix24 загружен", "success");
 
                     // Периодическая проверка доступности b24form
                     const checkInterval = setInterval(() => {
@@ -392,7 +423,6 @@
             // Проверка существования элемента
             if (!tgidElement) {
                 console.error("Элемент с id 'tgid-value' не найден");
-                addDebugMessage("❌ Элемент для отображения Telegram ID не найден", "error");
                 return;
             }
 
