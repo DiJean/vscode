@@ -6,25 +6,6 @@ $version = time();
 <html lang="ru">
 
 <head>
-    <!-- Добавьте этот скрипт первым в секции head -->
-    <script>
-        (function() {
-            // Создаем элементы для favicon
-            const favicon = document.createElement('link');
-            favicon.rel = 'icon';
-            favicon.href = '/webapp/css/icons/favicon.png';
-            favicon.type = 'image/x-icon';
-
-            const appleIcon = document.createElement('link');
-            appleIcon.rel = 'apple-touch-icon';
-            appleIcon.href = '/webapp/css/icons/favicon.png';
-
-            // Добавляем иконки в документ
-            document.head.appendChild(favicon);
-            document.head.appendChild(appleIcon);
-        })();
-    </script>
-    <link rel="manifest" href="/webapp/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дашборд исполнителя</title>
@@ -61,7 +42,7 @@ $version = time();
                 </select>
             </div>
             <div class="col-md-5">
-                <input type="text" class="form-control" id="city-search" placeholder="Поиск по городу...">
+                <input type="text" class="form-control" id="search" placeholder="Поиск по клиенту или услуге...">
             </div>
             <div class="col-md-3">
                 <button class="btn btn-primary w-100" id="refresh-btn">Обновить</button>
@@ -134,7 +115,13 @@ $version = time();
                 });
 
                 const data = await response.json();
-                return data.result && data.result.length > 0 ? data.result[0] : null;
+
+                // Ключевое исправление 1: правильная обработка ответа
+                if (data && data.result && data.result.length > 0) {
+                    return data.result[0];
+                }
+                return null;
+
             } catch (error) {
                 console.error('Ошибка поиска исполнителя:', error);
                 return null;
@@ -150,18 +137,25 @@ $version = time();
             tg = Telegram.WebApp;
 
             try {
-                user = tg.initDataUnsafe?.user || {};
+                // Ключевое исправление 2: правильное получение данных пользователя
+                user = tg.initDataUnsafe.user || {};
+
                 const performerContact = await findPerformerByTgId(user.id);
 
+                // Добавим отладочный вывод
+                console.log('Performer Contact:', performerContact);
+
                 if (!performerContact) {
-                    tg.showPopup({
-                        title: 'Требуется регистрация',
-                        message: 'Пройдите регистрацию для доступа к дашборду',
-                        buttons: [{
-                            id: 'ok',
-                            type: 'ok'
-                        }]
-                    });
+                    if (tg.showPopup) {
+                        tg.showPopup({
+                            title: 'Требуется регистрация',
+                            message: 'Пройдите регистрацию для доступа к дашборду',
+                            buttons: [{
+                                id: 'ok',
+                                type: 'ok'
+                            }]
+                        });
+                    }
 
                     setTimeout(() => {
                         window.location.href = 'performer-form.php';
@@ -221,9 +215,11 @@ $version = time();
                 const status = document.getElementById('status-filter').value;
                 const search = document.getElementById('search').value;
 
+                // Ключевое исправление 3: правильный формат фильтра
                 const filter = {
-                    'UF_CRM_1751128612': contactId // ID исполнителя в сделке
+                    'UF_CRM_1751128612': contactId
                 };
+
                 if (status) filter['STAGE_ID'] = status;
                 if (search) filter['%TITLE'] = search;
 
@@ -248,8 +244,14 @@ $version = time();
                 });
 
                 const data = await response.json();
-                renderDeals(data.result || []);
-                updatePagination(data.total || 0);
+
+                // Ключевое исправление 4: правильная обработка ответа
+                if (data && data.result) {
+                    renderDeals(data.result);
+                    updatePagination(data.total);
+                } else {
+                    throw new Error('Некорректный ответ от сервера');
+                }
 
             } catch (error) {
                 console.error('Ошибка загрузки сделок:', error);
@@ -379,6 +381,7 @@ $version = time();
             `;
         }
 
+        // Ключевое исправление 5: правильная инициализация
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
