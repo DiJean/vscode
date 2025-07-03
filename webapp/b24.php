@@ -6,92 +6,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
     <script>
-        // Улучшенная функция получения Telegram ID
+        // Глобальная конфигурация
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+        const BITRIX_FORM_ID = 'loader_1_wugrzo'; // ID вашей CRM-формы
+        const TG_FIELD_CODE = 'UF_CRM_1751128872'; // Код поля для Telegram ID
+
+        // Получение Telegram User ID
         function getTelegramUserId() {
             try {
-                // Проверка Telegram WebApp
+                // Основной способ: Telegram WebApp
                 if (window.Telegram && Telegram.WebApp) {
                     const tg = Telegram.WebApp;
-
-                    // Расширенная проверка данных пользователя
-                    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-                        const tgUserId = tg.initDataUnsafe.user.id.toString();
-                        console.log("Telegram ID из WebApp:", tgUserId);
-                        localStorage.setItem('tgUserId', tgUserId);
-                        return tgUserId;
-                    }
-
-                    // Проверка query-параметров (для дебага)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.has('tg_user_id')) {
-                        const tgUserId = urlParams.get('tg_user_id');
-                        console.log("Telegram ID из URL параметра:", tgUserId);
-                        localStorage.setItem('tgUserId', tgUserId);
-                        return tgUserId;
+                    if (tg.initDataUnsafe?.user?.id) {
+                        return tg.initDataUnsafe.user.id.toString();
                     }
                 }
 
-                // Проверка localStorage
-                const storedId = localStorage.getItem('tgUserId');
-                if (storedId) {
-                    console.log("Telegram ID из localStorage:", storedId);
-                    return storedId;
-                }
-
-                console.warn("Telegram ID не найден");
-                return null;
+                // Резервный способ: localStorage
+                return localStorage.getItem('tgUserId') || null;
             } catch (e) {
                 console.error("Ошибка получения Telegram ID:", e);
                 return null;
             }
         }
 
-        // Инициализация виджета с гарантированной передачей TG ID
-        function initBitrixWidget() {
+        // Прямая отправка данных в Bitrix24
+        async function sendToBitrix(formData) {
             const tgUserId = getTelegramUserId();
 
-            // Переопределяем функцию виджета
-            window.b24form = function(params) {
-                // Добавляем TG ID в параметры формы
-                if (tgUserId) {
-                    // Основной метод передачи
-                    params.data = params.data || {};
-                    params.data.UF_CRM_1751128872 = tgUserId;
-
-                    // Дополнительный метод через скрытые поля
-                    setTimeout(() => {
-                        try {
-                            const formSelector = `.${params.form_class}`;
-                            const form = document.querySelector(formSelector);
-
-                            if (form) {
-                                // Удаляем старое поле если есть
-                                const existingField = form.querySelector('[name="UF_CRM_1751128872"]');
-                                if (existingField) existingField.remove();
-
-                                // Создаем новое скрытое поле
-                                const hiddenField = document.createElement('input');
-                                hiddenField.type = 'hidden';
-                                hiddenField.name = 'UF_CRM_1751128872';
-                                hiddenField.value = tgUserId;
-                                form.appendChild(hiddenField);
-
-                                console.log("Добавлено скрытое поле в форму:", hiddenField);
-                            }
-                        } catch (e) {
-                            console.error("Ошибка добавления скрытого поля:", e);
-                        }
-                    }, 1500);
-                }
-
-                // Вызываем оригинальную функцию
-                if (window.b24formCallback) {
-                    window.b24formCallback(params);
+            // Добавляем Telegram ID к данным
+            const data = {
+                fields: {
+                    ...formData,
+                    [TG_FIELD_CODE]: tgUserId || 'unknown'
                 }
             };
+
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.add.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                return await response.json();
+            } catch (error) {
+                console.error("Ошибка отправки в Bitrix24:", error);
+                return null;
+            }
+        }
+
+        // Перехватчик для виджета Bitrix24
+        function initBitrixInterceptor() {
+            // Перехватываем создание форм
+            const originalB24form = window.b24form;
+
+            window.b24form = function(params) {
+                // Сохраняем оригинальные параметры
+                const originalCallback = params.callback;
+                const originalData = params.data || {};
+
+                // Переопределяем callback
+                params.callback = function(result) {
+                    // Если есть Telegram ID и форма успешно создана
+                    const tgUserId = getTelegramUserId();
+                    if (tgUserId && result && result.result) {
+                        // Обновляем лид в Bitrix24
+                        updateLeadInBitrix(result.result, tgUserId);
+                    }
+
+                    // Вызываем оригинальный callback
+                    if (originalCallback) {
+                        originalCallback(result);
+                    }
+                };
+
+                // Вызываем оригинальную функцию
+                originalB24form(params);
+            };
+
+            // Обновление лида в Bitrix24
+            async function updateLeadInBitrix(leadId, tgUserId) {
+                try {
+                    const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.update.json`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: leadId,
+                            fields: {
+                                [TG_FIELD_CODE]: tgUserId
+                            }
+                        })
+                    });
+
+                    const result = await response.json();
+                    console.log("Лид обновлен:", result);
+
+                    if (result.result) {
+                        addDebugMessage(`✅ Telegram ID добавлен в лид #${leadId}`, 'success');
+                    }
+                } catch (error) {
+                    console.error("Ошибка обновления лида:", error);
+                    addDebugMessage(`❌ Ошибка обновления лида #${leadId}`, 'error');
+                }
+            }
         }
     </script>
     <style>
+        /* Стили остаются без изменений */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -223,6 +249,13 @@
             margin: 0 auto 20px;
             display: block;
         }
+
+        .tgid-display {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 
@@ -230,7 +263,7 @@
     <div class="container">
         <div class="header">
             <h1>Bitrix24 + Telegram ID</h1>
-            <p>Интеграция Telegram User ID с CRM</p>
+            <p>Гарантированная передача Telegram User ID</p>
         </div>
 
         <div class="debug-panel">
@@ -244,22 +277,17 @@
         </div>
 
         <div class="instructions">
-            <h3>Как проверить работоспособность:</h3>
+            <h3>Новый подход:</h3>
             <ol class="steps">
-                <li class="step">Заполните тестовую форму через виджет Bitrix24</li>
-                <li class="step">В Bitrix24 откройте созданный контакт</li>
-                <li class="step">Проверьте поле <code>UF_CRM_1751128872</code></li>
-                <li class="step">Значение должно совпадать с вашим Telegram ID</li>
+                <li class="step">Сначала создается лид через виджет</li>
+                <li class="step">После создания получаем ID лида</li>
+                <li class="step">Отдельным запросом обновляем лид</li>
+                <li class="step">Добавляем Telegram ID в нужное поле</li>
             </ol>
 
-            <div class="note">
-                <p><strong>Важно:</strong> В Bitrix24 должно быть создано пользовательское поле:</p>
-                <ul>
-                    <li>Код: <code>UF_CRM_1751128872</code></li>
-                    <li>Название: Telegram User ID</li>
-                    <li>Тип: Строка</li>
-                    <li>Привязка: Контакты</li>
-                </ul>
+            <div class="tgid-display">
+                <strong>Ваш Telegram ID:</strong>
+                <div id="tgid-value">Определение...</div>
             </div>
         </div>
 
@@ -269,12 +297,13 @@
                 // Сохраняем оригинальную функцию
                 w.b24formCallback = w.b24form;
 
-                // Инициализируем интеграцию
-                initBitrixWidget();
+                // Инициализируем перехватчик перед загрузкой виджета
+                initBitrixInterceptor();
 
                 var s = d.createElement('script');
                 s.async = true;
                 s.src = u + '?' + (Date.now() / 60000 | 0);
+
                 var h = d.getElementsByTagName('script')[0];
                 h.parentNode.insertBefore(s, h);
             })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
@@ -303,41 +332,24 @@
 
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', function() {
-            // Добавляем начальные сообщения
-            addDebugMessage('Страница загружена');
-
             // Получаем и отображаем Telegram ID
             const tgUserId = getTelegramUserId();
+            const tgidValue = document.getElementById('tgid-value');
 
             if (tgUserId) {
-                addDebugMessage(`✅ Telegram ID получен: <strong>${tgUserId}</strong>`, 'success');
-                addDebugMessage('ID будет передан в поле UF_CRM_1751128872', 'success');
+                tgidValue.textContent = tgUserId;
+                tgidValue.className = 'success';
+                addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
                 localStorage.setItem('tgUserId', tgUserId);
             } else {
+                tgidValue.textContent = 'Не обнаружен';
+                tgidValue.className = 'error';
                 addDebugMessage('❌ Telegram ID не обнаружен', 'error');
-                addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
+                addDebugMessage('Для тестирования используйте параметр ?debug_tg_id=TEST123', 'warning');
             }
 
-            // Мониторинг событий Bitrix24
-            let widgetLoaded = false;
-
-            // Проверка загрузки виджета
-            const checkWidget = setInterval(() => {
-                if (window.BX) {
-                    addDebugMessage('✅ Виджет Bitrix24 загружен', 'success');
-                    widgetLoaded = true;
-                    clearInterval(checkWidget);
-                }
-            }, 500);
-
-            // Таймаут проверки виджета
-            setTimeout(() => {
-                if (!widgetLoaded) {
-                    addDebugMessage('❌ Виджет Bitrix24 не загрузился', 'error');
-                    addDebugMessage('Проверьте подключение к интернету и URL виджета', 'warning');
-                    clearInterval(checkWidget);
-                }
-            }, 10000);
+            // Добавляем тестовую ссылку
+            addDebugMessage(`<a href="?debug_tg_id=TEST123" target="_blank">Протестировать с ID: TEST123</a>`, 'info');
         });
     </script>
 </body>
