@@ -142,7 +142,7 @@
     <script>
         // Конфигурация
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
-        const TG_FIELD_CODE = 'UF_CRM_1751577211';
+        const TG_FIELD_CODE = 'UF_CRM_1751128872';
 
         // Получение Telegram User ID
         function getTelegramUserId() {
