@@ -5,157 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            color: white;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .debug-panel {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 30px;
-            font-family: monospace;
-            overflow-x: auto;
-            max-height: 300px;
-        }
-
-        .panel-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .refresh-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .refresh-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .status-item {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .status-item:last-child {
-            border-bottom: none;
-        }
-
-        .success {
-            color: #4ade80;
-        }
-
-        .warning {
-            color: #fbbf24;
-        }
-
-        .error {
-            color: #f87171;
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .steps {
-            padding-left: 25px;
-            margin-bottom: 20px;
-        }
-
-        .step {
-            margin-bottom: 15px;
-            position: relative;
-            padding-left: 30px;
-        }
-
-        .step:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            top: 0;
-            font-size: 24px;
-            color: #818cf8;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 12px 25px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-        }
-
-        .btn-icon {
-            margin-right: 8px;
-        }
-
-        .tgid-display {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="/webapp/css/b24.css">
     <script>
         // Конфигурация
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
         const TG_FIELD_CODE = 'UF_CRM_1751577211';
 
+        // Функция для безопасного использования Telegram WebApp API
+        function useTelegramAPI(callback) {
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                try {
+                    const tg = Telegram.WebApp;
+                    callback(tg);
+                } catch (e) {
+                    console.error("Ошибка при работе с Telegram API:", e);
+                    addDebugMessage(`❌ Ошибка Telegram API: ${e.message}`, "error");
+                }
+            } else {
+                addDebugMessage("ℹ️ Telegram WebApp API недоступно", "info");
+            }
+        }
+
         // Получение Telegram User ID
         function getTelegramUserId() {
             try {
-                if (window.Telegram && Telegram.WebApp) {
-                    const tg = Telegram.WebApp;
+                let userId = null;
+
+                useTelegramAPI(tg => {
                     if (tg.initDataUnsafe?.user?.id) {
-                        const userId = tg.initDataUnsafe.user.id.toString();
+                        userId = tg.initDataUnsafe.user.id.toString();
                         console.log("Telegram ID из WebApp:", userId);
                         localStorage.setItem('tgUserId', userId);
-                        return userId;
                     }
-                }
+                });
+
+                if (userId) return userId;
 
                 const storedId = localStorage.getItem('tgUserId');
                 if (storedId) {
@@ -310,9 +194,9 @@
         <script>
             (async function() {
                 // Проверка прав вебхука
-                const hasPermissions = await checkWebhookPermissions();
+                await checkWebhookPermissions();
 
-                // Загрузка виджета напрямую без перехвата
+                // Загрузка виджета
                 const widgetScript = document.createElement('script');
                 widgetScript.async = true;
                 widgetScript.src = 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js';
@@ -410,6 +294,29 @@
             }
 
             addDebugMessage(`<a href="?debug_tg_id=TEST123">Протестировать с ID: TEST123</a>`, 'info');
+
+            // Безопасная инициализация Telegram WebApp
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                try {
+                    Telegram.WebApp.ready();
+
+                    if (Telegram.WebApp.isExpanded !== true && typeof Telegram.WebApp.expand === 'function') {
+                        Telegram.WebApp.expand();
+                    }
+
+                    Telegram.WebApp.backgroundColor = '#6a11cb';
+                    if (typeof Telegram.WebApp.setHeaderColor === 'function') {
+                        Telegram.WebApp.setHeaderColor('#6a11cb');
+                    }
+
+                    addDebugMessage("✅ Telegram WebApp инициализирован", "success");
+                } catch (e) {
+                    console.error("Ошибка инициализации Telegram WebApp:", e);
+                    addDebugMessage(`❌ Ошибка инициализации Telegram: ${e.message}`, "error");
+                }
+            } else {
+                addDebugMessage("ℹ️ Telegram WebApp API недоступно", "info");
+            }
         });
     </script>
 </body>
