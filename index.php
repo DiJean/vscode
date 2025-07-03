@@ -161,7 +161,7 @@ $version = time();
             document.addEventListener('DOMContentLoaded', initApp);
         }
     </script>
-
+    <a href="/webapp/b24.php">b24</a>
     <script>
         (function(w, d, u) {
             var s = d.createElement('script');
