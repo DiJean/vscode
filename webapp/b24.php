@@ -97,7 +97,55 @@ $version = time();
         }
     </script>
 
-    </head>
+    <style>
+        .id-display-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .id-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .id-display strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .id-value {
+            font-size: 18px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .id-value.success {
+            color: #28a745;
+        }
+
+        .id-value.error {
+            color: #dc3545;
+        }
+
+        .id-value.waiting {
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .id-display-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
 
 <body>
     <div class="container">
@@ -147,42 +195,65 @@ $version = time();
                 var h = d.getElementsByTagName('script')[0];
                 h.parentNode.insertBefore(s, h);
 
-                // Глобальный обработчик для форм
-                w.b24form = {
-                    onload: function(form) {
-                        console.log("Bitrix24 Form loaded");
-                        addDebugMessage("✅ Форма Bitrix24 загружена", "success");
+                // Глобальный обработчик для форм - НОВАЯ РЕАЛИЗАЦИЯ
+                w.b24form = w.b24form || {};
+                w.b24form.onload = function(form) {
+                    console.log("Bitrix24 Form loaded");
+                    addDebugMessage("✅ Форма Bitrix24 загружена", "success");
 
-                        const tgUserId = getTelegramUserId();
-                        if (tgUserId) {
-                            try {
-                                // Добавляем скрытое поле с Telegram ID
-                                form.addField({
-                                    code: TG_LEAD_FIELD,
-                                    value: tgUserId,
-                                    type: 'hidden'
-                                });
-                                addDebugMessage(`✅ Добавлено скрытое поле ${TG_LEAD_FIELD} со значением: ${tgUserId}`, "success");
-                            } catch (e) {
-                                console.error("Ошибка добавления поля:", e);
-                                addDebugMessage(`❌ Ошибка добавления поля: ${e.message}`, "error");
-                            }
+                    const tgUserId = getTelegramUserId();
+                    if (tgUserId) {
+                        try {
+                            // Добавляем скрытое поле с Telegram ID
+                            form.addField({
+                                name: TG_LEAD_FIELD, // Важно: используем 'name' вместо 'code'
+                                value: tgUserId,
+                                type: 'hidden'
+                            });
+                            addDebugMessage(`✅ Добавлено скрытое поле ${TG_LEAD_FIELD} со значением: ${tgUserId}`, "success");
+                        } catch (e) {
+                            console.error("Ошибка добавления поля:", e);
+                            addDebugMessage(`❌ Ошибка добавления поля: ${e.message}`, "error");
                         }
-
-                        form.onSubmit(function(result) {
-                            if (result && result.result) {
-                                const leadId = result.result;
-                                const leadIdElement = document.getElementById('leadid-value');
-
-                                if (leadIdElement) {
-                                    leadIdElement.textContent = leadId;
-                                    leadIdElement.className = 'id-value success';
-                                }
-
-                                addDebugMessage(`✅ Создан лид #${leadId} с Telegram ID`, "success");
-                            }
-                        });
                     }
+
+                    // Новый обработчик события отправки формы
+                    form.onSubmit = function(callback) {
+                        this._onSubmitCallback = callback;
+                    };
+
+                    // Перехватываем оригинальный метод отправки
+                    const originalSubmit = form.submit;
+                    form.submit = function() {
+                        const result = originalSubmit.apply(this, arguments);
+
+                        // Обрабатываем результат
+                        if (result && result.then) {
+                            result.then(data => {
+                                console.log("Form submit result:", data);
+                                if (data && data.result) {
+                                    const leadId = data.result;
+                                    const leadIdElement = document.getElementById('leadid-value');
+
+                                    if (leadIdElement) {
+                                        leadIdElement.textContent = leadId;
+                                        leadIdElement.className = 'id-value success';
+                                    }
+
+                                    addDebugMessage(`✅ Создан лид #${leadId} с Telegram ID`, "success");
+
+                                    // Вызываем оригинальный callback если есть
+                                    if (this._onSubmitCallback) {
+                                        this._onSubmitCallback(data);
+                                    }
+                                }
+                            }).catch(error => {
+                                console.error("Form submit error:", error);
+                                addDebugMessage(`❌ Ошибка при создании лида: ${error.message}`, "error");
+                            });
+                        }
+                        return result;
+                    };
                 };
             })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
         </script>
