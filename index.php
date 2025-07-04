@@ -97,6 +97,8 @@ $version = time();
         .btn-icon {
             margin-right: 8px;
         }
+
+        /* Удалены все стили связанные с выпадающим селектом */
     </style>
 </head>
 
@@ -123,6 +125,7 @@ $version = time();
             </div>
         </div>
 
+        <!-- Только стиль с кнопками для выбора роли -->
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="role-card" data-role="client">
@@ -168,8 +171,12 @@ $version = time();
 
     <script>
         const version = '<?= $version ?>';
+        let appInitialized = false;
 
         function initApp() {
+            if (appInitialized) return;
+            appInitialized = true;
+
             if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
                 showFallbackView();
                 return;
@@ -257,11 +264,19 @@ $version = time();
             `;
         }
 
+        // Инициализация при загрузке
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
             document.addEventListener('DOMContentLoaded', initApp);
         }
+
+        // Восстановление состояния при возврате
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
+                initApp();
+            }
+        });
     </script>
 </body>
 

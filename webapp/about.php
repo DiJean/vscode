@@ -10,6 +10,10 @@ $version = time();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>О нашем сервисе</title>
     <link rel="stylesheet" href="/webapp/css/about.css?<?= $version ?>">
+    <script>
+        // Сохраняем состояние перед переходом на about.php
+        sessionStorage.setItem('returnToIndex', 'true');
+    </script>
 </head>
 
 <body>
@@ -70,15 +74,22 @@ $version = time();
             </div>
 
             <div class="back-btn-container">
-                <a href="index.php" class="back-btn">
+                <button id="back-button" class="back-btn">
                     <svg class="btn-icon" viewBox="0 0 24 24" width="20" height="20">
                         <path fill="white" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                     </svg>
                     На главную
-                </a>
+                </button>
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('back-button').addEventListener('click', function() {
+            // Используем историю браузера для возврата
+            window.history.back();
+        });
+    </script>
 </body>
 
 </html>
