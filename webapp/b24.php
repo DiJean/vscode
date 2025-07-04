@@ -9,8 +9,6 @@ $version = time();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
     <link rel="stylesheet" href="/webapp/css/b24.css?v=<?= $version ?>">
-
-    <!-- Загрузка Telegram WebApp API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <script>
@@ -22,24 +20,16 @@ $version = time();
         function getTelegramUserId() {
             try {
                 let userId = null;
-
-                // Попытка получить ID из WebApp
-                if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe?.user?.id) {
+                if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
                     userId = Telegram.WebApp.initDataUnsafe.user.id.toString();
                     console.log("Telegram ID из WebApp:", userId);
                     localStorage.setItem('tgUserId', userId);
                 }
-
                 if (userId) return userId;
 
-                // Попытка получить ID из localStorage
                 const storedId = localStorage.getItem('tgUserId');
-                if (storedId) {
-                    console.log("Telegram ID из localStorage:", storedId);
-                    return storedId;
-                }
+                if (storedId) return storedId;
 
-                // Попытка получить ID из параметров URL
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.has('debug_tg_id')) {
                     return urlParams.get('debug_tg_id');
@@ -56,95 +46,88 @@ $version = time();
         // Функция для добавления статуса в debug-панель
         function addDebugMessage(message, type = 'info') {
             const debugDiv = document.getElementById('debug-content');
-            if (!debugDiv) {
-                console.error("Debug panel not found");
-                return;
-            }
+            if (!debugDiv) return;
 
             const messageDiv = document.createElement('div');
             messageDiv.className = `status-item ${type}`;
-
-            const timestamp = new Date().toLocaleTimeString();
-            messageDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
-
+            messageDiv.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
             debugDiv.appendChild(messageDiv);
             debugDiv.scrollTop = debugDiv.scrollHeight;
         }
 
         // Инициализация Telegram WebApp
         function initTelegramWebApp() {
-            if (window.Telegram && Telegram.WebApp) {
+            if (window.Telegram?.WebApp) {
                 try {
                     Telegram.WebApp.ready();
-
-                    if (Telegram.WebApp.isExpanded !== true && typeof Telegram.WebApp.expand === 'function') {
+                    if (Telegram.WebApp.isExpanded !== true) {
                         Telegram.WebApp.expand();
                     }
-
+                    Telegram.WebApp.setHeaderColor('#6a11cb');
                     Telegram.WebApp.backgroundColor = '#6a11cb';
-                    if (typeof Telegram.WebApp.setHeaderColor === 'function') {
-                        Telegram.WebApp.setHeaderColor('#6a11cb');
-                    }
-
                     addDebugMessage("✅ Telegram WebApp инициализирован", "success");
                 } catch (e) {
-                    console.error("Ошибка инициализации Telegram WebApp:", e);
                     addDebugMessage(`❌ Ошибка инициализации Telegram: ${e.message}`, "error");
                 }
             } else {
                 addDebugMessage("ℹ️ Telegram WebApp API недоступно", "info");
             }
         }
+
+        // Основная функция инициализации Bitrix24 формы
+        function initBitrixForm() {
+            const tgUserId = getTelegramUserId();
+            if (!tgUserId) {
+                addDebugMessage("⚠️ Telegram ID не найден, форма будет работать без него", "warning");
+            }
+
+            // Создаем скрытое поле для Telegram ID
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = TG_LEAD_FIELD;
+            hiddenField.value = tgUserId || '';
+            hiddenField.id = 'b24-tg-field';
+
+            // Находим контейнер формы и добавляем скрытое поле
+            const formContainer = document.querySelector('[data-b24-form]');
+            if (formContainer) {
+                formContainer.appendChild(hiddenField);
+                addDebugMessage(`✅ Скрытое поле ${TG_LEAD_FIELD} добавлено в форму`);
+            } else {
+                addDebugMessage("❌ Контейнер формы не найден", "error");
+            }
+
+            // Перехват события отправки формы
+            document.addEventListener('b24formSubmit', function(event) {
+                const leadId = event.detail?.result;
+                if (leadId) {
+                    document.getElementById('leadid-value').textContent = leadId;
+                    addDebugMessage(`✅ Создан лид #${leadId}`, "success");
+
+                    // Проверяем заполнение поля
+                    setTimeout(() => {
+                        fetch(`${BITRIX_WEBHOOK}crm.lead.get.json?id=${leadId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const fieldValue = data.result?.[TG_LEAD_FIELD];
+                                if (fieldValue === tgUserId) {
+                                    addDebugMessage(`✅ Поле ${TG_LEAD_FIELD} успешно заполнено: ${fieldValue}`, "success");
+                                } else {
+                                    addDebugMessage(`❌ Поле ${TG_LEAD_FIELD} не заполнено! Значение: ${fieldValue || 'пусто'}`, "error");
+                                }
+                            })
+                            .catch(error => {
+                                addDebugMessage(`❌ Ошибка проверки лида: ${error.message}`, "error");
+                            });
+                    }, 3000);
+                } else {
+                    addDebugMessage("❌ Не удалось получить ID лида", "error");
+                }
+            });
+        }
     </script>
 
-    <style>
-        .id-display-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .id-display {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            flex: 1;
-            min-width: 150px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .id-display strong {
-            display: block;
-            margin-bottom: 5px;
-            color: #495057;
-            font-size: 14px;
-        }
-
-        .id-value {
-            font-size: 18px;
-            font-weight: bold;
-            word-break: break-all;
-        }
-
-        .id-value.success {
-            color: #28a745;
-        }
-
-        .id-value.error {
-            color: #dc3545;
-        }
-
-        .id-value.waiting {
-            color: #6c757d;
-        }
-
-        @media (max-width: 768px) {
-            .id-display-container {
-                flex-direction: column;
-            }
-        }
-    </style>
+    
 </head>
 
 <body>
@@ -168,9 +151,9 @@ $version = time();
             <h3>Как работает:</h3>
             <ol class="steps">
                 <li class="step">Вы заполняете форму через виджет</li>
-                <li class="step">Создается лид в Bitrix24 с Telegram ID</li>
-                <li class="step">Лид автоматически конвертируется в контакт</li>
-                <li class="step">Telegram ID остается в лиде и копируется в контакт</li>
+                <li class="step">Telegram ID передается как скрытое поле</li>
+                <li class="step">Создается лид с заполненным полем Telegram ID</li>
+                <li class="step">Система проверяет заполнение поля</li>
             </ol>
 
             <div class="id-display-container">
@@ -178,7 +161,6 @@ $version = time();
                     <strong>Telegram ID:</strong>
                     <div id="tgid-value" class="id-value waiting">Определение...</div>
                 </div>
-
                 <div class="id-display">
                     <strong>Lead ID:</strong>
                     <div id="leadid-value" class="id-value waiting">Ожидание формы...</div>
@@ -186,77 +168,55 @@ $version = time();
             </div>
         </div>
 
-        <!-- Стандартная интеграция Bitrix24 с модификацией -->
+        <!-- Стандартная интеграция Bitrix24 -->
         <script>
             (function(w, d, u) {
+                // Создаем обработчик события для отправки формы
+                w.b24formResult = function(result) {
+                    const event = new CustomEvent('b24formSubmit', {
+                        detail: result
+                    });
+                    document.dispatchEvent(event);
+                };
+
                 var s = d.createElement('script');
                 s.async = true;
                 s.src = u + '?' + (Date.now() / 60000 | 0);
                 var h = d.getElementsByTagName('script')[0];
                 h.parentNode.insertBefore(s, h);
-
-                // Глобальный обработчик для форм - НОВАЯ РЕАЛИЗАЦИЯ
-                w.b24form = w.b24form || {};
-                w.b24form.onload = function(form) {
-                    console.log("Bitrix24 Form loaded");
-                    addDebugMessage("✅ Форма Bitrix24 загружена", "success");
-
-                    const tgUserId = getTelegramUserId();
-                    if (tgUserId) {
-                        try {
-                            // Добавляем скрытое поле с Telegram ID
-                            form.addField({
-                                name: TG_LEAD_FIELD, // Важно: используем 'name' вместо 'code'
-                                value: tgUserId,
-                                type: 'hidden'
-                            });
-                            addDebugMessage(`✅ Добавлено скрытое поле ${TG_LEAD_FIELD} со значением: ${tgUserId}`, "success");
-                        } catch (e) {
-                            console.error("Ошибка добавления поля:", e);
-                            addDebugMessage(`❌ Ошибка добавления поля: ${e.message}`, "error");
-                        }
-                    }
-
-                    // Новый обработчик события отправки формы
-                    form.onSubmit = function(callback) {
-                        this._onSubmitCallback = callback;
-                    };
-
-                    // Перехватываем оригинальный метод отправки
-                    const originalSubmit = form.submit;
-                    form.submit = function() {
-                        const result = originalSubmit.apply(this, arguments);
-
-                        // Обрабатываем результат
-                        if (result && result.then) {
-                            result.then(data => {
-                                console.log("Form submit result:", data);
-                                if (data && data.result) {
-                                    const leadId = data.result;
-                                    const leadIdElement = document.getElementById('leadid-value');
-
-                                    if (leadIdElement) {
-                                        leadIdElement.textContent = leadId;
-                                        leadIdElement.className = 'id-value success';
-                                    }
-
-                                    addDebugMessage(`✅ Создан лид #${leadId} с Telegram ID`, "success");
-
-                                    // Вызываем оригинальный callback если есть
-                                    if (this._onSubmitCallback) {
-                                        this._onSubmitCallback(data);
-                                    }
-                                }
-                            }).catch(error => {
-                                console.error("Form submit error:", error);
-                                addDebugMessage(`❌ Ошибка при создании лида: ${error.message}`, "error");
-                            });
-                        }
-                        return result;
-                    };
-                };
             })(window, document, 'https://cdn-ru.bitrix24.ru/b34052738/crm/site_button/loader_1_wugrzo.js');
+
+            // Инициализация формы
+            document.addEventListener('DOMContentLoaded', function() {
+                // Добавляем обработчик для формы Bitrix24
+                window.b24form = {
+                    onload: function(form) {
+                        console.log("Bitrix24 Form loaded");
+                        addDebugMessage("✅ Форма Bitrix24 загружена", "success");
+
+                        // Перехват события отправки
+                        form.onSubmit = function(callback) {
+                            this._callback = callback;
+                        };
+
+                        // Перехват метода отправки
+                        const originalSubmit = form.submit;
+                        form.submit = function() {
+                            const result = originalSubmit.apply(this, arguments);
+
+                            if (result && result.then) {
+                                result.then(data => {
+                                    if (this._callback) this._callback(data);
+                                    window.b24formResult(data);
+                                });
+                            }
+                            return result;
+                        };
+                    }
+                };
+            });
         </script>
+
         <div data-b24-form="1" data-skip-moving="true"></div>
 
         <div style="text-align: center; margin-top: 30px;">
@@ -270,26 +230,22 @@ $version = time();
         // Инициализация страницы
         document.addEventListener('DOMContentLoaded', function() {
             initTelegramWebApp();
+            initBitrixForm();
 
             const tgUserId = getTelegramUserId();
             const tgidElement = document.getElementById('tgid-value');
 
-            if (!tgidElement) {
-                console.error("Элемент с id 'tgid-value' не найден");
-                return;
-            }
-
-            if (tgUserId) {
-                tgidElement.textContent = tgUserId;
-                tgidElement.className = 'id-value success';
-                addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
-                addDebugMessage(`ID будет добавлен в поле ${TG_LEAD_FIELD} лида`, 'success');
-                localStorage.setItem('tgUserId', tgUserId);
-            } else {
-                tgidElement.textContent = 'Не обнаружен';
-                tgidElement.className = 'id-value error';
-                addDebugMessage('❌ Telegram ID не обнаружен', 'error');
-                addDebugMessage('Формы будут работать без передачи Telegram ID', 'warning');
+            if (tgidElement) {
+                if (tgUserId) {
+                    tgidElement.textContent = tgUserId;
+                    tgidElement.className = 'id-value success';
+                    addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
+                    localStorage.setItem('tgUserId', tgUserId);
+                } else {
+                    tgidElement.textContent = 'Не обнаружен';
+                    tgidElement.className = 'id-value error';
+                    addDebugMessage('❌ Telegram ID не обнаружен', 'error');
+                }
             }
 
             addDebugMessage(`<a href="?debug_tg_id=TEST123">Протестировать с ID: TEST123</a>`, 'info');
