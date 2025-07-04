@@ -136,3 +136,50 @@ body {
     min-height: 500px;
     margin: 20px 0;
 }
+
+.id-display-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.id-display {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    flex: 1;
+    min-width: 150px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.id-display strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #495057;
+    font-size: 14px;
+}
+
+.id-value {
+    font-size: 18px;
+    font-weight: bold;
+    word-break: break-all;
+}
+
+.id-value.success {
+    color: #28a745;
+}
+
+.id-value.error {
+    color: #dc3545;
+}
+
+.id-value.waiting {
+    color: #6c757d;
+}
+
+@media (max-width: 768px) {
+    .id-display-container {
+        flex-direction: column;
+    }
+}
