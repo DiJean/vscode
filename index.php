@@ -28,29 +28,66 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <!-- Стили для Bitrix кнопки и иконки -->
+    <!-- Стили для кнопок и иконок -->
     <style>
-        .telegram-icon {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            background: #0088cc;
+        .bot-avatar-container {
+            position: relative;
+            margin: 0 auto 20px;
+            width: 80px;
+            height: 80px;
+        }
+
+        .bot-avatar {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
+            background: #0088cc;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             border: 3px solid white;
-            z-index: 10;
+            overflow: hidden;
         }
 
-        .telegram-icon svg {
-            width: 32px;
-            height: 32px;
+        .bot-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bot-avatar svg {
+            width: 40px;
+            height: 40px;
             fill: white;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .btn-icon {
+            margin-right: 8px;
         }
 
         .bitrix-section {
@@ -61,9 +98,9 @@ $version = time();
             border-radius: 16px;
         }
 
-        .bitrix-btn {
-            display: inline-block;
-            margin-top: 15px;
+        .btn {
+            display: inline-flex;
+            align-items: center;
             padding: 12px 25px;
             background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
             color: white;
@@ -71,55 +108,37 @@ $version = time();
             border-radius: 12px;
             font-weight: bold;
             transition: all 0.3s;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
         }
 
-        .bitrix-btn:hover {
+        .btn:hover {
             opacity: 0.9;
             transform: translateY(-3px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .bitrix-icon {
-            vertical-align: middle;
-            margin-right: 8px;
-            font-size: 1.2rem;
-        }
-
-        .about-btn {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 12px 25px;
+        .btn-about {
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin-left: 10px;
         }
 
-        .about-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .header-container {
-            position: relative;
-            padding-top: 50px;
-            text-align: center;
-            margin-bottom: 30px;
+        .btn-icon {
+            margin-right: 8px;
         }
     </style>
 </head>
 
 <body class="theme-beige">
     <div class="container py-4">
-        <!-- Иконка бота Telegram -->
-        <div class="telegram-icon">
-            <svg viewBox="0 0 24 24">
-                <path fill="white" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z" />
-            </svg>
+        <!-- Аватар бота -->
+        <div class="bot-avatar-container">
+            <div class="bot-avatar">
+                <!-- SVG иконка бота (можно заменить на изображение) -->
+                <svg viewBox="0 0 24 24">
+                    <path fill="white" d="M20 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14H5v-2h6v2zm8-4H5v-2h14v2zm0-4H5V7h14v2z" />
+                </svg>
+            </div>
         </div>
 
         <div class="header-container">
@@ -156,12 +175,18 @@ $version = time();
         <div class="bitrix-section">
             <h4>Интеграция с CRM</h4>
             <p>Тестовая страница с виджетом Bitrix24</p>
-            <a href="/webapp/b24.php" class="bitrix-btn">
-                <span class="bitrix-icon">📊</span> Bitrix24 Виджет
+            <a href="/webapp/b24.php" class="btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="white" d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" />
+                </svg>
+                Bitrix24 Виджет
             </a>
             <!-- Ссылка на страницу "О нас" -->
-            <a href="/webapp/about.php" class="about-btn">
-                <span class="bitrix-icon">ℹ️</span> О нашем сервисе
+            <a href="/webapp/about.php" class="btn btn-about">
+                <svg class="btn-icon" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="white" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+                О нашем сервисе
             </a>
         </div>
 
