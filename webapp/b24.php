@@ -8,7 +8,7 @@ $version = time();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitrix24 + Telegram ID</title>
-    <link rel="stylesheet" href="/webapp/b24.css?v=<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/b24.css?v=<?= $version ?>">
 
     <!-- Загрузка Telegram WebApp API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -16,7 +16,7 @@ $version = time();
     <script>
         // Конфигурация
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
-        const TG_FIELD_CODE = 'UF_CRM_1751577211';
+        const TG_CONTACT_FIELD = 'UF_CRM_6866F376B4A80'; // Поле контакта для Telegram ID
 
         // Получение Telegram User ID
         function getTelegramUserId() {
@@ -53,23 +53,45 @@ $version = time();
             }
         }
 
-        // Обновление лида в Bitrix24
-        async function updateLeadInBitrix(leadId, tgUserId) {
+        // Получение CONTACT_ID из лида
+        async function getContactIdFromLead(leadId) {
             try {
                 if (isNaN(leadId)) {
                     throw new Error(`Некорректный ID лида: ${leadId}`);
                 }
 
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.get.json?id=${leadId}`);
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(`Bitrix API Error: ${result.error} - ${result.error_description}`);
+                }
+
+                return result.result.CONTACT_ID;
+            } catch (e) {
+                console.error("Ошибка получения CONTACT_ID:", e);
+                addDebugMessage(`❌ Ошибка получения CONTACT_ID: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        // Обновление контакта в Bitrix24
+        async function updateContactInBitrix(contactId, tgUserId) {
+            try {
+                if (!contactId) {
+                    throw new Error("CONTACT_ID не получен");
+                }
+
                 const requestBody = {
-                    id: parseInt(leadId),
+                    id: parseInt(contactId),
                     fields: {
-                        [TG_FIELD_CODE]: tgUserId
+                        [TG_CONTACT_FIELD]: tgUserId
                     }
                 };
 
-                console.log("Отправка запроса на обновление лида:", requestBody);
+                console.log("Отправка запроса на обновление контакта:", requestBody);
 
-                const response = await fetch(`${BITRIX_WEBHOOK}crm.lead.update.json`, {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.update.json`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -78,20 +100,41 @@ $version = time();
                 });
 
                 const result = await response.json();
-                console.log("Ответ от Bitrix24:", result);
+                console.log("Ответ от Bitrix24 (контакт):", result);
 
                 if (result.error) {
                     throw new Error(`Bitrix API Error: ${result.error} - ${result.error_description}`);
                 }
 
-                if (result.result) {
-                    addDebugMessage(`✅ Telegram ID добавлен в лид #${leadId}`, 'success');
-                } else {
-                    addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${JSON.stringify(result)}`, 'error');
-                }
+                return result.result;
             } catch (error) {
-                console.error("Ошибка обновления лида:", error);
-                addDebugMessage(`❌ Ошибка обновления лида #${leadId}: ${error.message}`, 'error');
+                console.error("Ошибка обновления контакта:", error);
+                addDebugMessage(`❌ Ошибка обновления контакта #${contactId}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Обработка созданного лида
+        async function processCreatedLead(leadId, tgUserId) {
+            addDebugMessage(`🔄 Обработка лида #${leadId}`, 'info');
+
+            // Получаем CONTACT_ID из лида
+            const contactId = await getContactIdFromLead(leadId);
+
+            if (!contactId) {
+                addDebugMessage(`❌ Не удалось получить CONTACT_ID для лида #${leadId}`, 'error');
+                return;
+            }
+
+            addDebugMessage(`✅ Получен CONTACT_ID: ${contactId}`, 'success');
+
+            // Обновляем контакт
+            const updateSuccess = await updateContactInBitrix(contactId, tgUserId);
+
+            if (updateSuccess) {
+                addDebugMessage(`✅ Telegram ID добавлен в контакт #${contactId}`, 'success');
+            } else {
+                addDebugMessage(`❌ Ошибка обновления контакта #${contactId}`, 'error');
             }
         }
 
@@ -144,7 +187,7 @@ $version = time();
     <div class="container">
         <div class="header">
             <h1>Bitrix24 + Telegram ID</h1>
-            <p>Поле для Telegram ID: <code>UF_CRM_1751577211</code></p>
+            <p>Поле для Telegram ID: <code>UF_CRM_6866F376B4A80</code></p>
         </div>
 
         <div class="debug-panel">
@@ -162,8 +205,9 @@ $version = time();
             <ol class="steps">
                 <li class="step">Вы заполняете форму через виджет</li>
                 <li class="step">Создается лид в Bitrix24</li>
-                <li class="step">Мы получаем ID созданного лида</li>
-                <li class="step">Отдельным запросом добавляем Telegram ID в поле <code>UF_CRM_1751577211</code></li>
+                <li class="step">Лид конвертируется в контакт и сделку</li>
+                <li class="step">Мы получаем ID созданного контакта</li>
+                <li class="step">Добавляем Telegram ID в поле <code>UF_CRM_6866F376B4A80</code> контакта</li>
             </ol>
 
             <div class="tgid-display">
@@ -193,8 +237,8 @@ $version = time();
                                 const tgUserId = getTelegramUserId();
 
                                 if (tgUserId) {
-                                    console.log(`Обновление лида #${leadId} с Telegram ID: ${tgUserId}`);
-                                    updateLeadInBitrix(leadId, tgUserId);
+                                    console.log(`Обработка лида #${leadId} с Telegram ID: ${tgUserId}`);
+                                    processCreatedLead(leadId, tgUserId);
                                 }
                             }
                         });
@@ -228,7 +272,7 @@ $version = time();
                 tgidElement.textContent = tgUserId;
                 tgidElement.className = 'success';
                 addDebugMessage(`✅ Telegram ID получен: ${tgUserId}`, 'success');
-                addDebugMessage(`ID будет добавлен в поле ${TG_FIELD_CODE}`, 'success');
+                addDebugMessage(`ID будет добавлен в поле ${TG_CONTACT_FIELD}`, 'success');
                 localStorage.setItem('tgUserId', tgUserId);
             } else {
                 tgidElement.textContent = 'Не обнаружен';
