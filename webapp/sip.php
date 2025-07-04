@@ -1,195 +1,154 @@
+<?php
+header('Content-Type: text/html; charset=utf-8');
+$version = time();
+?>
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
-    <title>SIP-звонок в Bitrix24</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIP Телефония</title>
+    <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
+    <link rel="stylesheet" href="/webapp/css/sip.css?<?= $version ?>">
+    <!-- Подключаем SIP.js через CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sip.js@0.20.0/dist/sip.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 20px auto;
-        }
-
-        .container {
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        input,
-        button {
-            padding: 10px;
-            margin: 5px;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        .status {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .connected {
-            background: #d4edda;
-        }
-
-        .calling {
-            background: #cce5ff;
-        }
-
-        .error {
-            background: #f8d7da;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <h2>SIP-звонок в Bitrix24</h2>
-
-        <div id="connectionPanel">
-            <button id="connectBtn">Подключиться к SIP</button>
-            <div id="status" class="status"></div>
+        <h1>SIP Телефония</h1>
+        <div class="sip-container">
+            <div id="sip-status">Статус: Не подключено</div>
+            <div class="sip-controls">
+                <input type="text" id="phone-number" placeholder="Номер телефона" disabled>
+                <button id="call-btn" disabled>Позвонить</button>
+                <button id="hangup-btn" disabled>Завершить</button>
+            </div>
+            <div class="sip-actions">
+                <button id="connect-btn">Подключиться</button>
+                <button id="disconnect-btn" disabled>Отключиться</button>
+            </div>
         </div>
-
-        <div id="callPanel" class="hidden">
-            <input type="text" id="extensionInput" placeholder="Внутренний номер сотрудника">
-            <button id="callBtn">Позвонить</button>
-            <button id="hangupBtn" disabled>Завершить звонок</button>
-        </div>
-
-        <audio id="remoteAudio" autoplay controls class="hidden"></audio>
     </div>
 
     <script>
-        // Конфигурация (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
-        const sipConfig = {
-            uri: 'sip:phone1@b24-saiczd.bitrix24.ru', // Ваш SIP логин
-            password: '3ed24ac4cf28', // Ваш SIP пароль
-            websocket: 'wss://sip.bitrix.info:443/ws', // Стандартный Bitrix24 WS
-            domain: 'b24-saiczd.bitrix24.ru' // Ваш домен Bitrix24
-        };
+        // Ожидаем полной загрузки страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Конфигурация SIP
+            const sipConfig = {
+                uri: 'sip:1001@cloud.mikrod.ru',
+                password: 'password',
+                wsServers: 'wss://cloud.mikrod.ru:8089/ws'
+            };
 
-        // Элементы интерфейса
-        const connectBtn = document.getElementById('connectBtn');
-        const callBtn = document.getElementById('callBtn');
-        const hangupBtn = document.getElementById('hangupBtn');
-        const extensionInput = document.getElementById('extensionInput');
-        const statusDiv = document.getElementById('status');
-        const callPanel = document.getElementById('callPanel');
-        const remoteAudio = document.getElementById('remoteAudio');
+            // Глобальные переменные
+            let userAgent;
+            let session;
 
-        let ua;
-        let session;
+            // Элементы интерфейса
+            const connectBtn = document.getElementById('connect-btn');
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            const callBtn = document.getElementById('call-btn');
+            const hangupBtn = document.getElementById('hangup-btn');
+            const phoneNumberInput = document.getElementById('phone-number');
+            const statusDisplay = document.getElementById('sip-status');
 
-        // Инициализация SIP
-        function initSIP() {
-            ua = new SIP.UA({
-                uri: sipConfig.uri,
-                password: sipConfig.password,
-                transportOptions: {
-                    wsServers: [sipConfig.websocket],
-                    connectionRecoveryMinInterval: 2000,
-                    maxReconnectionAttempts: 5
-                },
-                sessionDescriptionHandlerFactoryOptions: {
-                    constraints: {
-                        audio: true,
-                        video: false
-                    }
+            // Обработчики событий
+            connectBtn.addEventListener('click', connectSIP);
+            disconnectBtn.addEventListener('click', disconnectSIP);
+            callBtn.addEventListener('click', makeCall);
+            hangupBtn.addEventListener('click', hangupCall);
+
+            // Функция подключения к SIP серверу
+            function connectSIP() {
+                statusDisplay.textContent = 'Статус: Подключение...';
+
+                // Проверяем доступность SIP объекта
+                if (typeof SIP === 'undefined') {
+                    statusDisplay.textContent = 'Ошибка: Библиотека SIP не загружена';
+                    return;
                 }
-            });
 
-            ua.on('connected', () => {
-                statusDiv.textContent = 'Подключено к SIP-серверу';
-                statusDiv.className = 'status connected';
-                callPanel.classList.remove('hidden');
-            });
+                // Создаем UserAgent
+                userAgent = new SIP.UA(sipConfig);
 
-            ua.on('disconnected', () => {
-                statusDiv.textContent = 'Отключено от SIP-сервера';
-                statusDiv.className = 'status';
-                callPanel.classList.add('hidden');
-            });
+                // Обработчики событий UserAgent
+                userAgent.on('connected', () => {
+                    statusDisplay.textContent = 'Статус: Подключено';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    callBtn.disabled = false;
+                    phoneNumberInput.disabled = false;
+                });
 
-            ua.on('registrationFailed', (response) => {
-                statusDiv.textContent = `Ошибка регистрации: ${response.cause}`;
-                statusDiv.className = 'status error';
-            });
-        }
+                userAgent.on('disconnected', () => {
+                    statusDisplay.textContent = 'Статус: Отключено';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    callBtn.disabled = true;
+                    hangupBtn.disabled = true;
+                    phoneNumberInput.disabled = true;
+                });
 
-        // Подключение к серверу
-        connectBtn.addEventListener('click', () => {
-            statusDiv.textContent = 'Подключаемся...';
-            initSIP();
-            ua.start();
-        });
+                userAgent.on('registrationFailed', () => {
+                    statusDisplay.textContent = 'Ошибка регистрации';
+                    connectBtn.disabled = false;
+                });
 
-        // Совершение звонка
-        callBtn.addEventListener('click', () => {
-            const extension = extensionInput.value.trim();
-            if (!extension) {
-                alert('Введите внутренний номер сотрудника');
-                return;
+                // Запускаем подключение
+                userAgent.start();
             }
 
-            // Формируем SIP-адрес из внутреннего номера
-            const target = `sip:${extension}@${sipConfig.domain}`;
-
-            statusDiv.textContent = `Звонок на ${extension}...`;
-            statusDiv.className = 'status calling';
-
-            session = ua.invite(target, {
-                sessionDescriptionHandlerOptions: {
-                    constraints: {
-                        audio: true,
-                        video: false
-                    }
+            // Функция отключения от SIP сервера
+            function disconnectSIP() {
+                if (userAgent) {
+                    userAgent.stop();
                 }
-            });
-
-            session.on('accepted', () => {
-                statusDiv.textContent = `Разговор с ${extension} активен`;
-                hangupBtn.disabled = false;
-                remoteAudio.classList.remove('hidden');
-                remoteAudio.srcObject = session.sessionDescriptionHandler.remoteMediaStream;
-            });
-
-            session.on('failed', () => {
-                statusDiv.textContent = `Сотрудник ${extension} не ответил`;
-                statusDiv.className = 'status error';
-                hangupBtn.disabled = true;
-            });
-
-            session.on('bye', () => endCall(extension));
-        });
-
-        // Завершение звонка
-        hangupBtn.addEventListener('click', () => {
-            if (session) session.bye();
-            endCall(extensionInput.value.trim());
-        });
-
-        // Обработка завершения звонка
-        function endCall(extension) {
-            statusDiv.textContent = extension ? `Звонок с ${extension} завершён` : 'Звонок завершён';
-            statusDiv.className = 'status';
-            hangupBtn.disabled = true;
-            if (remoteAudio.srcObject) {
-                remoteAudio.srcObject.getTracks().forEach(track => track.stop());
-                remoteAudio.srcObject = null;
             }
-            remoteAudio.classList.add('hidden');
-        }
+
+            // Функция совершения звонка
+            function makeCall() {
+                const number = phoneNumberInput.value.trim();
+                if (!number) return;
+
+                statusDisplay.textContent = `Статус: Звонок на ${number}...`;
+                session = userAgent.invite(`sip:${number}@cloud.mikrod.ru`, {
+                    sessionDescriptionHandlerOptions: {
+                        constraints: {
+                            audio: true,
+                            video: false
+                        }
+                    }
+                });
+
+                // Обработчики событий сессии
+                session.on('accepted', () => {
+                    statusDisplay.textContent = 'Статус: Разговор';
+                    hangupBtn.disabled = false;
+                    callBtn.disabled = true;
+                });
+
+                session.on('bye', () => {
+                    statusDisplay.textContent = 'Статус: Звонок завершен';
+                    hangupBtn.disabled = true;
+                    callBtn.disabled = false;
+                });
+
+                session.on('failed', () => {
+                    statusDisplay.textContent = 'Статус: Ошибка звонка';
+                    hangupBtn.disabled = true;
+                    callBtn.disabled = false;
+                });
+            }
+
+            // Функция завершения звонка
+            function hangupCall() {
+                if (session) {
+                    session.bye();
+                }
+            }
+        });
     </script>
 </body>
 
