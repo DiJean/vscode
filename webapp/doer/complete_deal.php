@@ -44,6 +44,10 @@ try {
         throw new Exception('Вы не являетесь исполнителем этого заказа');
     }
 
+    if ($dealInfo['stage_id'] !== 'EXECUTING') {
+        throw new Exception('Заявка не в статусе исполнения');
+    }
+
     $beforeFileId = uploadFileToBitrix($beforePhoto);
     $afterFileId = uploadFileToBitrix($afterPhoto);
 
@@ -218,7 +222,7 @@ function getDealInfo($dealId)
     $url = $BITRIX_WEBHOOK . 'crm.deal.get.json';
     $params = [
         'id' => $dealId,
-        'select' => ['ID', 'TITLE', 'CONTACT_ID', 'ASSIGNED_BY_ID', 'UF_CRM_1751128612', 'UF_CRM_1751128872']
+        'select' => ['ID', 'TITLE', 'STAGE_ID', 'CONTACT_ID', 'ASSIGNED_BY_ID', 'UF_CRM_1751128612', 'UF_CRM_1751128872']
     ];
 
     $response = makeBitrixRequest($url, $params);
@@ -233,6 +237,7 @@ function getDealInfo($dealId)
 
     return [
         'deal_id' => $dealId,
+        'stage_id' => $deal['STAGE_ID'] ?? '',
         'client_name' => trim(($clientInfo['NAME'] ?? '') . ' ' . ($clientInfo['LAST_NAME'] ?? '')),
         'client_tg_id' => $clientInfo['UF_CRM_1751128872'] ?? null,
         'performer_name' => trim(($performerInfo['NAME'] ?? '') . ' ' . ($performerInfo['LAST_NAME'] ?? '')),
