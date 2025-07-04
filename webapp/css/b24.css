@@ -1,10 +1,43 @@
-body {
+[file name]: b24.css [file content begin] body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     min-height: 100vh;
     margin: 0;
     padding: 20px;
     color: white;
+}
+
+/* Добавлена иконка Telegram в header */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    padding-top: 50px;
+    /* Добавлено место для иконки */
+}
+
+/* Стили для иконки Telegram (из официального UI Kit) */
+.telegram-icon {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    background: #0088cc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 3px solid white;
+}
+
+/* SVG иконка Telegram */
+.telegram-icon svg {
+    width: 32px;
+    height: 32px;
+    fill: white;
 }
 
 .container {
@@ -16,11 +49,6 @@ body {
     padding: 30px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.header {
-    text-align: center;
-    margin-bottom: 40px;
 }
 
 .debug-panel {
@@ -48,6 +76,16 @@ body {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Добавлена иконка в кнопку обновления */
+.refresh-btn svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
 }
 
 .refresh-btn:hover {
@@ -124,14 +162,30 @@ body {
     margin-right: 8px;
 }
 
+/* Добавлена иконка в блок с Telegram ID */
 .tgid-display {
     background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
+    padding: 15px 15px 15px 50px;
+    /* Увеличен левый отступ */
     border-radius: 10px;
     margin-top: 20px;
+    position: relative;
 }
 
-/* Стили для виджета Bitrix24 */
+/* Иконка перед Telegram ID */
+.tgid-display::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
 .b24-form-container {
     min-height: 500px;
     margin: 20px 0;
@@ -182,98 +236,15 @@ body {
     .id-display-container {
         flex-direction: column;
     }
-}
 
-.id-display-container {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-.id-display {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    flex: 1;
-    min-width: 150px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.id-display strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #495057;
-    font-size: 14px;
-}
-
-.id-value {
-    font-size: 18px;
-    font-weight: bold;
-    word-break: break-all;
-}
-
-.id-value.success {
-    color: #28a745;
-}
-
-.id-value.error {
-    color: #dc3545;
-}
-
-.id-value.waiting {
-    color: #6c757d;
-}
-
-@media (max-width: 768px) {
-    .id-display-container {
-        flex-direction: column;
+    /* Адаптив для иконки в шапке */
+    .telegram-icon {
+        width: 50px;
+        height: 50px;
     }
-}
 
-.id-display-container {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-
-.id-display {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    flex: 1;
-    min-width: 150px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.id-display strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #495057;
-    font-size: 14px;
-}
-
-.id-value {
-    font-size: 18px;
-    font-weight: bold;
-    word-break: break-all;
-}
-
-.id-value.success {
-    color: #28a745;
-}
-
-.id-value.error {
-    color: #dc3545;
-}
-
-.id-value.waiting {
-    color: #6c757d;
-}
-
-@media (max-width: 768px) {
-    .id-display-container {
-        flex-direction: column;
+    .telegram-icon svg {
+        width: 26px;
+        height: 26px;
     }
 }
