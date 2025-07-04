@@ -1,0 +1,208 @@
+/* Стили для страницы "О нас" */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    padding-top: 50px;
+}
+
+.telegram-icon {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    background: #0088cc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 3px solid white;
+    overflow: hidden;
+}
+
+.telegram-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.about-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(8px);
+}
+
+.about-content {
+    line-height: 1.7;
+    font-size: 17px;
+    text-align: justify;
+}
+
+.about-subtitle {
+    font-size: 22px;
+    margin: 30px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    padding-left: 30px;
+}
+
+.about-subtitle::before {
+    content: "▌";
+    position: absolute;
+    left: 0;
+    top: -2px;
+    color: #818cf8;
+    font-size: 24px;
+}
+
+.services-list {
+    counter-reset: service-counter;
+    padding-left: 0;
+    margin-bottom: 30px;
+}
+
+.service-item {
+    counter-increment: service-counter;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    position: relative;
+    padding-left: 70px;
+    transition: transform 0.3s, background 0.3s;
+}
+
+.service-item:hover {
+    background: rgba(0, 0, 0, 0.25);
+    transform: translateY(-3px);
+}
+
+.service-item::before {
+    content: counter(service-counter);
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.service-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 18px;
+    color: #e0f7fa;
+}
+
+.service-description {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.guarantee-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 40px;
+    border-left: 4px solid #4ade80;
+    position: relative;
+}
+
+.guarantee-icon {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: #4ade80;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.guarantee-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+.back-btn-container {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: bold;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+}
+
+.btn-icon {
+    margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+    .telegram-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .service-item {
+        padding: 15px 15px 15px 60px;
+    }
+
+    .service-item::before {
+        left: 15px;
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+}

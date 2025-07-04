@@ -56,38 +56,9 @@ $version = time();
             object-fit: cover;
         }
 
-        .bot-avatar svg {
-            width: 40px;
-            height: 40px;
-            fill: white;
-        }
-
         .header-container {
             text-align: center;
             margin-bottom: 30px;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 20px;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px);
-        }
-
-        .btn-icon {
-            margin-right: 8px;
         }
 
         .bitrix-section {
@@ -134,10 +105,8 @@ $version = time();
         <!-- Аватар бота -->
         <div class="bot-avatar-container">
             <div class="bot-avatar">
-                <!-- SVG иконка бота (можно заменить на изображение) -->
-                <svg viewBox="0 0 24 24">
-                    <path fill="white" d="M20 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14H5v-2h6v2zm8-4H5v-2h14v2zm0-4H5V7h14v2z" />
-                </svg>
+                <!-- Изображение аватара бота -->
+                <img src="/webapp/css/icons/bot-avatar.jpg" alt="Аватар бота">
             </div>
         </div>
 

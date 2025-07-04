@@ -1,22 +1,22 @@
+<?php
+header('Content-Type: text/html; charset=utf-8');
+$version = time();
+?>
 <!DOCTYPE html>
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/webapp/css/style.css?v=<?= $version ?>">
-    <link rel="stylesheet" href="/webapp/css/about.css?v=<?= $version ?>">
     <title>О нашем сервисе</title>
-    <link rel="stylesheet" href="b24.css">
+    <link rel="stylesheet" href="/webapp/css/about.css?<?= $version ?>">
 </head>
 
 <body>
     <div class="container">
-        <div class="about-header">
-            <div class="about-icon">
-                <svg viewBox="0 0 24 24">
-                    <path fill="white" d="M20 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-9 14H5v-2h6v2zm8-4H5v-2h14v2zm0-4H5V7h14v2z" />
-                </svg>
+        <div class="header">
+            <div class="telegram-icon">
+                <img src="/webapp/css/icons/bot-avatar.jpg" alt="Аватар бота">
             </div>
             <h1>О нашем сервисе</h1>
         </div>
