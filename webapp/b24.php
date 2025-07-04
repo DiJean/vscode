@@ -15,6 +15,7 @@ $version = time();
         // Конфигурация
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
         const TG_LEAD_FIELD = 'UF_CRM_1751577211'; // Поле лида для Telegram ID
+        const TG_CONTACT_FIELD = 'UF_CRM_6866F376B4A80'; // Поле контакта для Telegram ID
 
         // Получение Telegram User ID
         function getTelegramUserId() {
@@ -104,19 +105,47 @@ $version = time();
                     document.getElementById('leadid-value').textContent = leadId;
                     addDebugMessage(`✅ Создан лид #${leadId}`, "success");
 
-                    // Проверяем заполнение поля
+                    // Проверяем заполнение поля в лиде
                     setTimeout(() => {
                         fetch(`${BITRIX_WEBHOOK}crm.lead.get.json?id=${leadId}`)
                             .then(response => response.json())
-                            .then(data => {
-                                const fieldValue = data.result?.[TG_LEAD_FIELD];
+                            .then(leadData => {
+                                const fieldValue = leadData.result?.[TG_LEAD_FIELD];
                                 if (fieldValue === tgUserId) {
-                                    addDebugMessage(`✅ Поле ${TG_LEAD_FIELD} успешно заполнено: ${fieldValue}`, "success");
+                                    addDebugMessage(`✅ Поле ${TG_LEAD_FIELD} в лиде заполнено: ${fieldValue}`, "success");
                                 } else {
-                                    addDebugMessage(`❌ Поле ${TG_LEAD_FIELD} не заполнено! Значение: ${fieldValue || 'пусто'}`, "error");
+                                    addDebugMessage(`❌ Поле ${TG_LEAD_FIELD} в лиде не заполнено! Значение: ${fieldValue || 'пусто'}`, "error");
+                                }
+
+                                // Проверяем Contact ID
+                                const contactId = leadData.result?.CONTACT_ID;
+                                if (contactId) {
+                                    console.log("Contact ID:", contactId);
+                                    addDebugMessage(`🔄 Получен Contact ID: ${contactId} из лида`, "info");
+
+                                    // Проверяем поле в контакте
+                                    fetch(`${BITRIX_WEBHOOK}crm.contact.get.json?id=${contactId}`)
+                                        .then(response => response.json())
+                                        .then(contactData => {
+                                            const contactFieldValue = contactData.result?.[TG_CONTACT_FIELD];
+                                            console.log("Contact field value:", contactFieldValue);
+
+                                            if (contactFieldValue === tgUserId) {
+                                                addDebugMessage(`✅ Поле ${TG_CONTACT_FIELD} в контакте заполнено: ${contactFieldValue}`, "success");
+                                            } else {
+                                                addDebugMessage(`❌ Поле ${TG_CONTACT_FIELD} в контакте не заполнено! Значение: ${contactFieldValue || 'пусто'}`, "error");
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error("Ошибка получения контакта:", error);
+                                            addDebugMessage(`❌ Ошибка получения контакта: ${error.message}`, "error");
+                                        });
+                                } else {
+                                    addDebugMessage("ℹ️ CONTACT_ID в лиде не найден", "info");
                                 }
                             })
                             .catch(error => {
+                                console.error("Ошибка проверки лида:", error);
                                 addDebugMessage(`❌ Ошибка проверки лида: ${error.message}`, "error");
                             });
                     }, 3000);
@@ -127,7 +156,54 @@ $version = time();
         }
     </script>
 
-    
+    <style>
+        .id-display-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .id-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .id-display strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .id-value {
+            font-size: 18px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .id-value.success {
+            color: #28a745;
+        }
+
+        .id-value.error {
+            color: #dc3545;
+        }
+
+        .id-value.waiting {
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .id-display-container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -153,7 +229,8 @@ $version = time();
                 <li class="step">Вы заполняете форму через виджет</li>
                 <li class="step">Telegram ID передается как скрытое поле</li>
                 <li class="step">Создается лид с заполненным полем Telegram ID</li>
-                <li class="step">Система проверяет заполнение поля</li>
+                <li class="step">Лид конвертируется в контакт</li>
+                <li class="step">Система проверяет заполнение поля в лиде и контакте</li>
             </ol>
 
             <div class="id-display-container">
@@ -208,6 +285,9 @@ $version = time();
                                 result.then(data => {
                                     if (this._callback) this._callback(data);
                                     window.b24formResult(data);
+                                }).catch(error => {
+                                    console.error("Form submit error:", error);
+                                    addDebugMessage(`❌ Ошибка при создании лида: ${error.message}`, "error");
                                 });
                             }
                             return result;
