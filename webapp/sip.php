@@ -73,10 +73,10 @@
     <script>
         // Конфигурация (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
         const sipConfig = {
-            uri: 'sip:ваш_логин@ваш_домен.bitrix.info', // Ваш SIP логин
-            password: 'ваш_пароль', // Ваш SIP пароль
+            uri: 'sip:phone1@b24-saiczd.bitrix24.ru', // Ваш SIP логин
+            password: '3ed24ac4cf28', // Ваш SIP пароль
             websocket: 'wss://sip.bitrix.info:443/ws', // Стандартный Bitrix24 WS
-            domain: 'ваш_домен.bitrix.info' // Ваш домен Bitrix24
+            domain: 'b24-saiczd.bitrix24.ru' // Ваш домен Bitrix24
         };
 
         // Элементы интерфейса
