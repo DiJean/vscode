@@ -150,6 +150,7 @@ $version = time();
 
                         // Проверяем поле в контакте
                         checkContactField(contactId, tgUserId);
+
                     } else {
                         console.log("CONTACT_ID не найден в лиде");
                         addDebugMessage(`ℹ️ CONTACT_ID в лиде не найден`, "info");
