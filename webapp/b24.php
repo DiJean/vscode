@@ -117,32 +117,8 @@ $version = time();
                                     addDebugMessage(`❌ Поле ${TG_LEAD_FIELD} в лиде не заполнено! Значение: ${fieldValue || 'пусто'}`, "error");
                                 }
 
-                                // Проверяем Contact ID
-                                const contactId = leadData.result?.CONTACT_ID;
-                                if (contactId) {
-                                    console.log("Contact ID:", contactId);
-                                    addDebugMessage(`🔄 Получен Contact ID: ${contactId} из лида`, "info");
-
-                                    // Проверяем поле в контакте
-                                    fetch(`${BITRIX_WEBHOOK}crm.contact.get.json?id=${contactId}`)
-                                        .then(response => response.json())
-                                        .then(contactData => {
-                                            const contactFieldValue = contactData.result?.[TG_CONTACT_FIELD];
-                                            console.log("Contact field value:", contactFieldValue);
-
-                                            if (contactFieldValue === tgUserId) {
-                                                addDebugMessage(`✅ Поле ${TG_CONTACT_FIELD} в контакте заполнено: ${contactFieldValue}`, "success");
-                                            } else {
-                                                addDebugMessage(`❌ Поле ${TG_CONTACT_FIELD} в контакте не заполнено! Значение: ${contactFieldValue || 'пусто'}`, "error");
-                                            }
-                                        })
-                                        .catch(error => {
-                                            console.error("Ошибка получения контакта:", error);
-                                            addDebugMessage(`❌ Ошибка получения контакта: ${error.message}`, "error");
-                                        });
-                                } else {
-                                    addDebugMessage("ℹ️ CONTACT_ID в лиде не найден", "info");
-                                }
+                                // Получаем Contact ID с повторными попытками
+                                getContactInfo(leadId, tgUserId);
                             })
                             .catch(error => {
                                 console.error("Ошибка проверки лида:", error);
@@ -153,6 +129,71 @@ $version = time();
                     addDebugMessage("❌ Не удалось получить ID лида", "error");
                 }
             });
+        }
+
+        // Функция для получения информации о контакте
+        function getContactInfo(leadId, tgUserId, attempt = 1) {
+            const MAX_ATTEMPTS = 5;
+            const RETRY_DELAY = 3000; // 3 секунды
+
+            console.log(`Попытка #${attempt} получения контакта для лида ${leadId}`);
+            addDebugMessage(`🔄 Попытка #${attempt}: получение контакта для лида ${leadId}`, "info");
+
+            fetch(`${BITRIX_WEBHOOK}crm.lead.get.json?id=${leadId}`)
+                .then(response => response.json())
+                .then(leadData => {
+                    const contactId = leadData.result?.CONTACT_ID;
+
+                    if (contactId) {
+                        console.log("Contact ID:", contactId);
+                        addDebugMessage(`✅ Получен Contact ID: ${contactId}`, "success");
+
+                        // Проверяем поле в контакте
+                        checkContactField(contactId, tgUserId);
+                    } else {
+                        console.log("CONTACT_ID не найден в лиде");
+                        addDebugMessage(`ℹ️ CONTACT_ID в лиде не найден`, "info");
+
+                        // Повторная попытка если не превышен лимит
+                        if (attempt < MAX_ATTEMPTS) {
+                            setTimeout(() => getContactInfo(leadId, tgUserId, attempt + 1), RETRY_DELAY);
+                        } else {
+                            addDebugMessage(`❌ Не удалось получить Contact ID после ${MAX_ATTEMPTS} попыток`, "error");
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка получения лида:", error);
+                    addDebugMessage(`❌ Ошибка получения лида: ${error.message}`, "error");
+
+                    // Повторная попытка при ошибке
+                    if (attempt < MAX_ATTEMPTS) {
+                        setTimeout(() => getContactInfo(leadId, tgUserId, attempt + 1), RETRY_DELAY);
+                    }
+                });
+        }
+
+        // Функция проверки поля контакта
+        function checkContactField(contactId, tgUserId) {
+            console.log(`Проверка поля контакта #${contactId}`);
+            addDebugMessage(`🔄 Проверка поля контакта #${contactId}`, "info");
+
+            fetch(`${BITRIX_WEBHOOK}crm.contact.get.json?id=${contactId}`)
+                .then(response => response.json())
+                .then(contactData => {
+                    const contactFieldValue = contactData.result?.[TG_CONTACT_FIELD];
+                    console.log("Contact field value:", contactFieldValue);
+
+                    if (contactFieldValue === tgUserId) {
+                        addDebugMessage(`✅ Поле ${TG_CONTACT_FIELD} в контакте заполнено: ${contactFieldValue}`, "success");
+                    } else {
+                        addDebugMessage(`❌ Поле ${TG_CONTACT_FIELD} в контакте не заполнено! Значение: ${contactFieldValue || 'пусто'}`, "error");
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка получения контакта:", error);
+                    addDebugMessage(`❌ Ошибка получения контакта: ${error.message}`, "error");
+                });
         }
     </script>
 
