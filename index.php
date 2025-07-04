@@ -13,7 +13,7 @@ $version = time();
         (function() {
             const favicon = document.createElement('link');
             favicon.rel = 'icon';
-            favicon.href = '/webapp/icons/favicon.ico';
+            favicon.href = '/webapp/icons/favicon.png';
             favicon.type = 'image/x-icon';
             document.head.appendChild(favicon);
         })();
