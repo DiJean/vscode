@@ -18,7 +18,7 @@ $version = time();
 <body>
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="my-services.php" class="back-btn">← Назад к списку заявок</a>
+            <a href="/webapp/doer/dashboard.php" class="back-btn">← Назад к списку заявок</a>
         </div>
 
         <h1 class="text-center mb-4">Детали заявки</h1>
