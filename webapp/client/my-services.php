@@ -1,5 +1,8 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 $version = time();
 ?>
 <!DOCTYPE html>
@@ -8,139 +11,221 @@ $version = time();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои услуги</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Мои запросы</title>
+    <script src="https://telegram.org/js/telegram-web-app.js?<?= $version ?>"></script>
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <style>
-        body.theme-beige {
-            background-image: url('/webapp/css/icons/marble_back.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: rgba(255, 255, 255, 0.85);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .container * {
-            color: #333 !important;
-        }
-
-        .btn-change-role {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.5);
-            color: #333 !important;
-            border-radius: 12px;
-            text-decoration: none;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-change-role:hover {
-            background: rgba(255, 255, 255, 0.7);
-            transform: translateY(-2px);
-        }
-
-        .role-icon-small {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-        }
-    </style>
+    <link rel="stylesheet" href="/webapp/css/my-services.css?<?= $version ?>">
 </head>
 
 <body class="theme-beige">
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center">
-                <a href="/" class="btn-change-role me-3">
-                    <img src="/webapp/css/icons/doer_ava.png" alt="Исполнитель" class="role-icon-small">
-                    Сменить роль
-                </a>
-                <h1 class="h3 mb-0">Мои услуги</h1>
-            </div>
-            <div class="d-flex align-items-center" id="user-info">
-                <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
-                Загрузка...
-            </div>
-        </div>
-
-        <!-- Содержимое страницы клиента -->
-        <div id="services-container">
-            <div class="text-center py-4">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Загрузка...</span>
-                </div>
+    <div class="container">
+        <a href="/" class="btn-change-role">← Сменить роль</a>
+        <div class="greeting">Мои заявки</div>
+        <a href="/webapp/client/client-form.php?v=<?= $version ?>" class="btn-create">+ Создать новую заявку</a>
+        <div class="requests-list" id="requests-list">
+            <div class="request-item">
+                <div class="request-service">Загрузка заявок...</div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const selectedRole = localStorage.getItem('selectedRole') || sessionStorage.getItem('selectedRole');
         const version = '<?= $version ?>';
-        let tg = null;
-        let user = null;
 
-        async function initApp() {
-            if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-                showFallbackView();
-                return;
-            }
+        if (!selectedRole || selectedRole !== 'client') {
+            window.location.href = '/?v=' + version;
+        } else {
+            localStorage.setItem('selectedRole', 'client');
+            sessionStorage.setItem('selectedRole', 'client');
 
-            tg = Telegram.WebApp;
-
-            try {
-                user = tg.initDataUnsafe.user || {};
-
-                const firstName = user.first_name || '';
-                const lastName = user.last_name || '';
-                const fullName = `${firstName} ${lastName}`.trim() || 'Пользователь';
-
-                document.getElementById('user-info').innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <div class="avatar me-2">
-                            ${user.photo_url ? 
-                                `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle" style="width:40px;height:40px;object-fit:cover;">` : 
-                                `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold" style="width:40px;height:40px;">${firstName.charAt(0) || 'П'}</div>`
-                            }
-                        </div>
-                        <div>
-                            <div class="user-name">${fullName || 'Клиент'}</div>
-                        </div>
-                    </div>
-                `;
-
-                // Здесь будет код загрузки услуг клиента
-
-            } catch (e) {
-                console.error('Ошибка инициализации:', e);
-                showFallbackView();
+            if (userData.firstName) {
+                document.querySelector('.greeting').textContent = `Здравствуйте, ${userData.firstName}!`;
             }
         }
 
-        function showFallbackView() {
-            document.getElementById('user-info').innerHTML = `
-                <div class="text-muted">
-                    Для использования приложения откройте его в Telegram
+        let tgUserId = null;
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+            const tg = Telegram.WebApp;
+            tgUserId = tg.initDataUnsafe?.user?.id;
+        }
+
+        if (!tgUserId) {
+            tgUserId = localStorage.getItem('tgUserId');
+        }
+
+        if (tgUserId) {
+            localStorage.setItem('tgUserId', tgUserId);
+
+            loadBitrixIntegration().then(() => {
+                if (typeof BitrixCRM !== 'undefined' && BitrixCRM.getUserRequests) {
+                    loadRequests(tgUserId);
+                } else {
+                    showError();
+                }
+            }).catch(error => {
+                console.error('Ошибка загрузки BitrixCRM:', error);
+                showError();
+            });
+        } else {
+            showNoRequests();
+        }
+
+        function loadBitrixIntegration() {
+            return new Promise((resolve, reject) => {
+                if (typeof BitrixCRM !== 'undefined') {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = '/webapp/js/bitrix-integration.js?<?= $version ?>';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        }
+
+        function loadRequests(tgUserId) {
+            BitrixCRM.getUserRequests(tgUserId)
+                .then(deals => {
+                    const performerIds = deals
+                        .map(deal => deal.UF_CRM_1751128612)
+                        .filter(id => id && id > 0);
+
+                    if (performerIds.length > 0) {
+                        return BitrixCRM.getPerformersInfo(performerIds)
+                            .then(performers => {
+                                return {
+                                    deals,
+                                    performers
+                                };
+                            });
+                    }
+
+                    return {
+                        deals,
+                        performers: []
+                    };
+                })
+                .then(({
+                    deals,
+                    performers
+                }) => {
+                    renderRequests(deals, performers);
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки заявок:', error);
+                    showError();
+                });
+        }
+
+        function renderRequests(deals, performers = []) {
+            if (!deals || deals.length === 0) {
+                showNoRequests();
+                return;
+            }
+
+            let html = `
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>№ заявки</th>
+                            <th>Услуги</th>
+                            <th>Дата создания</th>
+                            <th>Статус</th>
+                            <th>Исполнитель</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            deals.forEach(deal => {
+                const date = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
+                const serviceNames = deal.services || 'Услуга не указана';
+
+                let statusClass = '';
+                let statusText = deal.STAGE_ID || '';
+
+                if (statusText === 'NEW') {
+                    statusText = 'Новая заявка';
+                    statusClass = 'status-new';
+                } else if (statusText === 'PREPARATION' ||
+                    statusText === 'PREPAYMENT_INVOICE' ||
+                    statusText === 'EXECUTING') {
+                    statusText = 'В работе';
+                    statusClass = 'status-processing';
+                } else if (statusText === 'WON') {
+                    statusText = 'Завершена';
+                    statusClass = 'status-completed';
+                } else if (statusText === 'LOSE' || statusText === 'APOLOGY') {
+                    statusText = 'Отменена';
+                    statusClass = 'status-canceled';
+                }
+
+                let performerInfo = 'Не назначен';
+                if (deal.UF_CRM_1751128612) {
+                    const performer = performers.find(p => p.ID == deal.UF_CRM_1751128612);
+                    if (performer) {
+                        performerInfo = `${performer.NAME || ''} ${performer.LAST_NAME || ''}`.trim() || 'Исполнитель';
+                    } else {
+                        performerInfo = `ID: ${deal.UF_CRM_1751128612}`;
+                    }
+                }
+
+                html += `
+                    <tr>
+                        <td class="request-num">#${deal.ID}</td>
+                        <td class="request-service">${serviceNames}</td>
+                        <td class="request-date">${date}</td>
+                        <td><span class="request-status ${statusClass}">${statusText}</span></td>
+                        <td class="request-performer">${performerInfo}</td>
+                        <td>
+                            <button class="details-btn" data-id="${deal.ID}">Детали</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('requests-list').innerHTML = html;
+
+            document.querySelectorAll('.details-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dealId = this.getAttribute('data-id');
+                    window.location.href = `deal-details.php?id=${dealId}&v=${version}`;
+                });
+            });
+        }
+
+        function showNoRequests() {
+            document.getElementById('requests-list').innerHTML = `
+                <div class="no-requests">
+                    <div class="no-requests-icon">📭</div>
+                    <h3>У вас пока нет заявок</h3>
+                    <p>Нажмите кнопку "Создать новую заявку", чтобы оставить первый запрос</p>
                 </div>
             `;
         }
 
-        document.addEventListener('DOMContentLoaded', initApp);
+        function showError() {
+            document.getElementById('requests-list').innerHTML = `
+                <div class="no-requests">
+                    <div class="no-requests-icon">⚠️</div>
+                    <h3>Ошибка загрузки данных</h3>
+                    <p>Попробуйте обновить страницу или зайти позже</p>
+                </div>
+            `;
+        }
     </script>
 </body>
 
