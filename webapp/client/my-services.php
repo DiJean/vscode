@@ -20,7 +20,7 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/my-services.css?<?= $version ?>">
 </head>
 
-<body>
+<body class="theme-beige">
     <div class="container">
         <a href="/" class="btn-change-role">← Сменить роль</a>
         <div class="greeting">Мои заявки</div>
