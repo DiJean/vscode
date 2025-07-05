@@ -16,7 +16,7 @@ $version = time();
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
-<body>
+<body class="theme-beige">
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center">
