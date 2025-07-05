@@ -11,6 +11,16 @@ ini_set('post_max_size', '10M');
 ini_set('upload_max_filesize', '15M');
 ini_set('memory_limit', '256M');
 
+// Включим логирование в файл для отладки
+$logFile = __DIR__ . '/complete_deal.log';
+file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Начало обработки запроса\n", FILE_APPEND);
+
+function logMessage($message)
+{
+    global $logFile;
+    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] " . $message . "\n", FILE_APPEND);
+}
+
 $BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
 $FOLDER_ID = 1;
 $TELEGRAM_BOT_TOKEN = 'bot:1845249310:AAGgqxI9crjWVgyCXlve0BDGssGgEANhh3g';
@@ -18,8 +28,11 @@ $MAX_FILE_SIZE = 5 * 1024 * 1024;
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 try {
+    logMessage("Получен запрос: " . print_r($_POST, true));
+    logMessage("Файлы: " . print_r($_FILES, true));
+
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Invalid request method');
+        throw new Exception('Недопустимый метод запроса');
     }
 
     $dealId = $_POST['deal_id'] ?? null;
@@ -35,25 +48,33 @@ try {
     validatePhoto($afterPhoto);
 
     $dealInfo = getDealInfo($dealId);
+    logMessage("Информация о сделке: " . print_r($dealInfo, true));
 
     if (empty($dealInfo['performer_tg_id'])) {
         throw new Exception('Исполнитель не назначен на заказ');
     }
 
     if ($dealInfo['performer_tg_id'] != $tgUserId) {
-        throw new Exception('Вы не являетесь исполнителем этого заказа');
+        throw new Exception('Вы не являетесь исполнителем этого заказа. Ваш ID: ' .
+            $tgUserId . ', ожидался: ' . $dealInfo['performer_tg_id']);
     }
 
     if ($dealInfo['stage_id'] !== 'EXECUTING') {
-        throw new Exception('Заявка не в статусе исполнения');
+        throw new Exception('Заявка не в статусе исполнения. Текущий статус: ' . $dealInfo['stage_id']);
     }
 
     $beforeFileId = uploadFileToBitrix($beforePhoto);
     $afterFileId = uploadFileToBitrix($afterPhoto);
 
+    logMessage("ID фото до: $beforeFileId");
+    logMessage("ID фото после: $afterFileId");
+
+    // Обновляем сделку с прикреплением файлов
     $updateResult = updateDeal($dealId, $beforeFileId, $afterFileId);
+    logMessage("Результат обновления: " . print_r($updateResult, true));
 
     if ($updateResult) {
+        logMessage("Уведомление исполнителю: {$dealInfo['performer_tg_id']}");
         if (!empty($dealInfo['performer_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['performer_tg_id'],
@@ -61,6 +82,7 @@ try {
             );
         }
 
+        logMessage("Уведомление клиенту: {$dealInfo['client_tg_id']}");
         if (!empty($dealInfo['client_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['client_tg_id'],
@@ -74,6 +96,7 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(400);
+    logMessage("ОШИБКА: " . $e->getMessage());
     echo json_encode([
         'success' => false,
         'error' => 'Ошибка: ' . $e->getMessage()
@@ -89,14 +112,15 @@ function validatePhoto($file)
     }
 
     if ($file['size'] > $MAX_FILE_SIZE) {
-        throw new Exception('Размер файла превышает 5MB');
+        throw new Exception('Размер файла превышает 5MB. Фактический размер: ' .
+            round($file['size'] / 1024 / 1024, 2) . 'MB');
     }
 
     $fileInfo = new finfo(FILEINFO_MIME_TYPE);
     $mimeType = $fileInfo->file($file['tmp_name']);
 
     if (!in_array($mimeType, $ALLOWED_MIME_TYPES)) {
-        throw new Exception('Недопустимый формат файла. Разрешены: JPEG, PNG, WebP');
+        throw new Exception('Недопустимый формат файла. Разрешены: JPEG, PNG, WebP. Получен: ' . $mimeType);
     }
 }
 
@@ -118,6 +142,7 @@ function getUploadErrorMessage($errorCode)
 function uploadFileToBitrix($file)
 {
     global $BITRIX_WEBHOOK, $FOLDER_ID;
+    logMessage("Загрузка файла: {$file['name']}");
 
     $fileContent = file_get_contents($file['tmp_name']);
     if ($fileContent === false) {
@@ -140,6 +165,7 @@ function uploadFileToBitrix($file)
     $response = makeBitrixRequest($url, $params);
 
     if (!isset($response['result'])) {
+        logMessage("Ошибка загрузки файла: " . print_r($response, true));
         throw new Exception('Ошибка загрузки файла в Bitrix24: ' . print_r($response, true));
     }
 
@@ -148,8 +174,9 @@ function uploadFileToBitrix($file)
 
 function makeBitrixRequest($url, $params = [])
 {
-    $ch = curl_init();
+    logMessage("Bitrix запрос: $url, параметры: " . print_r($params, true));
 
+    $ch = curl_init();
     $options = [
         CURLOPT_URL => $url,
         CURLOPT_POST => true,
@@ -172,6 +199,7 @@ function makeBitrixRequest($url, $params = [])
     }
 
     curl_close($ch);
+    logMessage("Bitrix ответ: HTTP $httpCode, " . $response);
 
     if ($httpCode === 401) {
         throw new Exception('Ошибка авторизации в Bitrix24. Проверьте вебхук');
@@ -202,11 +230,22 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
     global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
 
+    // Подготовка полей для обновления
     $fields = ['STAGE_ID' => 'WON'];
-    if ($beforeFileId) $fields['UF_CRM_1751200529'] = [$beforeFileId];
-    if ($afterFileId) $fields['UF_CRM_1751200549'] = [$afterFileId];
+
+    // Прикрепляем файлы к пользовательским полям
+    if ($beforeFileId) {
+        $fields['UF_CRM_1751200529'] = [$beforeFileId];
+        logMessage("Прикрепляем фото до: $beforeFileId к полю UF_CRM_1751200529");
+    }
+
+    if ($afterFileId) {
+        $fields['UF_CRM_1751200549'] = [$afterFileId];
+        logMessage("Прикрепляем фото после: $afterFileId к полю UF_CRM_1751200549");
+    }
 
     $params = ['id' => $dealId, 'fields' => $fields];
+    logMessage("Обновление сделки: " . print_r($params, true));
 
     try {
         $response = makeBitrixRequest($url, $params);
@@ -260,6 +299,7 @@ function getContactInfo($contactId)
         $response = makeBitrixRequest($url, $params);
         return $response['result'] ?? [];
     } catch (Exception $e) {
+        logMessage("Ошибка получения контакта $contactId: " . $e->getMessage());
         return [];
     }
 }
@@ -267,6 +307,7 @@ function getContactInfo($contactId)
 function sendTelegramNotification($chatId, $message)
 {
     global $TELEGRAM_BOT_TOKEN;
+    logMessage("Отправка Telegram уведомления: $chatId - " . substr($message, 0, 50) . "...");
 
     if (!$chatId || !$TELEGRAM_BOT_TOKEN) return false;
 
@@ -286,5 +327,6 @@ function sendTelegramNotification($chatId, $message)
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
+    logMessage("Результат отправки Telegram: HTTP $httpCode, $response");
     return $httpCode === 200;
 }
