@@ -13,6 +13,145 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body.theme-beige {
+            background-image: url('/webapp/css/icons/marble_back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .container * {
+            color: #333 !important;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.5);
+            color: #333 !important;
+            border-radius: 12px;
+            text-decoration: none;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .completion-section {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .photo-upload-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .photo-upload {
+            flex: 1;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6a11cb;
+            color: white !important;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: #4d0d99;
+        }
+
+        .complete-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .complete-btn:hover {
+            background: #218838;
+        }
+
+        .complete-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #6a11cb !important;
+        }
+
+        .detail-value {
+            font-size: 1.05rem;
+        }
+    </style>
 </head>
 
 <body class="theme-beige">
@@ -41,7 +180,9 @@ $version = time();
                 <div class="photo-upload-container">
                     <div class="photo-upload">
                         <div class="detail-label">Фото до работы</div>
-                        <div class="photo-preview" id="before-preview"></div>
+                        <div class="photo-preview" id="before-preview">
+                            <span>Изображение не выбрано</span>
+                        </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
                             <input type="file" name="before_photo" accept="image/*" hidden>
@@ -49,7 +190,9 @@ $version = time();
                     </div>
                     <div class="photo-upload">
                         <div class="detail-label">Фото после работы</div>
-                        <div class="photo-preview" id="after-preview"></div>
+                        <div class="photo-preview" id="after-preview">
+                            <span>Изображение не выбрано</span>
+                        </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
                             <input type="file" name="after_photo" accept="image/*" hidden>
@@ -195,10 +338,30 @@ $version = time();
             const file = input.files[0];
             if (!file) return;
 
+            const preview = document.getElementById(previewId);
+            preview.innerHTML = '';
+
+            // Проверка типа файла
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                preview.innerHTML = '<div class="text-danger">Недопустимый формат</div>';
+                input.value = '';
+                return;
+            }
+
+            // Проверка размера файла (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                preview.innerHTML = '<div class="text-danger">Файл слишком большой</div>';
+                input.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                const preview = document.getElementById(previewId);
-                preview.innerHTML = `<img src="${e.target.result}" class="img-fluid">`;
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.classList.add('img-fluid');
+                preview.appendChild(img);
             };
             reader.readAsDataURL(file);
         }
@@ -208,29 +371,77 @@ $version = time();
             const formData = new FormData(form);
             const completeBtn = document.getElementById('complete-btn');
 
+            // Проверка что оба фото загружены
+            const beforePhoto = formData.get('before_photo');
+            const afterPhoto = formData.get('after_photo');
+
+            if (!beforePhoto || !afterPhoto || beforePhoto.size === 0 || afterPhoto.size === 0) {
+                Telegram.WebApp.showAlert('Загрузите оба фото (до и после работы)');
+                return;
+            }
+
             completeBtn.disabled = true;
             completeBtn.textContent = 'Отправка...';
 
             try {
-                const response = await fetch('/webapp/complete_deal.php', {
+                // Показать индикатор загрузки в Telegram
+                if (Telegram.WebApp.showProgress) Telegram.WebApp.showProgress();
+
+                // Добавляем временные метки для обхода кеширования
+                const url = `/webapp/complete_deal.php?t=${Date.now()}`;
+
+                const response = await fetch(url, {
                     method: 'POST',
                     body: formData
                 });
 
+                // Проверка HTTP статуса
+                if (!response.ok) {
+                    let errorText = '';
+                    try {
+                        const errorData = await response.json();
+                        errorText = errorData.error || 'Неизвестная ошибка сервера';
+                    } catch (e) {
+                        errorText = await response.text();
+                    }
+
+                    throw new Error(`HTTP error ${response.status}: ${errorText}`);
+                }
+
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Заявка успешно завершена!');
-                    location.reload();
+                    Telegram.WebApp.showAlert('✅ Заявка успешно завершена!', () => {
+                        // Обновляем страницу без перезагрузки
+                        loadDealDetails();
+
+                        // Скрываем секцию завершения
+                        document.getElementById('completion-section').style.display = 'none';
+
+                        // Сбрасываем форму
+                        form.reset();
+                        document.getElementById('before-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                        document.getElementById('after-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                    });
                 } else {
-                    throw new Error(result.error || 'Неизвестная ошибка');
+                    throw new Error(result.error || 'Не удалось завершить сделку');
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
-                alert(`Ошибка завершения: ${error.message}`);
+
+                let errorMessage = error.message;
+                // Упрощаем сообщение для пользователя
+                if (errorMessage.includes('Failed to fetch')) {
+                    errorMessage = 'Ошибка соединения с сервером. Проверьте интернет-соединение';
+                } else if (errorMessage.includes('HTTP error')) {
+                    errorMessage = 'Ошибка сервера: ' + errorMessage.split(':')[1];
+                }
+
+                Telegram.WebApp.showAlert(`❌ ${errorMessage}`);
             } finally {
                 completeBtn.disabled = false;
                 completeBtn.textContent = 'Завершить заявку';
+                if (Telegram.WebApp.hideProgress) Telegram.WebApp.hideProgress();
             }
         }
 
