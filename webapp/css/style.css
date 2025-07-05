@@ -414,6 +414,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    object-fit: cover;
+    /* Сохраняет пропорции изображения */
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    /* Тонкая граница */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* Легкая тень для объема */
 }
 
 .role-icon img {
