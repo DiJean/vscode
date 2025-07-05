@@ -11,7 +11,7 @@ ini_set('post_max_size', '10M');
 ini_set('upload_max_filesize', '15M');
 ini_set('memory_limit', '256M');
 
-// Включим логирование в файл для отладки
+// Логирование
 $logFile = __DIR__ . '/complete_deal.log';
 file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Начало обработки запроса\n", FILE_APPEND);
 
@@ -69,12 +69,12 @@ try {
     logMessage("ID фото до: $beforeFileId");
     logMessage("ID фото после: $afterFileId");
 
-    // Обновляем сделку с прикреплением файлов
+    // Обновление сделки
     $updateResult = updateDeal($dealId, $beforeFileId, $afterFileId);
     logMessage("Результат обновления: " . print_r($updateResult, true));
 
-    if ($updateResult) {
-        logMessage("Уведомление исполнителю: {$dealInfo['performer_tg_id']}");
+    if ($updateResult === true) {
+        // Отправка уведомлений
         if (!empty($dealInfo['performer_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['performer_tg_id'],
@@ -82,7 +82,6 @@ try {
             );
         }
 
-        logMessage("Уведомление клиенту: {$dealInfo['client_tg_id']}");
         if (!empty($dealInfo['client_tg_id'])) {
             sendTelegramNotification(
                 $dealInfo['client_tg_id'],
@@ -92,7 +91,7 @@ try {
 
         echo json_encode(['success' => true]);
     } else {
-        throw new Exception('Не удалось обновить сделку');
+        throw new Exception('Не удалось обновить сделку. Ответ Bitrix: ' . print_r($updateResult, true));
     }
 } catch (Exception $e) {
     http_response_code(400);
@@ -233,7 +232,7 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
     // Подготовка полей для обновления
     $fields = ['STAGE_ID' => 'WON'];
 
-    // Прикрепляем файлы к пользовательским полям
+    // Прикрепляем файлы
     if ($beforeFileId) {
         $fields['UF_CRM_1751200529'] = [$beforeFileId];
         logMessage("Прикрепляем фото до: $beforeFileId к полю UF_CRM_1751200529");
@@ -249,7 +248,14 @@ function updateDeal($dealId, $beforeFileId, $afterFileId)
 
     try {
         $response = makeBitrixRequest($url, $params);
-        return isset($response['result']) && $response['result'] === true;
+
+        // Проверяем ответ
+        if (isset($response['result']) && $response['result'] === true) {
+            return true;
+        } else {
+            logMessage("Ошибка обновления: " . print_r($response, true));
+            return $response; // Возвращаем ответ для анализа
+        }
     } catch (Exception $e) {
         throw new Exception("Ошибка обновления сделки: " . $e->getMessage());
     }
