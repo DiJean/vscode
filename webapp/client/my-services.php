@@ -22,8 +22,11 @@ $version = time();
 
 <body class="theme-beige">
     <div class="container">
-        <a href="/" class="btn-change-rol me-3">← Сменить роль</a>
-        <img src="/webapp/css/icons/bot-avatar.jpg" alt="Бот" class="role-icon-small">
+        <a href="/" class="btn-change-role me-3 d-inline-flex align-items-center">
+            <img src="/webapp/css/icons/bot_avatar.jpg" alt="Бот"
+                class="role-icon-small me-2" style="width:24px;height:24px;">
+            <span>Сменить роль</span>
+        </a>
         <div class="greeting">Мои заявки</div>
         <a href="/webapp/client/client-form.php?v=<?= $version ?>" class="btn-create">+ Создать новую заявку</a>
         <div class="requests-list" id="requests-list">
