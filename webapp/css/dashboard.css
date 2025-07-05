@@ -277,7 +277,6 @@
     }
 }
 
-/* Новые стили для поиска по городу */
 #city-search {
     width: 100%;
     padding: 10px 15px;
@@ -296,4 +295,33 @@
 
 #city-search::placeholder {
     color: rgba(255, 255, 255, 0.7);
+}
+
+/* Новые стили для мраморного фона */
+body.theme-beige .deals-container {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.theme-beige #deals-table a {
+    color: #1a0dab !important;
+}
+
+body.theme-beige #deals-table a:hover {
+    color: #0d47a1 !important;
+    text-decoration: underline;
+}
+
+body.theme-beige .btn-outline-light {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #333 !important;
+}
+
+body.theme-beige .btn-outline-light:hover {
+    background: rgba(106, 17, 203, 0.1);
+}
+
+body.theme-beige #refresh-btn {
+    background: rgba(106, 17, 203, 0.85);
+    color: #fff !important;
 }

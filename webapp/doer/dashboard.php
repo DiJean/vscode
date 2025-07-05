@@ -1,5 +1,4 @@
 <?php
-//работающая версия
 header('Content-Type: text/html; charset=utf-8');
 $version = time();
 ?>
@@ -14,6 +13,47 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/dashboard.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        body.theme-beige {
+            background-image: url('/webapp/css/icons/marble_back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .container * {
+            color: #333 !important;
+        }
+
+        #deals-table th {
+            background: rgba(106, 17, 203, 0.85) !important;
+        }
+
+        #deals-table td {
+            background: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .status-badge {
+            color: #fff !important;
+        }
+
+        .btn-change-role {
+            color: #333 !important;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 
 <body class="theme-beige">
@@ -109,7 +149,7 @@ $version = time();
                     body: JSON.stringify({
                         filter: {
                             'UF_CRM_1751128872': String(tgId),
-                            'TYPE_ID': '1' // Только контакты типа "Исполнитель"
+                            'TYPE_ID': '1'
                         },
                         select: ['ID', 'NAME', 'LAST_NAME', 'UF_CRM_685D2956061DB']
                     })
@@ -117,7 +157,6 @@ $version = time();
 
                 const data = await response.json();
 
-                // Ключевое исправление 1: правильная обработка ответа
                 if (data && data.result && data.result.length > 0) {
                     return data.result[0];
                 }
@@ -138,12 +177,10 @@ $version = time();
             tg = Telegram.WebApp;
 
             try {
-                // Ключевое исправление 2: правильное получение данных пользователя
                 user = tg.initDataUnsafe.user || {};
 
                 const performerContact = await findPerformerByTgId(user.id);
 
-                // Добавим отладочный вывод
                 console.log('Performer Contact:', performerContact);
 
                 if (!performerContact) {
@@ -216,7 +253,6 @@ $version = time();
                 const status = document.getElementById('status-filter').value;
                 const search = document.getElementById('search').value;
 
-                // Ключевое исправление 3: правильный формат фильтра
                 const filter = {
                     'UF_CRM_1751128612': contactId
                 };
@@ -246,7 +282,6 @@ $version = time();
 
                 const data = await response.json();
 
-                // Ключевое исправление 4: правильная обработка ответа
                 if (data && data.result) {
                     renderDeals(data.result);
                     updatePagination(data.total);
@@ -382,7 +417,6 @@ $version = time();
             `;
         }
 
-        // Ключевое исправление 5: правильная инициализация
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>

@@ -27,79 +27,6 @@ $version = time();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Стили для кнопок и иконок -->
-    <style>
-        .bot-avatar-container {
-            position: relative;
-            margin: 0 auto 20px;
-            width: 80px;
-            height: 80px;
-        }
-
-        .bot-avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: #0088cc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 3px solid white;
-            overflow: hidden;
-        }
-
-        .bot-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .header-container {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .bitrix-section {
-            margin-top: 30px;
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin: 5px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-about {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-        }
-
-        .btn-icon {
-            margin-right: 8px;
-        }
-
-        /* Удалены все стили связанные с выпадающим селектом */
-    </style>
 </head>
 
 <body class="theme-beige">
@@ -107,7 +34,6 @@ $version = time();
         <!-- Аватар бота -->
         <div class="bot-avatar-container">
             <div class="bot-avatar">
-                <!-- Изображение аватара бота -->
                 <img src="/webapp/css/icons/bot-avatar.jpg" alt="Аватар бота">
             </div>
         </div>
@@ -125,18 +51,22 @@ $version = time();
             </div>
         </div>
 
-        <!-- Только стиль с кнопками для выбора роли -->
+        <!-- Кнопки выбора роли с иконками -->
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="role-card" data-role="client">
-                    <div class="role-icon">👤</div>
+                    <div class="role-icon">
+                        <img src="/webapp/css/icons/client_ava.png" alt="Клиент">
+                    </div>
                     <h3>Клиент</h3>
                     <p>Хочу заказать услугу</p>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="role-card" data-role="performer">
-                    <div class="role-icon">👷</div>
+                    <div class="role-icon">
+                        <img src="/webapp/css/icons/doer_ava.png" alt="Исполнитель">
+                    </div>
                     <h3>Исполнитель</h3>
                     <p>Готов выполнять заказы</p>
                 </div>
@@ -153,7 +83,6 @@ $version = time();
                 </svg>
                 Bitrix24 Виджет
             </a>
-            <!-- Ссылка на страницу "О нас" -->
             <a href="/webapp/about.php" class="btn btn-about">
                 <svg class="btn-icon" viewBox="0 0 24 24" width="20" height="20">
                     <path fill="white" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
@@ -200,7 +129,6 @@ $version = time();
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     user = tg.initDataUnsafe.user;
 
-                    // Сохраняем Telegram User ID
                     if (user.id) {
                         localStorage.setItem('tgUserId', user.id);
                     }
@@ -214,10 +142,8 @@ $version = time();
                     const lastName = user.last_name || '';
                     const fullName = `${firstName} ${lastName}`.trim() || 'Пользователь';
 
-                    // Обновляем приветствие
                     fullNameElement.textContent = fullName;
 
-                    // Обновляем аватар
                     if (user.photo_url) {
                         avatarContainer.innerHTML = `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle">`;
                     } else {
@@ -264,14 +190,12 @@ $version = time();
             `;
         }
 
-        // Инициализация при загрузке
         if (window.Telegram && window.Telegram.WebApp) {
             initApp();
         } else {
             document.addEventListener('DOMContentLoaded', initApp);
         }
 
-        // Восстановление состояния при возврате
         window.addEventListener('pageshow', function(event) {
             if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
                 initApp();
