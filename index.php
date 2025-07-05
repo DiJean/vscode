@@ -30,6 +30,24 @@ $version = time();
 
     <!-- Стили для кнопок и иконок -->
     <style>
+        /* Новый стиль для фона */
+        body.theme-beige {
+            background-image: url('/webapp/css/icon/marble_back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
         .bot-avatar-container {
             position: relative;
             margin: 0 auto 20px;
@@ -65,7 +83,7 @@ $version = time();
             margin-top: 30px;
             text-align: center;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
         }
 
@@ -98,7 +116,13 @@ $version = time();
             margin-right: 8px;
         }
 
-        /* Удалены все стили связанные с выпадающим селектом */
+        /* Обновленные стили для аватара пользователя */
+        .user-greeting {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 
