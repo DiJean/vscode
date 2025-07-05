@@ -26,7 +26,6 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     #background: var(--background-color);
-    background-image: url(/webapp/css/icons/marble_back.jpg);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -321,6 +320,7 @@ body {
 .theme-beige {
     --primary-color: #654321;
     --secondary-color: #FFF44F;
+    background-image: url(/webapp/css/icons/marble_back.jpg);
 }
 
 .photo-upload-container {
