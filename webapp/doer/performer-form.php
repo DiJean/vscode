@@ -16,7 +16,7 @@ $version = time();
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
-<body class="performer-form">
+<body class="performer-form theme-beige">
     <div class="container py-4">
         <div class="greeting text-center mb-4" id="greeting">Регистрация исполнителя</div>
         <div id="user-container" class="text-center mb-4"></div>
