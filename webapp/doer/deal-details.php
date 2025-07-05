@@ -395,36 +395,45 @@ $version = time();
                     body: formData
                 });
 
-                // Проверка HTTP статуса
+                // Ключевое исправление: читаем ответ только один раз
+                const responseText = await response.text();
+
                 if (!response.ok) {
                     let errorText = '';
                     try {
-                        const errorData = await response.json();
+                        // Пытаемся распарсить ошибку как JSON
+                        const errorData = JSON.parse(responseText);
                         errorText = errorData.error || 'Неизвестная ошибка сервера';
                     } catch (e) {
-                        errorText = await response.text();
+                        // Если не JSON, используем текст ответа
+                        errorText = responseText;
                     }
 
                     throw new Error(`HTTP error ${response.status}: ${errorText}`);
                 }
 
-                const result = await response.json();
+                try {
+                    // Парсим ответ только если статус OK
+                    const result = JSON.parse(responseText);
 
-                if (result.success) {
-                    Telegram.WebApp.showAlert('✅ Заявка успешно завершена!', () => {
-                        // Обновляем страницу без перезагрузки
-                        loadDealDetails();
+                    if (result.success) {
+                        Telegram.WebApp.showAlert('✅ Заявка успешно завершена!', () => {
+                            // Обновляем страницу без перезагрузки
+                            loadDealDetails();
 
-                        // Скрываем секцию завершения
-                        document.getElementById('completion-section').style.display = 'none';
+                            // Скрываем секцию завершения
+                            document.getElementById('completion-section').style.display = 'none';
 
-                        // Сбрасываем форму
-                        form.reset();
-                        document.getElementById('before-preview').innerHTML = '<span>Изображение не выбрано</span>';
-                        document.getElementById('after-preview').innerHTML = '<span>Изображение не выбрано</span>';
-                    });
-                } else {
-                    throw new Error(result.error || 'Не удалось завершить сделку');
+                            // Сбрасываем форму
+                            form.reset();
+                            document.getElementById('before-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                            document.getElementById('after-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                        });
+                    } else {
+                        throw new Error(result.error || 'Не удалось завершить сделку');
+                    }
+                } catch (e) {
+                    throw new Error('Неверный формат ответа от сервера');
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
