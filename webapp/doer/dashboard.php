@@ -50,27 +50,8 @@ $version = time();
         }
 
         .btn-change-role {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.5);
             color: #333 !important;
-            border-radius: 12px;
-            text-decoration: none;
-            margin-bottom: 15px;
-            transition: all 0.3s;
             border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-change-role:hover {
-            background: rgba(255, 255, 255, 0.7);
-            transform: translateY(-2px);
-        }
-
-        .role-icon-small {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
         }
     </style>
 </head>
@@ -79,10 +60,7 @@ $version = time();
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center">
-                <a href="/" class="btn-change-role me-3">
-                    <img src="/webapp/css/icons/client_ava.png" alt="Клиент" class="role-icon-small">
-                    Сменить роль
-                </a>
+                <a href="/" class="btn-change-role me-3">← Сменить роль</a>
                 <h1 class="h3 mb-0">Мои заявки</h1>
             </div>
             <div class="d-flex align-items-center" id="user-info">
