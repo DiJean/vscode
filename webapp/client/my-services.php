@@ -23,7 +23,7 @@ $version = time();
 <body class="theme-beige">
     <div class="container">
         <a href="/" class="btn-change-role me-3 d-inline-flex align-items-center">
-            <img src="/webapp/css/icons/bot_avatar.jpg" alt="Бот"
+            <img src="/webapp/css/icons/bot-avatar.jpg" alt="Бот"
                 class="role-icon-small me-2" style="width:24px;height:24px;">
             <span>Сменить роль</span>
         </a>
