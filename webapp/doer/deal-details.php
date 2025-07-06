@@ -395,45 +395,36 @@ $version = time();
                     body: formData
                 });
 
-                // Ключевое исправление: читаем ответ только один раз
-                const responseText = await response.text();
-
+                // Проверка HTTP статуса
                 if (!response.ok) {
                     let errorText = '';
                     try {
-                        // Пытаемся распарсить ошибку как JSON
-                        const errorData = JSON.parse(responseText);
+                        const errorData = await response.json();
                         errorText = errorData.error || 'Неизвестная ошибка сервера';
                     } catch (e) {
-                        // Если не JSON, используем текст ответа
-                        errorText = responseText;
+                        errorText = await response.text();
                     }
 
                     throw new Error(`HTTP error ${response.status}: ${errorText}`);
                 }
 
-                try {
-                    // Парсим ответ только если статус OK
-                    const result = JSON.parse(responseText);
+                const result = await response.json();
 
-                    if (result.success) {
-                        Telegram.WebApp.showAlert('✅ Заявка успешно завершена!', () => {
-                            // Обновляем страницу без перезагрузки
-                            loadDealDetails();
+                if (result.success) {
+                    Telegram.WebApp.showAlert('✅ Заявка успешно завершена!', () => {
+                        // Обновляем страницу без перезагрузки
+                        loadDealDetails();
 
-                            // Скрываем секцию завершения
-                            document.getElementById('completion-section').style.display = 'none';
+                        // Скрываем секцию завершения
+                        document.getElementById('completion-section').style.display = 'none';
 
-                            // Сбрасываем форму
-                            form.reset();
-                            document.getElementById('before-preview').innerHTML = '<span>Изображение не выбрано</span>';
-                            document.getElementById('after-preview').innerHTML = '<span>Изображение не выбрано</span>';
-                        });
-                    } else {
-                        throw new Error(result.error || 'Не удалось завершить сделку');
-                    }
-                } catch (e) {
-                    throw new Error('Неверный формат ответа от сервера');
+                        // Сбрасываем форму
+                        form.reset();
+                        document.getElementById('before-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                        document.getElementById('after-preview').innerHTML = '<span>Изображение не выбрано</span>';
+                    });
+                } else {
+                    throw new Error(result.error || 'Не удалось завершить сделку');
                 }
             } catch (error) {
                 console.error('Ошибка:', error);
