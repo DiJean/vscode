@@ -14,9 +14,8 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Добавляем стили для отображения деталей заявки */
         .detail-card {
-            #background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
@@ -28,6 +27,12 @@ $version = time();
             margin-bottom: 15px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
         .detail-label {
@@ -183,7 +188,7 @@ $version = time();
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
-                            <input type="file" name="before_photo" accept="image/*" hidden>
+                            <input type="file" name="before_photo" accept="image/*" hidden required>
                         </label>
                     </div>
                     <div class="photo-upload">
@@ -193,7 +198,7 @@ $version = time();
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
-                            <input type="file" name="after_photo" accept="image/*" hidden>
+                            <input type="file" name="after_photo" accept="image/*" hidden required>
                         </label>
                     </div>
                 </div>
@@ -306,6 +311,21 @@ $version = time();
             // Обработчик отправки формы
             document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
+
+                // Проверка наличия файлов
+                const beforeFile = this.elements.before_photo.files[0];
+                const afterFile = this.elements.after_photo.files[0];
+
+                if (!beforeFile || !afterFile) {
+                    alert('Пожалуйста, загрузите оба фото!');
+                    return;
+                }
+
+                // Проверка, что файлы не пустые
+                if (beforeFile.size === 0 || afterFile.size === 0) {
+                    alert('Файлы не должны быть пустыми!');
+                    return;
+                }
 
                 const formData = new FormData(this);
                 const completeBtn = document.getElementById('complete-btn');
