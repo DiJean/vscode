@@ -34,7 +34,7 @@ $version = time();
         }
 
         .container * {
-            color: #333 !important;
+            color: #dcdcdc !important;
         }
 
         #deals-table th {
@@ -43,6 +43,7 @@ $version = time();
 
         #deals-table td {
             background: rgba(255, 255, 255, 0.7) !important;
+            color: #414141 !important;
         }
 
         .status-badge {

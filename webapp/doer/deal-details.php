@@ -14,21 +14,19 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Единые стили для обеих ролей */
         .detail-card {
-            #background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
             color: #333;
             border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .detail-item {
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .detail-item:last-child {
@@ -52,39 +50,35 @@ $version = time();
 
         .back-btn {
             display: inline-block;
-            padding: 8px 16px;
-            background: rgba(106, 17, 203, 0.85);
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             text-align: center;
-            border-radius: 8px;
+            border-radius: 12px;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: bold;
             transition: all 0.3s;
             border: none;
             cursor: pointer;
+            margin-top: 20px;
         }
 
         .back-btn:hover {
-            background: rgba(106, 17, 203, 1);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0.9;
+            transform: translateY(-2px);
         }
 
         .completion-section {
-            /*background: rgba(255, 255, 255, 0.85);*/
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
             padding: 20px;
             margin-top: 30px;
             border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .completion-section h3 {
             color: #333;
             margin-bottom: 20px;
-            font-weight: 600;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .photo-upload-container {
@@ -104,7 +98,7 @@ $version = time();
             width: 100%;
             height: 150px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(0, 0, 0, 0.05);
             margin-bottom: 10px;
             overflow: hidden;
             display: flex;
@@ -124,17 +118,28 @@ $version = time();
             width: 100%;
             padding: 10px;
             background: rgba(106, 17, 203, 0.1);
-            border-radius: 8px;
+            border-radius: 12px;
             color: #333;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             border: 1px dashed rgba(106, 17, 203, 0.5);
-            font-size: 0.9rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-btn input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
 
         .upload-btn:hover {
-            background: rgba(106, 17, 203, 0.15);
+            background: rgba(106, 17, 203, 0.2);
         }
 
         .complete-btn {
@@ -144,18 +149,11 @@ $version = time();
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             text-align: center;
-            border-radius: 8px;
-            font-weight: 500;
+            border-radius: 12px;
+            font-weight: bold;
             border: none;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .complete-btn:hover:not(:disabled) {
-            opacity: 0.95;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         .complete-btn:disabled {
@@ -163,33 +161,9 @@ $version = time();
             cursor: not-allowed;
         }
 
-        /* Единый стиль для статусов */
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: inline-block;
-        }
-
-        .status-new {
-            background: rgba(255, 193, 7, 0.2);
-            color: #b28704;
-        }
-
-        .status-processing {
-            background: rgba(0, 123, 255, 0.2);
-            color: #0069d9;
-        }
-
-        .status-completed {
-            background: rgba(40, 167, 69, 0.2);
-            color: #218838;
-        }
-
-        .status-canceled {
-            background: rgba(220, 53, 69, 0.2);
-            color: #c82333;
+        .complete-btn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -226,7 +200,7 @@ $version = time();
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
-                            <input type="file" name="before_photo" accept="image/*" hidden>
+                            <input type="file" name="before_photo" accept="image/*" required>
                         </label>
                     </div>
                     <div class="photo-upload">
@@ -236,7 +210,7 @@ $version = time();
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
-                            <input type="file" name="after_photo" accept="image/*" hidden>
+                            <input type="file" name="after_photo" accept="image/*" required>
                         </label>
                     </div>
                 </div>
@@ -261,7 +235,7 @@ $version = time();
             '79': 'Благоустройство'
         };
 
-        // Словарь статусов заявок (единый для обеих ролей)
+        // Словарь статусов заявок
         const stageNames = {
             'NEW': 'Новый заказ',
             'PREPARATION': 'Подготовка',
@@ -304,7 +278,7 @@ $version = time();
                     return;
                 }
 
-                // Отображаем детали заявки в едином стиле
+                // Отображаем детали заявки
                 renderDealDetails(deal);
 
                 // Проверяем, является ли текущий пользователь исполнителем
@@ -350,6 +324,21 @@ $version = time();
             document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
+                // Проверка наличия файлов
+                const beforeFile = this.elements.before_photo.files[0];
+                const afterFile = this.elements.after_photo.files[0];
+
+                if (!beforeFile || !afterFile) {
+                    alert('Пожалуйста, загрузите оба фото!');
+                    return;
+                }
+
+                // Проверка, что файлы не пустые
+                if (beforeFile.size === 0 || afterFile.size === 0) {
+                    alert('Файлы не должны быть пустыми!');
+                    return;
+                }
+
                 const formData = new FormData(this);
                 const completeBtn = document.getElementById('complete-btn');
                 completeBtn.disabled = true;
@@ -364,7 +353,6 @@ $version = time();
                     const result = await response.json();
                     if (result.success) {
                         alert('Заявка успешно завершена!');
-                        // Перенаправляем на дашборд
                         window.location.href = '/webapp/doer/dashboard.php';
                     } else {
                         alert(result.error || 'Ошибка при завершении заявки');
@@ -453,7 +441,7 @@ $version = time();
             }
         }
 
-        // Функция отображения деталей заявки в едином стиле
+        // Функция отображения деталей заявки
         function renderDealDetails(deal) {
             const dealContainer = document.getElementById('deal-container');
             // Форматируем дату
@@ -477,11 +465,7 @@ $version = time();
                 ).join(', ');
             }
 
-            // Определяем класс для статуса
-            const statusClass = getStatusClass(deal.stageId);
-            const statusName = stageNames[deal.stageId] || deal.stageId;
-
-            // Создаем HTML в едином стиле
+            // Создаем HTML
             dealContainer.innerHTML = `
                 <div class="detail-item">
                     <div class="detail-label">Номер заявки</div>
@@ -489,7 +473,7 @@ $version = time();
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
-                    <div class="detail-value"><span class="status-badge ${statusClass}">${statusName}</span></div>
+                    <div class="detail-value">${stageNames[deal.stageId] || deal.stageId}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Дата создания</div>
@@ -528,25 +512,6 @@ $version = time();
                     <div class="detail-value">${deal.comments || 'нет'}</div>
                 </div>
             `;
-        }
-
-        // Функция определения класса для статуса (единая для обеих ролей)
-        function getStatusClass(stageId) {
-            switch (stageId) {
-                case 'NEW':
-                    return 'status-new';
-                case 'PREPARATION':
-                case 'PREPAYMENT_INVOICE':
-                case 'EXECUTING':
-                    return 'status-processing';
-                case 'WON':
-                    return 'status-completed';
-                case 'LOSE':
-                case 'APOLOGY':
-                    return 'status-canceled';
-                default:
-                    return '';
-            }
         }
 
         function showError(message) {

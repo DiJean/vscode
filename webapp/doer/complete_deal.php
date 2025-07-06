@@ -12,6 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+ini_set('max_execution_time', 300);
+ini_set('post_max_size', '20M');
+ini_set('upload_max_filesize', '15M');
+ini_set('memory_limit', '256M');
 
 $logFile = __DIR__ . '/complete_deal.log';
 file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Начало обработки запроса\n", FILE_APPEND);
@@ -23,10 +27,14 @@ function logMessage($message)
 }
 
 $BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+$FOLDER_ID = 1; // ID папки в Битрикс24, куда загружать файлы
 $TELEGRAM_BOT_TOKEN = 'bot:1845249310:AAGgqxI9crjWVgyCXlve0BDGssGgEANhh3g';
+$MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+$ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 try {
     logMessage("Получен запрос: " . print_r($_POST, true));
+    logMessage("Файлы: " . print_r($_FILES, true));
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Недопустимый метод запроса');
@@ -34,9 +42,23 @@ try {
 
     $dealId = $_POST['deal_id'] ?? null;
     $tgUserId = $_POST['tg_user_id'] ?? null;
+    $beforePhoto = $_FILES['before_photo'] ?? null;
+    $afterPhoto = $_FILES['after_photo'] ?? null;
 
     if (!$dealId) throw new Exception('Не указан ID заявки');
     if (!$tgUserId) throw new Exception('Не указан идентификатор пользователя');
+
+    // Проверка файлов
+    if (!$beforePhoto || !$afterPhoto) {
+        throw new Exception('Необходимо загрузить оба фото');
+    }
+
+    if ($beforePhoto['size'] === 0 || $afterPhoto['size'] === 0) {
+        throw new Exception('Файлы не должны быть пустыми');
+    }
+
+    validatePhoto($beforePhoto);
+    validatePhoto($afterPhoto);
 
     $dealInfo = getDealInfo($dealId);
     logMessage("Информация о сделке: " . print_r($dealInfo, true));
@@ -54,8 +76,15 @@ try {
         throw new Exception('Заявка не в статусе исполнения. Текущий статус: ' . $dealInfo['stage_id']);
     }
 
-    // Обновление сделки - только смена статуса
-    $updateResult = updateDeal($dealId);
+    // Загрузка файлов
+    $beforeFileId = uploadFileToBitrix($beforePhoto);
+    $afterFileId = uploadFileToBitrix($afterPhoto);
+
+    logMessage("ID фото до: $beforeFileId");
+    logMessage("ID фото после: $afterFileId");
+
+    // Обновление сделки
+    $updateResult = updateDeal($dealId, $beforeFileId, $afterFileId);
     logMessage("Результат обновления: " . print_r($updateResult, true));
 
     if ($updateResult === true) {
@@ -85,6 +114,75 @@ try {
         'success' => false,
         'error' => 'Ошибка: ' . $e->getMessage()
     ]);
+}
+
+function validatePhoto($file)
+{
+    global $MAX_FILE_SIZE, $ALLOWED_MIME_TYPES;
+
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception('Ошибка загрузки файла: ' . getUploadErrorMessage($file['error']));
+    }
+
+    if ($file['size'] > $MAX_FILE_SIZE) {
+        throw new Exception('Размер файла превышает 5MB. Фактический размер: ' .
+            round($file['size'] / 1024 / 1024, 2) . 'MB');
+    }
+
+    $fileInfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $fileInfo->file($file['tmp_name']);
+
+    if (!in_array($mimeType, $ALLOWED_MIME_TYPES)) {
+        throw new Exception('Недопустимый формат файла. Разрешены: JPEG, PNG, WebP. Получен: ' . $mimeType);
+    }
+}
+
+function getUploadErrorMessage($errorCode)
+{
+    $errors = [
+        UPLOAD_ERR_INI_SIZE   => 'Размер файла превышает разрешенный сервером',
+        UPLOAD_ERR_FORM_SIZE  => 'Размер файла превышает разрешенный формой',
+        UPLOAD_ERR_PARTIAL    => 'Файл загружен частично',
+        UPLOAD_ERR_NO_FILE    => 'Файл не был загружен',
+        UPLOAD_ERR_NO_TMP_DIR => 'Отсутствует временная папка',
+        UPLOAD_ERR_CANT_WRITE => 'Не удалось записать файл на диск',
+        UPLOAD_ERR_EXTENSION  => 'Расширение PHP остановило загрузку файла',
+    ];
+
+    return $errors[$errorCode] ?? "Неизвестная ошибка ($errorCode)";
+}
+
+function uploadFileToBitrix($file)
+{
+    global $BITRIX_WEBHOOK, $FOLDER_ID;
+    logMessage("Загрузка файла: {$file['name']}");
+
+    $fileContent = file_get_contents($file['tmp_name']);
+    if ($fileContent === false) {
+        throw new Exception('Не удалось прочитать файл');
+    }
+
+    $fileEncoded = base64_encode($fileContent);
+    $fileName = sanitizeFileName($file['name']);
+
+    $url = $BITRIX_WEBHOOK . 'disk.folder.uploadfile.json';
+    $params = [
+        'id' => $FOLDER_ID,
+        'fields' => [
+            'NAME' => $fileName,
+            'FILE_CONTENT' => $fileEncoded
+        ],
+        'generateUniqueName' => true
+    ];
+
+    $response = makeBitrixRequest($url, $params);
+
+    if (!isset($response['result'])) {
+        logMessage("Ошибка загрузки файла: " . print_r($response, true));
+        throw new Exception('Ошибка загрузки файла в Bitrix24: ' . print_r($response, true));
+    }
+
+    return $response['result']['ID'];
 }
 
 function makeBitrixRequest($url, $params = [])
@@ -134,12 +232,25 @@ function makeBitrixRequest($url, $params = [])
     return $result;
 }
 
-function updateDeal($dealId)
+function sanitizeFileName($filename)
+{
+    $filename = preg_replace('/[^a-zA-Z0-9\.\-_]/', '_', $filename);
+    return substr($filename, 0, 100);
+}
+
+function updateDeal($dealId, $beforeFileId, $afterFileId)
 {
     global $BITRIX_WEBHOOK;
     $url = $BITRIX_WEBHOOK . 'crm.deal.update.json';
-    $params = ['id' => $dealId, 'fields' => ['STAGE_ID' => 'WON']];
 
+    // Подготовка полей для обновления
+    $fields = [
+        'STAGE_ID' => 'WON',
+        'UF_CRM_1751200529' => [$beforeFileId], // Поле для фото "до"
+        'UF_CRM_1751200549' => [$afterFileId]   // Поле для фото "после"
+    ];
+
+    $params = ['id' => $dealId, 'fields' => $fields];
     logMessage("Обновление сделки: " . print_r($params, true));
 
     try {
