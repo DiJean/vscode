@@ -16,7 +16,7 @@ $version = time();
     <style>
         /* Добавляем стили для отображения деталей заявки */
         .detail-card {
-            background: rgba(255, 255, 255, 0.7);
+            #background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
