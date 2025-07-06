@@ -49,7 +49,16 @@ try {
 
     if (!$dealId) throw new Exception('Не указан ID заявки');
     if (!$tgUserId) throw new Exception('Не указан идентификатор пользователя');
-    if (!$beforePhoto || !$afterPhoto) throw new Exception('Необходимо загрузить оба фото');
+
+    // Строгая проверка файлов
+    if (!$beforePhoto || !$afterPhoto) {
+        throw new Exception('Необходимо загрузить оба фото');
+    }
+
+    // Проверка на пустые файлы
+    if ($beforePhoto['size'] === 0 || $afterPhoto['size'] === 0) {
+        throw new Exception('Файлы не должны быть пустыми');
+    }
 
     validatePhoto($beforePhoto);
     validatePhoto($afterPhoto);
@@ -113,6 +122,11 @@ function validatePhoto($file)
 {
     global $MAX_FILE_SIZE, $ALLOWED_MIME_TYPES;
 
+    // Проверка на пустой файл
+    if ($file['size'] === 0) {
+        throw new Exception('Файл пустой: ' . $file['name']);
+    }
+
     if ($file['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('Ошибка загрузки файла: ' . getUploadErrorMessage($file['error']));
     }
@@ -149,6 +163,11 @@ function uploadFileToBitrix($file)
 {
     global $BITRIX_WEBHOOK, $FOLDER_ID;
     logMessage("Загрузка файла: {$file['name']}");
+
+    // Дополнительная проверка перед чтением файла
+    if ($file['size'] === 0) {
+        throw new Exception('Файл пустой: ' . $file['name']);
+    }
 
     $fileContent = file_get_contents($file['tmp_name']);
     if ($fileContent === false) {
