@@ -356,7 +356,7 @@ $version = time();
                 completeBtn.textContent = 'Отправка...';
 
                 try {
-                    const response = await fetch('/webapp/complete_deal.php', {
+                    const response = await fetch('/webapp/doer/complete_deal.php', {
                         method: 'POST',
                         body: formData
                     });
