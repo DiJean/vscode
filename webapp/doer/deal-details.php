@@ -16,7 +16,7 @@ $version = time();
     <style>
         /* Единые стили для обеих ролей */
         .detail-card {
-            background: rgba(255, 255, 255, 0.85);
+            #background: rgba(255, 255, 255, 0.85);
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
