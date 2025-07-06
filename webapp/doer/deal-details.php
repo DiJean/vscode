@@ -13,7 +13,142 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- УДАЛЕН ВСТРОЕННЫЙ БЛОК STYLE -->
+    <style>
+        /* Добавляем стили для отображения деталей заявки */
+        .detail-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            color: #333;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-label {
+            font-weight: bold;
+            opacity: 0.8;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .detail-value {
+            font-size: 1.1rem;
+            color: #000;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .back-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .completion-section {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .completion-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .photo-upload-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .photo-upload {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.05);
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #ccc;
+        }
+
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: rgba(106, 17, 203, 0.1);
+            border-radius: 12px;
+            color: #333;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px dashed rgba(106, 17, 203, 0.5);
+        }
+
+        .upload-btn:hover {
+            background: rgba(106, 17, 203, 0.2);
+        }
+
+        .complete-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .complete-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .complete-btn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 
 <body class="theme-beige">
@@ -29,6 +164,7 @@ $version = time();
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">Загрузка...</span>
                 </div>
+                <div class="mt-2">Загрузка деталей заявки...</div>
             </div>
         </div>
 
@@ -68,10 +204,290 @@ $version = time();
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
-
     <script>
-        // JavaScript без изменений
+        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+        const version = '<?= $version ?>';
+
+        // Словарь для преобразования ID услуг в названия
+        const serviceNames = {
+            '69': 'Уход',
+            '71': 'Цветы',
+            '73': 'Ремонт',
+            '75': 'Церковная служба',
+            '77': 'Установка памятника',
+            '79': 'Благоустройство'
+        };
+
+        // Словарь статусов заявок
+        const stageNames = {
+            'NEW': 'Новый заказ',
+            'PREPARATION': 'Подготовка',
+            'PREPAYMENT_INVOICE': 'Оплата',
+            'EXECUTING': 'В работе',
+            'FINAL_INVOICE': 'Выставлен счет',
+            'WON': 'Успешно завершена',
+            'LOSE': 'Не нашли участок',
+            'APOLOGY': 'Анализ неудачи'
+        };
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Инициализация Telegram WebApp
+            let tg = null;
+            let user = null;
+            try {
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    tg = Telegram.WebApp;
+                    tg.ready();
+                    user = tg.initDataUnsafe.user;
+                }
+            } catch (e) {
+                console.error('Telegram WebApp init error', e);
+            }
+
+            // Получаем ID заявки из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const dealId = urlParams.get('id');
+            if (!dealId) {
+                showError('Не указан ID заявки');
+                return;
+            }
+
+            // Загружаем детали заявки
+            const dealContainer = document.getElementById('deal-container');
+            try {
+                const deal = await getDealDetails(dealId);
+                if (!deal) {
+                    showError('Заявка не найдена');
+                    return;
+                }
+
+                // Отображаем детали заявки
+                renderDealDetails(deal);
+
+                // Проверяем, является ли текущий пользователь исполнителем
+                if (user) {
+                    // Ищем контакт текущего пользователя (исполнителя) по Telegram ID
+                    const performerContact = await findPerformerByTgId(user.id);
+                    if (performerContact && performerContact.ID == deal.performerId) {
+                        // Проверяем статус заявки
+                        if (deal.stageId === 'EXECUTING') {
+                            // Показываем секцию завершения
+                            document.getElementById('completion-section').style.display = 'block';
+                            // Заполняем hidden поля формы
+                            document.getElementById('deal-id-hidden').value = dealId;
+                            document.getElementById('tg-user-id-hidden').value = user.id;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки заявки', error);
+                showError('Ошибка загрузки данных заявки');
+            }
+
+            // Обработчики для загрузки фото и предпросмотра
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const previewId = this.name === 'before_photo' ? 'before-preview' : 'after-preview';
+                    const preview = document.getElementById(previewId);
+
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        preview.innerHTML = '<span>Изображение не выбрано</span>';
+                    }
+                });
+            });
+
+            // Обработчик отправки формы
+            document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const completeBtn = document.getElementById('complete-btn');
+                completeBtn.disabled = true;
+                completeBtn.textContent = 'Отправка...';
+
+                try {
+                    const response = await fetch('/webapp/complete_deal.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Заявка успешно завершена!');
+                        // Перенаправляем на дашборд
+                        window.location.href = '/webapp/doer/dashboard.php';
+                    } else {
+                        alert(result.error || 'Ошибка при завершении заявки');
+                        completeBtn.disabled = false;
+                        completeBtn.textContent = 'Завершить заявку';
+                    }
+                } catch (error) {
+                    console.error('Ошибка отправки формы', error);
+                    alert('Сетевая ошибка');
+                    completeBtn.disabled = false;
+                    completeBtn.textContent = 'Завершить заявку';
+                }
+            });
+        });
+
+        // Функция загрузки деталей заявки
+        async function getDealDetails(dealId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: dealId,
+                        select: [
+                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
+                            'UF_CRM_685D295664A8A', // Желаемая дата услуги
+                            'UF_CRM_685D2956BF4C8', // Город
+                            'UF_CRM_685D2956C64E0', // Услуги
+                            'UF_CRM_685D2956D0916', // Кладбище
+                            'UF_CRM_1751022940', // Сектор
+                            'UF_CRM_685D2956D7C70', // Ряд
+                            'UF_CRM_685D2956DF40F', // Участок
+                            'UF_CRM_1751128612' // Исполнитель (ID контакта)
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.result) {
+                    return {
+                        id: data.result.ID,
+                        title: data.result.TITLE,
+                        dateCreate: data.result.DATE_CREATE,
+                        stageId: data.result.STAGE_ID,
+                        comments: data.result.COMMENTS,
+                        serviceDate: data.result.UF_CRM_685D295664A8A,
+                        city: data.result.UF_CRM_685D2956BF4C8,
+                        services: data.result.UF_CRM_685D2956C64E0,
+                        cemetery: data.result.UF_CRM_685D2956D0916,
+                        sector: data.result.UF_CRM_1751022940,
+                        row: data.result.UF_CRM_685D2956D7C70,
+                        plot: data.result.UF_CRM_685D2956DF40F,
+                        performerId: data.result.UF_CRM_1751128612
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Ошибка получения деталей заявки:', error);
+                return null;
+            }
+        }
+
+        // Функция поиска исполнителя по Telegram ID
+        async function findPerformerByTgId(tgId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filter: {
+                            'UF_CRM_1751128872': String(tgId)
+                        },
+                        select: ['ID']
+                    })
+                });
+
+                const data = await response.json();
+                return data.result && data.result.length > 0 ? data.result[0] : null;
+            } catch (error) {
+                console.error('Ошибка поиска исполнителя:', error);
+                return null;
+            }
+        }
+
+        // Функция отображения деталей заявки
+        function renderDealDetails(deal) {
+            const dealContainer = document.getElementById('deal-container');
+            // Форматируем дату
+            const createdDate = new Date(deal.dateCreate).toLocaleDateString();
+            const serviceDate = deal.serviceDate ? new Date(deal.serviceDate).toLocaleDateString() : 'не указана';
+
+            // Преобразуем ID услуг в названия
+            let services = 'не указаны';
+            if (deal.services) {
+                let serviceIds = [];
+                if (Array.isArray(deal.services)) {
+                    serviceIds = deal.services;
+                } else if (typeof deal.services === 'string') {
+                    serviceIds = deal.services.split(',');
+                } else {
+                    serviceIds = [String(deal.services)];
+                }
+
+                services = serviceIds.map(id =>
+                    serviceNames[id] || `Услуга #${id}`
+                ).join(', ');
+            }
+
+            // Создаем HTML
+            dealContainer.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Номер заявки</div>
+                    <div class="detail-value">${deal.id}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Статус</div>
+                    <div class="detail-value">${stageNames[deal.stageId] || deal.stageId}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Дата создания</div>
+                    <div class="detail-value">${createdDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Желаемая дата исполнения</div>
+                    <div class="detail-value">${serviceDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Услуги</div>
+                    <div class="detail-value">${services}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Город</div>
+                    <div class="detail-value">${deal.city || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Кладбище</div>
+                    <div class="detail-value">${deal.cemetery || 'не указано'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Сектор</div>
+                    <div class="detail-value">${deal.sector || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Ряд</div>
+                    <div class="detail-value">${deal.row || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Участок</div>
+                    <div class="detail-value">${deal.plot || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Комментарий</div>
+                    <div class="detail-value">${deal.comments || 'нет'}</div>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const dealContainer = document.getElementById('deal-container');
+            dealContainer.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
     </script>
 </body>
+
 </html>
