@@ -71,7 +71,7 @@ $version = time();
         }
 
         .completion-section {
-            background: rgba(255, 255, 255, 0.85);
+            #background: rgba(255, 255, 255, 0.85);
             border-radius: 16px;
             padding: 20px;
             margin-top: 30px;
