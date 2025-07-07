@@ -1,6 +1,7 @@
 (function() {
-    const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
-
+    // Используем глобальную переменную, установленную PHP
+    const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK || 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+    
     // Словарь для преобразования ID услуг в названия
     const serviceNames = {
         '69': 'Уход',

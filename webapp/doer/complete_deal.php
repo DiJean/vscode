@@ -1,4 +1,5 @@
 <?php
+require_once('/var/www/config.php');
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
@@ -26,9 +27,7 @@ function logMessage($message)
     file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] " . $message . "\n", FILE_APPEND);
 }
 
-$BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
 $FOLDER_ID = 1; // ID папки в Битрикс24, куда загружать файлы
-$TELEGRAM_BOT_TOKEN = 'bot:1845249310:AAGgqxI9crjWVgyCXlve0BDGssGgEANhh3g';
 $MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
