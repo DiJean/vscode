@@ -1,3 +1,4 @@
+/* Основные стили карточки деталей */
 .detail-card {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 16px;
@@ -28,18 +29,19 @@
     font-size: 1.1rem;
 }
 
+/* Стили кнопки "Назад" */
 .back-btn {
-    display: block;
-    width: 100%;
-    padding: 12px;
+    display: inline-block;
+    padding: 10px 20px;
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     color: white;
     text-align: center;
     border-radius: 12px;
     text-decoration: none;
     font-weight: bold;
-    margin-top: 20px;
     transition: all 0.3s;
+    border: none;
+    cursor: pointer;
 }
 
 .back-btn:hover {
@@ -47,6 +49,7 @@
     transform: translateY(-2px);
 }
 
+/* Стили для секции завершения заявки */
 .completion-section {
     margin-top: 30px;
     padding: 20px;
@@ -122,55 +125,6 @@
 }
 
 .complete-btn:hover:not(:disabled) {
-    opacity: 0.9;
-    transform: translateY(-2px);
-}
-
-[file name]: deal-details.css [file content begin] .detail-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 20px;
-}
-
-.detail-item {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.detail-item:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.detail-label {
-    font-weight: bold;
-    opacity: 0.8;
-    margin-bottom: 5px;
-    font-size: 0.9rem;
-}
-
-.detail-value {
-    font-size: 1.1rem;
-}
-
-.back-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    text-align: center;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-.back-btn:hover {
     opacity: 0.9;
     transform: translateY(-2px);
 }
