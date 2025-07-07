@@ -14,13 +14,18 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <script>
+        window.BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>';
+    </script>
+
     <style>
         .detail-card {
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
-            color: #333;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
 
         .detail-item {
@@ -48,84 +53,77 @@ $version = time();
             color: #000;
         }
 
-        .back-btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .back-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-
         .completion-section {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 16px;
-            padding: 20px;
+            padding: 25px;
             margin-top: 30px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
 
         .completion-section h3 {
             color: #333;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .photo-upload-container {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 25px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
         }
 
         .photo-upload {
             flex: 1;
-            min-width: 150px;
+            min-width: 250px;
             text-align: center;
         }
 
         .photo-preview {
             width: 100%;
-            height: 150px;
+            height: 250px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.05);
-            margin-bottom: 10px;
+            background: #f8f9fa;
+            margin-bottom: 15px;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px dashed #ccc;
+            border: 1px dashed #ced4da;
+            position: relative;
         }
 
         .photo-preview img {
             max-width: 100%;
             max-height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+        }
+
+        .photo-placeholder {
+            color: #6c757d;
+            font-size: 1rem;
         }
 
         .upload-btn {
             display: block;
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: rgba(106, 17, 203, 0.1);
             border-radius: 12px;
-            color: #333;
+            color: #495057;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             border: 1px dashed rgba(106, 17, 203, 0.5);
             position: relative;
             overflow: hidden;
+            font-weight: 500;
+        }
+
+        .upload-btn:hover {
+            background: rgba(106, 17, 203, 0.2);
         }
 
         .upload-btn input[type="file"] {
@@ -138,14 +136,10 @@ $version = time();
             cursor: pointer;
         }
 
-        .upload-btn:hover {
-            background: rgba(106, 17, 203, 0.2);
-        }
-
         .complete-btn {
             display: block;
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             text-align: center;
@@ -154,6 +148,7 @@ $version = time();
             border: none;
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 1.1rem;
         }
 
         .complete-btn:disabled {
@@ -163,7 +158,30 @@ $version = time();
 
         .complete-btn:hover:not(:disabled) {
             opacity: 0.9;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .photo-thumbnail {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .photo-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        .completed-photos {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px dashed rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -171,7 +189,7 @@ $version = time();
 <body class="theme-beige">
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="/webapp/doer/dashboard.php" class="back-btn">← Назад к списку заявок</a>
+            <a href="/webapp/doer/dashboard.php" class="btn btn-outline-primary">← Назад к списку заявок</a>
         </div>
 
         <h1 class="text-center mb-4">Детали заявки</h1>
@@ -181,7 +199,6 @@ $version = time();
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">Загрузка...</span>
                 </div>
-                <div class="mt-2">Загрузка деталей заявки...</div>
             </div>
         </div>
 
@@ -196,7 +213,7 @@ $version = time();
                     <div class="photo-upload">
                         <div class="detail-label">Фото до работы</div>
                         <div class="photo-preview" id="before-preview">
-                            <span>Изображение не выбрано</span>
+                            <span class="photo-placeholder">Изображение не выбрано</span>
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
@@ -206,7 +223,7 @@ $version = time();
                     <div class="photo-upload">
                         <div class="detail-label">Фото после работы</div>
                         <div class="photo-preview" id="after-preview">
-                            <span>Изображение не выбрано</span>
+                            <span class="photo-placeholder">Изображение не выбрано</span>
                         </div>
                         <label class="upload-btn">
                             📸 Загрузить фото
@@ -217,22 +234,22 @@ $version = time();
 
                 <button type="submit" class="complete-btn" id="complete-btn">Завершить заявку</button>
             </form>
+
+            <div class="completed-photos" id="completed-photos" style="display: none;">
+                <h4>Загруженные фото</h4>
+                <div class="row mt-3" id="uploaded-photos-container">
+                    <!-- Здесь будут отображаться загруженные фото -->
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const version = '<?= $version ?>';
+    <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
-        // Словарь для преобразования ID услуг в названия
-        const serviceNames = {
-            '69': 'Уход',
-            '71': 'Цветы',
-            '73': 'Ремонт',
-            '75': 'Церковная служба',
-            '77': 'Установка памятника',
-            '79': 'Благоустройство'
-        };
+    <script>
+        const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK;
+        const version = '<?= $version ?>';
 
         // Словарь статусов заявок
         const stageNames = {
@@ -292,6 +309,14 @@ $version = time();
                             // Заполняем hidden поля формы
                             document.getElementById('deal-id-hidden').value = dealId;
                             document.getElementById('tg-user-id-hidden').value = user.id;
+
+                            // Инициализация загрузки фото
+                            initPhotoUpload();
+                        }
+
+                        // Если заявка завершена, показываем загруженные фото
+                        if (deal.stageId === 'WON') {
+                            showUploadedPhotos(deal);
                         }
                     }
                 }
@@ -299,75 +324,8 @@ $version = time();
                 console.error('Ошибка загрузки заявки', error);
                 showError('Ошибка загрузки данных заявки');
             }
-
-            // Обработчики для загрузки фото и предпросмотра
-            document.querySelectorAll('input[type="file"]').forEach(input => {
-                input.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    const previewId = this.name === 'before_photo' ? 'before-preview' : 'after-preview';
-                    const preview = document.getElementById(previewId);
-
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(event) {
-                            preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        preview.innerHTML = '<span>Изображение не выбрано</span>';
-                    }
-                });
-            });
-
-            // Обработчик отправки формы
-            document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                // Проверка наличия файлов
-                const beforeFile = this.elements.before_photo.files[0];
-                const afterFile = this.elements.after_photo.files[0];
-
-                if (!beforeFile || !afterFile) {
-                    alert('Пожалуйста, загрузите оба фото!');
-                    return;
-                }
-
-                // Проверка, что файлы не пустые
-                if (beforeFile.size === 0 || afterFile.size === 0) {
-                    alert('Файлы не должны быть пустыми!');
-                    return;
-                }
-
-                const formData = new FormData(this);
-                const completeBtn = document.getElementById('complete-btn');
-                completeBtn.disabled = true;
-                completeBtn.textContent = 'Отправка...';
-
-                try {
-                    const response = await fetch('/webapp/doer/complete_deal.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        alert('Заявка успешно завершена!');
-                        window.location.href = '/webapp/doer/dashboard.php';
-                    } else {
-                        alert(result.error || 'Ошибка при завершении заявки');
-                        completeBtn.disabled = false;
-                        completeBtn.textContent = 'Завершить заявку';
-                    }
-                } catch (error) {
-                    console.error('Ошибка отправки формы', error);
-                    alert('Сетевая ошибка');
-                    completeBtn.disabled = false;
-                    completeBtn.textContent = 'Завершить заявку';
-                }
-            });
         });
 
-        // Функция загрузки деталей заявки
         async function getDealDetails(dealId) {
             try {
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
@@ -386,7 +344,9 @@ $version = time();
                             'UF_CRM_1751022940', // Сектор
                             'UF_CRM_685D2956D7C70', // Ряд
                             'UF_CRM_685D2956DF40F', // Участок
-                            'UF_CRM_1751128612' // Исполнитель (ID контакта)
+                            'UF_CRM_1751128612', // Исполнитель (ID контакта)
+                            'UF_CRM_1751200529', // Фото до
+                            'UF_CRM_1751200549' // Фото после
                         ]
                     })
                 });
@@ -406,7 +366,9 @@ $version = time();
                         sector: data.result.UF_CRM_1751022940,
                         row: data.result.UF_CRM_685D2956D7C70,
                         plot: data.result.UF_CRM_685D2956DF40F,
-                        performerId: data.result.UF_CRM_1751128612
+                        performerId: data.result.UF_CRM_1751128612,
+                        beforePhoto: data.result.UF_CRM_1751200529,
+                        afterPhoto: data.result.UF_CRM_1751200549
                     };
                 }
                 return null;
@@ -416,7 +378,6 @@ $version = time();
             }
         }
 
-        // Функция поиска исполнителя по Telegram ID
         async function findPerformerByTgId(tgId) {
             try {
                 const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
@@ -440,7 +401,6 @@ $version = time();
             }
         }
 
-        // Функция отображения деталей заявки
         function renderDealDetails(deal) {
             const dealContainer = document.getElementById('deal-container');
             // Форматируем дату
@@ -459,9 +419,13 @@ $version = time();
                     serviceIds = [String(deal.services)];
                 }
 
-                services = serviceIds.map(id =>
-                    serviceNames[id] || `Услуга #${id}`
-                ).join(', ');
+                services = serviceIds.map(id => {
+                    if (id === '69') return 'Уход';
+                    if (id === '71') return 'Цветы';
+                    if (id === '73') return 'Ремонт';
+                    if (id === '75') return 'Церковная служба';
+                    return `Услуга #${id}`;
+                }).join(', ');
             }
 
             // Создаем HTML
@@ -511,6 +475,129 @@ $version = time();
                     <div class="detail-value">${deal.comments || 'нет'}</div>
                 </div>
             `;
+        }
+
+        function initPhotoUpload() {
+            // Обработчики для загрузки фото и предпросмотра
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const previewId = this.name === 'before_photo' ? 'before-preview' : 'after-preview';
+                    const preview = document.getElementById(previewId);
+
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        preview.innerHTML = '<span class="photo-placeholder">Изображение не выбрано</span>';
+                    }
+                });
+            });
+
+            // Обработчик отправки формы
+            document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Проверка наличия файлов
+                const beforeFile = this.elements.before_photo.files[0];
+                const afterFile = this.elements.after_photo.files[0];
+
+                if (!beforeFile || !afterFile) {
+                    alert('Пожалуйста, загрузите оба фото!');
+                    return;
+                }
+
+                // Проверка, что файлы не пустые
+                if (beforeFile.size === 0 || afterFile.size === 0) {
+                    alert('Файлы не должны быть пустыми!');
+                    return;
+                }
+
+                const formData = new FormData(this);
+                const completeBtn = document.getElementById('complete-btn');
+                completeBtn.disabled = true;
+                completeBtn.textContent = 'Отправка...';
+
+                try {
+                    const response = await fetch('/webapp/doer/complete_deal.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Показываем сообщение об успехе
+                        if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.showPopup) {
+                            Telegram.WebApp.showPopup({
+                                title: 'Успех!',
+                                message: 'Заявка успешно завершена',
+                                buttons: [{
+                                    id: 'ok',
+                                    type: 'ok'
+                                }]
+                            });
+                        } else {
+                            alert('Заявка успешно завершена!');
+                        }
+
+                        // Обновляем страницу через 2 секунды
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        alert(result.error || 'Ошибка при завершении заявки');
+                        completeBtn.disabled = false;
+                        completeBtn.textContent = 'Завершить заявку';
+                    }
+                } catch (error) {
+                    console.error('Ошибка отправки формы', error);
+                    alert('Сетевая ошибка');
+                    completeBtn.disabled = false;
+                    completeBtn.textContent = 'Завершить заявку';
+                }
+            });
+        }
+
+        function showUploadedPhotos(deal) {
+            // Показываем секцию с загруженными фото
+            document.getElementById('completed-photos').style.display = 'block';
+            const container = document.getElementById('uploaded-photos-container');
+
+            // Формируем URL для фото
+            const baseUrl = BITRIX_WEBHOOK.replace('/rest/', '');
+
+            let photosHTML = '';
+
+            // Фото "до"
+            if (deal.beforePhoto && deal.beforePhoto.length > 0) {
+                const photoId = deal.beforePhoto[0];
+                const photoUrl = `${baseUrl}download.php?auth=1&fileId=${photoId}`;
+
+                photosHTML += `
+                    <div class="col-md-6 mb-4">
+                        <div class="detail-label">Фото до работы</div>
+                        <img src="${photoUrl}" alt="Фото до работы" class="photo-thumbnail">
+                    </div>
+                `;
+            }
+
+            // Фото "после"
+            if (deal.afterPhoto && deal.afterPhoto.length > 0) {
+                const photoId = deal.afterPhoto[0];
+                const photoUrl = `${baseUrl}download.php?auth=1&fileId=${photoId}`;
+
+                photosHTML += `
+                    <div class="col-md-6 mb-4">
+                        <div class="detail-label">Фото после работы</div>
+                        <img src="${photoUrl}" alt="Фото после работы" class="photo-thumbnail">
+                    </div>
+                `;
+            }
+
+            container.innerHTML = photosHTML || '<div class="col-12 text-center">Фото не загружены</div>';
         }
 
         function showError(message) {
