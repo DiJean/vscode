@@ -32,12 +32,31 @@ $version = time();
         </div>
     </div>
 
+    <!-- Модальное окно для просмотра фото -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoModalLabel">Просмотр фото</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalPhoto" src="" alt="" class="modal-photo">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
     <script>
         const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
         const version = '<?= $version ?>';
+        const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
 
         function getUrlParameter(name) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -129,6 +148,38 @@ $version = time();
                     <div class="detail-value">${deal.COMMENTS || '-'}</div>
                 </div>
             `;
+
+            // Добавляем фото для завершенных заявок
+            if (deal.STAGE_ID === 'WON') {
+                addPhotoSection(deal, 'До', 'UF_CRM_1751200529', dealContainer);
+                addPhotoSection(deal, 'После', 'UF_CRM_1751200549', dealContainer);
+            }
+        }
+
+        function addPhotoSection(deal, label, fieldName, container) {
+            const photoField = deal[fieldName];
+            if (photoField && photoField.length > 0) {
+                const photoId = photoField[0];
+                const photoUrl = `https://b24-saiczd.bitrix24.ru/rest/download.php?auth=1&token=5sjww0g09qa2cc0u&fileId=${photoId}`;
+
+                container.innerHTML += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото ${label}</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото ${label}" 
+                                 class="photo-thumbnail"
+                                 data-full="${photoUrl}"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function openPhotoModal(photoUrl) {
+            document.getElementById('modalPhoto').src = photoUrl;
+            photoModal.show();
         }
 
         function showError(message) {
