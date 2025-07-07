@@ -1,5 +1,14 @@
 <?php
 require_once('/var/www/config.php');
+if (!defined('BITRIX_WEBHOOK') || !defined('BOT_TOKEN')) {
+    header("HTTP/1.1 500 Internal Server Error");
+    echo json_encode(['success' => false, 'error' => 'Configuration error']);
+    exit();
+}
+
+$BITRIX_WEBHOOK = BITRIX_WEBHOOK;
+$TELEGRAM_BOT_TOKEN = BOT_TOKEN;
+
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
@@ -27,7 +36,7 @@ function logMessage($message)
     file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] " . $message . "\n", FILE_APPEND);
 }
 
-$FOLDER_ID = 1; // ID папки в Битрикс24, куда загружать файлы
+$FOLDER_ID = 113; // ID папки в Битрикс24, куда загружать файлы
 $MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
