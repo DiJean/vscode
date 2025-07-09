@@ -151,29 +151,35 @@ $version = time();
 
             // Добавляем фото для завершенных заявок
             if (deal.STAGE_ID === 'WON') {
-                addPhotoSection(deal, 'До', 'UF_CRM_1751200529', dealContainer);
-                addPhotoSection(deal, 'После', 'UF_CRM_1751200549', dealContainer);
-            }
-        }
-
-        function addPhotoSection(deal, label, fieldName, container) {
-            const photoField = deal[fieldName];
-            if (photoField && photoField.length > 0) {
-                const photoId = photoField[0];
-                const photoUrl = `https://b24-saiczd.bitrix24.ru/rest/download.php?auth=1&token=5sjww0g09qa2cc0u&fileId=${photoId}`;
-
-                container.innerHTML += `
-                    <div class="detail-item">
-                        <div class="detail-label">Фото ${label}</div>
-                        <div class="detail-value">
-                            <img src="${photoUrl}" 
-                                 alt="Фото ${label}" 
-                                 class="photo-thumbnail"
-                                 data-full="${photoUrl}"
-                                 onclick="openPhotoModal('${photoUrl}')">
+                if (deal.beforePhotoUrl) {
+                    dealContainer.innerHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Фото "До"</div>
+                            <div class="detail-value">
+                                <img src="${deal.beforePhotoUrl}" 
+                                     alt="Фото до" 
+                                     class="photo-thumbnail"
+                                     data-full="${deal.beforePhotoUrl}"
+                                     onclick="openPhotoModal('${deal.beforePhotoUrl}')">
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+
+                if (deal.afterPhotoUrl) {
+                    dealContainer.innerHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Фото "После"</div>
+                            <div class="detail-value">
+                                <img src="${deal.afterPhotoUrl}" 
+                                     alt="Фото после" 
+                                     class="photo-thumbnail"
+                                     data-full="${deal.afterPhotoUrl}"
+                                     onclick="openPhotoModal('${deal.afterPhotoUrl}')">
+                            </div>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -192,11 +198,9 @@ $version = time();
 
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
-            // Проверяем загружен ли BitrixCRM
             if (typeof BitrixCRM !== 'undefined') {
                 loadDealDetails();
             } else {
-                // Динамически загружаем скрипт
                 const script = document.createElement('script');
                 script.src = '/webapp/js/bitrix-integration.js?' + version;
                 script.onload = loadDealDetails;

@@ -1,8 +1,6 @@
 (function() {
-    // Используем глобальную переменную, установленную PHP
     const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK || 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
     
-    // Словарь для преобразования ID услуг в названия
     const serviceNames = {
         '69': 'Уход',
         '71': 'Цветы',
@@ -11,6 +9,22 @@
         '77': 'Установка памятника',
         '79': 'Благоустройство'
     };
+
+    async function getFileUrl(fileId) {
+        try {
+            const response = await fetch(`${BITRIX_WEBHOOK}disk.file.get.json`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: fileId })
+            });
+            
+            const data = await response.json();
+            return data.result?.DOWNLOAD_URL || null;
+        } catch (error) {
+            console.error('Ошибка получения URL файла:', error);
+            return null;
+        }
+    }
 
     async function findContactByTgId(tgId) {
         try {
@@ -43,7 +57,7 @@
                         'UF_CRM_685D295664A8A',
                         'UF_CRM_685D2956BF4C8',
                         'UF_CRM_685D2956C64E0',
-                        'UF_CRM_1751128612' // ID исполнителя
+                        'UF_CRM_1751128612'
                     ],
                     order: { "DATE_CREATE": "DESC" }
                 })
@@ -51,7 +65,6 @@
             
             const data = await response.json();
             
-            // Преобразуем ID услуг в названия
             if (data.result) {
                 data.result.forEach(deal => {
                     deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
@@ -65,7 +78,6 @@
         }
     }
 
-    // Функция преобразования ID услуг в названия
     function mapServices(serviceField) {
         if (!serviceField) return 'Услуга не указана';
         
@@ -85,7 +97,6 @@
 
     async function getPerformersInfo(performerIds) {
         try {
-            // Уникальные ID исполнителей
             const uniqueIds = [...new Set(performerIds)];
             
             const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
@@ -114,16 +125,16 @@
                     id: dealId,
                     select: [
                         'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
-                        'UF_CRM_685D295664A8A', // Желаемая дата услуги
-                        'UF_CRM_685D2956BF4C8', // Город
-                        'UF_CRM_685D2956C64E0', // Услуги
-                        'UF_CRM_685D2956D0916', // Кладбище
-                        'UF_CRM_1751022940',    // Сектор
-                        'UF_CRM_685D2956D7C70', // Ряд
-                        'UF_CRM_685D2956DF40F', // Участок
-                        'UF_CRM_1751128612',    // Исполнитель
-                        'UF_CRM_1751200529',     // Фото до
-                        'UF_CRM_1751200549'      // Фото после
+                        'UF_CRM_685D295664A8A',
+                        'UF_CRM_685D2956BF4C8',
+                        'UF_CRM_685D2956C64E0',
+                        'UF_CRM_685D2956D0916',
+                        'UF_CRM_1751022940',
+                        'UF_CRM_685D2956D7C70',
+                        'UF_CRM_685D2956DF40F',
+                        'UF_CRM_1751128612',
+                        'UF_CRM_1751200529',
+                        'UF_CRM_1751200549'
                     ]
                 })
             });
@@ -133,6 +144,16 @@
             if (data.result) {
                 const deal = data.result;
                 deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
+                
+                // Получаем URL для фото
+                if (deal.UF_CRM_1751200529 && deal.UF_CRM_1751200529.length > 0) {
+                    deal.beforePhotoUrl = await getFileUrl(deal.UF_CRM_1751200529[0]);
+                }
+                
+                if (deal.UF_CRM_1751200549 && deal.UF_CRM_1751200549.length > 0) {
+                    deal.afterPhotoUrl = await getFileUrl(deal.UF_CRM_1751200549[0]);
+                }
+                
                 return deal;
             }
             
@@ -307,6 +328,6 @@
         getUserRequests,
         getPerformersInfo,
         getDealDetails,
-        mapServices // Экспортируем для использования в других местах
+        mapServices
     };
 })();
