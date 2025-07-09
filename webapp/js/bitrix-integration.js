@@ -19,7 +19,8 @@
             });
             
             const data = await response.json();
-            return data.result?.DETAIL_URL || null;
+            // Используем прямой URL файла
+            return data.result?.DOWNLOAD_URL || null;
         } catch (error) {
             console.error('Ошибка получения URL файла:', error);
             return null;
@@ -145,7 +146,7 @@
                 const deal = data.result;
                 deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
                 
-                // Получаем URL для фото через DETAIL_URL
+                // Получаем URL для фото
                 if (deal.UF_CRM_1751200529 && deal.UF_CRM_1751200529.length > 0) {
                     deal.beforePhotoUrl = await getFileUrl(deal.UF_CRM_1751200529[0]);
                 }
