@@ -1,5 +1,5 @@
 <?php
-//require_once('/var/www/config.php');
+require_once('/var/www/config.php'); // Подключаем конфигурационный файл
 header('Content-Type: text/html; charset=utf-8');
 $version = time();
 ?>
@@ -14,123 +14,83 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/dashboard.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <style>
-        body.theme-beige {
-            background-image: url('/webapp/css/icons/marble_back.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-        }
-
-        .container {
-            #background-color: rgba(255, 255, 255, 0.85);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .container * {
-            color: #dcdcdc !important;
-        }
-
-        #deals-table th {
-            background: rgba(106, 17, 203, 0.85) !important;
-        }
-
-        #deals-table td {
-            background: rgba(255, 255, 255, 0.7) !important;
-            color: #414141 !important;
-        }
-
-        .status-badge {
-            color: #fff !important;
-        }
-
-        .btn-change-role {
-            color: #333 !important;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-    </style>
 </head>
 
 <body class="theme-beige">
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center">
-                <a href="/" class="btn-change-role me-3">← Сменить роль</a>
-                <h1 class="h3 mb-0">Мои заявки</h1>
+    <div class="dashboard">
+        <div class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    <a href="/" class="btn-change-role me-3">← Сменить роль</a>
+                    <h1 class="h3 mb-0">Мои заявки</h1>
+                </div>
+                <div class="d-flex align-items-center" id="user-info">
+                    <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
+                    Загрузка...
+                </div>
             </div>
-            <div class="d-flex align-items-center" id="user-info">
-                <div class="spinner-border spinner-border-sm text-light me-2" role="status"></div>
-                Загрузка...
-            </div>
-        </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <select class="form-select" id="status-filter">
-                    <option value="">Все статусы</option>
-                    <option value="NEW">Новый заказ</option>
-                    <option value="PREPARATION">Подготовка</option>
-                    <option value="PREPAYMENT_INVOICE">Оплата</option>
-                    <option value="EXECUTING">В работе</option>
-                    <option value="WON">Успешно завершена</option>
-                    <option value="LOSE">Не нашли участок</option>
-                    <option value="APOLOGY">Анализ неудачи</option>
-                </select>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <select class="form-select" id="status-filter">
+                        <option value="">Все статусы</option>
+                        <option value="NEW">Новый заказ</option>
+                        <option value="PREPARATION">Подготовка</option>
+                        <option value="PREPAYMENT_INVOICE">Оплата</option>
+                        <option value="EXECUTING">В работе</option>
+                        <option value="WON">Успешно завершена</option>
+                        <option value="LOSE">Не нашли участок</option>
+                        <option value="APOLOGY">Анализ неудачи</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" id="search" placeholder="Поиск по клиенту или услуге...">
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" id="refresh-btn">Обновить</button>
+                </div>
             </div>
-            <div class="col-md-5">
-                <input type="text" class="form-control" id="search" placeholder="Поиск по клиенту или услуге...">
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-primary w-100" id="refresh-btn">Обновить</button>
-            </div>
-        </div>
 
-        <div class="deals-container">
-            <div class="table-responsive rounded-3">
-                <table class="table table-hover align-middle mb-0" id="deals-table">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Клиент</th>
-                            <th>Услуги</th>
-                            <th>Создана</th>
-                            <th>Исполнение</th>
-                            <th>Город</th>
-                            <th class="status-cell">Статус</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="deals-list">
-                        <tr>
-                            <td colspan="8" class="text-center py-4">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Загрузка...</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="deals-container">
+                <div class="table-responsive rounded-3">
+                    <table class="table table-hover align-middle mb-0" id="deals-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Клиент</th>
+                                <th>Услуги</th>
+                                <th>Создана</th>
+                                <th>Исполнение</th>
+                                <th>Город</th>
+                                <th class="status-cell">Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deals-list">
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <div class="d-flex justify-content-center align-items-center mt-4" id="pagination">
-            <button class="btn btn-outline-light me-2" id="prev-page" disabled>← Назад</button>
-            <span class="mx-3" id="current-page">1</span>
-            <button class="btn btn-outline-light ms-2" id="next-page">Вперед →</button>
+            <div class="d-flex justify-content-center align-items-center mt-4" id="pagination">
+                <button class="btn btn-outline-primary me-2" id="prev-page" disabled>← Назад</button>
+                <span class="mx-3" id="current-page">1</span>
+                <button class="btn btn-outline-primary ms-2" id="next-page">Вперед →</button>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const BITRIX_WEBHOOK = 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
+        const BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>'; // Используем константу из конфига
         const version = '<?= $version ?>';
 
         let tg = null;
