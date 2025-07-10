@@ -23,7 +23,6 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    #background: var(--background-color);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -38,7 +37,6 @@ body {
 .container {
     max-width: 600px;
     width: 100%;
-    #background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(10px);
     border-radius: 24px;
     padding: 40px 20px;
@@ -235,6 +233,24 @@ body {
     .services-container {
         grid-template-columns: 1fr;
     }
+
+    /* Объединенные стили для .role-page */
+    .role-page .greeting-text {
+        font-size: 1.5rem;
+    }
+
+    .role-page .user-name {
+        font-size: 1.3rem;
+    }
+
+    .role-page .avatar {
+        width: 80px;
+        height: 80px;
+    }
+
+    .role-page .avatar-letter {
+        font-size: 2.5rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -389,160 +405,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РОЛИ */
-.role-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text-color);
-}
-
-.role-card:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-5px);
-}
-
-.role-icon {
-    width: 70px;
-    height: 70px;
-    margin: 0 auto 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    object-fit: cover;
-    /* Сохраняет пропорции изображения */
-    border: 1.5px solid rgba(0, 0, 0, 0.15);
-    /* Тонкая граница */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    /* Легкая тень для объема */
-    border-radius: 50%;
-}
-
-.role-icon img {
-    max-width: 10%;
-    max-height: 10%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-}
-
-.role-card:hover .role-icon img {
-    transform: scale(1.1);
-}
-
-.desktop-warning {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: var(--text-color);
-}
-
-.role-page .user-greeting {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-bottom: 30px;
-    color: var(--text-color);
-}
-
-.role-page .greeting-text {
-    font-size: 1.8rem;
-    font-weight: 500;
-    margin-bottom: 20px;
-    color: var(--text-color);
-}
-
-.role-page .user-name {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-top: 15px;
-    color: var(--text-color);
-}
-
-.role-page .avatar {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-    border: 3px solid white;
-}
-
-.role-page .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.role-page .avatar-letter {
-    font-size: 3rem;
-    font-weight: bold;
-    color: var(--text-color);
-}
-
-.role-page .desktop-warning {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    padding: 15px;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: var(--text-color);
-}
-
-@media (max-width: 768px) {
-    .role-page .greeting-text {
-        font-size: 1.5rem;
-    }
-
-    .role-page .user-name {
-        font-size: 1.3rem;
-    }
-
-    .role-page .avatar {
-        width: 80px;
-        height: 80px;
-    }
-
-    .role-page .avatar-letter {
-        font-size: 2.5rem;
-    }
-}
-
-.btn-change-role {
-    display: inline-block;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    border-radius: 12px;
-    text-decoration: none;
-    margin-bottom: 15px;
-    transition: all 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-change-role:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
-
-body,
-body * {
-    color: var(--text-color) !important;
-}
-
-/* ... предыдущие стили ... */
-
-/* Стили для кнопки смены роли */
+/* Унифицированные стили для кнопки смены роли */
 .btn-change-role {
     display: inline-flex;
     align-items: center;
@@ -567,7 +430,7 @@ body * {
     margin-right: 8px;
 }
 
-/* Для мраморного фона */
+/* Стили для мраморной темы */
 .theme-beige .btn-change-role {
     background: rgba(255, 255, 255, 0.5);
     color: #333 !important;
@@ -576,4 +439,74 @@ body * {
 
 .theme-beige .btn-change-role:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Унифицированные стили для карточек ролей */
+.role-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.role-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.role-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    object-fit: cover;
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+.role-icon img {
+    max-width: 10%;
+    max-height: 10%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.role-card:hover .role-icon img {
+    transform: scale(1.1);
+}
+
+/* Унифицированные стили для страницы выбора роли */
+.role-page .user-greeting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.role-page .greeting-text {
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+.role-page .user-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 15px;
+}
+
+.role-page .avatar {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.role-page .avatar-letter {
+    font-size: 3rem;
 }
