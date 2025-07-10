@@ -18,171 +18,6 @@ $version = time();
     <script>
         window.BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>';
     </script>
-
-    <style>
-        .detail-card {
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .detail-item {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .detail-label {
-            font-weight: bold;
-            opacity: 0.8;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            color: #555;
-        }
-
-        .detail-value {
-            font-size: 1.1rem;
-            color: #000;
-        }
-
-        .completion-section {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 16px;
-            padding: 25px;
-            margin-top: 30px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .completion-section h3 {
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .photo-upload-container {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .photo-upload {
-            flex: 1;
-            min-width: 250px;
-            text-align: center;
-        }
-
-        .photo-preview {
-            width: 100%;
-            height: 250px;
-            border-radius: 12px;
-            background: #f8f9fa;
-            margin-bottom: 15px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px dashed #ced4da;
-            position: relative;
-        }
-
-        .photo-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .photo-placeholder {
-            color: #6c757d;
-            font-size: 1rem;
-        }
-
-        .upload-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: rgba(106, 17, 203, 0.1);
-            border-radius: 12px;
-            color: #495057;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px dashed rgba(106, 17, 203, 0.5);
-            position: relative;
-            overflow: hidden;
-            font-weight: 500;
-        }
-
-        .upload-btn:hover {
-            background: rgba(106, 17, 203, 0.2);
-        }
-
-        .upload-btn input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .complete-btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            text-align: center;
-            border-radius: 12px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1.1rem;
-        }
-
-        .complete-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-
-        .complete-btn:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .photo-thumbnail {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.3s;
-            border: 1px solid #ddd;
-            padding: 5px;
-            background: white;
-            margin-top: 10px;
-        }
-
-        .photo-thumbnail:hover {
-            transform: scale(1.05);
-        }
-
-        .completed-photos {
-            margin-top: 25px;
-            padding-top: 25px;
-            border-top: 1px dashed rgba(0, 0, 0, 0.1);
-        }
-    </style>
 </head>
 
 <body class="theme-beige">
@@ -243,12 +78,31 @@ $version = time();
         </div>
     </div>
 
+    <!-- Модальное окно для просмотра фото -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="photoModalLabel">Просмотр фото</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalPhoto" src="" alt="" class="modal-photo">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
     <script>
         const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK;
         const version = '<?= $version ?>';
+        const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
 
         // Словарь статусов заявок
         const stageNames = {
@@ -578,7 +432,12 @@ $version = time();
                 photosHTML += `
                     <div class="col-md-6 mb-4">
                         <div class="detail-label">Фото до работы</div>
-                        <img src="${photoUrl}" alt="Фото до работы" class="photo-thumbnail">
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото до работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
                     </div>
                 `;
             }
@@ -591,12 +450,22 @@ $version = time();
                 photosHTML += `
                     <div class="col-md-6 mb-4">
                         <div class="detail-label">Фото после работы</div>
-                        <img src="${photoUrl}" alt="Фото после работы" class="photo-thumbnail">
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото после работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
                     </div>
                 `;
             }
 
             container.innerHTML = photosHTML || '<div class="col-12 text-center">Фото не загружены</div>';
+        }
+
+        function openPhotoModal(photoUrl) {
+            document.getElementById('modalPhoto').src = photoUrl;
+            photoModal.show();
         }
 
         function showError(message) {
