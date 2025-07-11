@@ -150,7 +150,7 @@ $version = time();
             `;
 
             // Всегда добавляем фото, если они есть
-            if (deal.beforePhotoUrl) {
+            if (!deal.beforePhotoUrl) {
                 dealContainer.innerHTML += `
                     <div class="detail-item">
                         <div class="detail-label">Фото "До"</div>
@@ -165,7 +165,7 @@ $version = time();
                 `;
             }
 
-            if (deal.afterPhotoUrl) {
+            if (!deal.afterPhotoUrl) {
                 dealContainer.innerHTML += `
                     <div class="detail-item">
                         <div class="detail-label">Фото "После"</div>
