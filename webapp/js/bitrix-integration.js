@@ -1,6 +1,12 @@
 (function() {
     const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK || 'https://b24-saiczd.bitrix24.ru/rest/1/5sjww0g09qa2cc0u/';
     
+    // Извлекаем токен и домен из URL вебхука
+    const parts = BITRIX_WEBHOOK.split('/rest/');
+    const domain = parts[0];
+    const tokenAndEndpoint = parts[1];
+    const token = tokenAndEndpoint.split('/')[0];
+    
     const serviceNames = {
         '69': 'Уход',
         '71': 'Цветы',
@@ -10,21 +16,8 @@
         '79': 'Благоустройство'
     };
 
-    async function getFileUrl(fileId) {
-        try {
-            const response = await fetch(`${BITRIX_WEBHOOK}disk.file.get.json`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: fileId })
-            });
-            
-            const data = await response.json();
-            // Используем прямой URL файла
-            return data.result?.DOWNLOAD_URL || null;
-        } catch (error) {
-            console.error('Ошибка получения URL файла:', error);
-            return null;
-        }
+    function getFileUrl(fileValueId) {
+        return `${domain}/rest/download/?&auth=1&token=${token}&fileId=${fileValueId}`;
     }
 
     async function findContactByTgId(tgId) {
@@ -146,13 +139,20 @@
                 const deal = data.result;
                 deal.services = mapServices(deal.UF_CRM_685D2956C64E0);
                 
-                // Получаем URL для фото
-                if (deal.UF_CRM_1751200529 && deal.UF_CRM_1751200529.length > 0) {
-                    deal.beforePhotoUrl = await getFileUrl(deal.UF_CRM_1751200529[0]);
+                if (deal.UF_CRM_1751200529) {
+                    if (Array.isArray(deal.UF_CRM_1751200529) && deal.UF_CRM_1751200529.length > 0) {
+                        deal.beforePhotoUrl = getFileUrl(deal.UF_CRM_1751200529[0]);
+                    } else {
+                        deal.beforePhotoUrl = getFileUrl(deal.UF_CRM_1751200529);
+                    }
                 }
                 
-                if (deal.UF_CRM_1751200549 && deal.UF_CRM_1751200549.length > 0) {
-                    deal.afterPhotoUrl = await getFileUrl(deal.UF_CRM_1751200549[0]);
+                if (deal.UF_CRM_1751200549) {
+                    if (Array.isArray(deal.UF_CRM_1751200549) && deal.UF_CRM_1751200549.length > 0) {
+                        deal.afterPhotoUrl = getFileUrl(deal.UF_CRM_1751200549[0]);
+                    } else {
+                        deal.afterPhotoUrl = getFileUrl(deal.UF_CRM_1751200549);
+                    }
                 }
                 
                 return deal;
