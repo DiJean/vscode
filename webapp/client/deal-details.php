@@ -237,25 +237,16 @@ $version = time();
             let html = `
                 <div class="detail-item">
                     <div class="detail-label">Номер заявки</div>
-                    <div class="detail-value">${deal.id}</div>
+                    <div class="detail-value">#${deal.id}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
                     <div class="detail-value ${statusClass}">${stageNames[deal.stageId] || deal.stageId}</div>
                 </div>
-            `;
-
-            // Добавляем исполнителя
-            if (deal.performerName) {
-                html += `
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
-                    <div class="detail-value">${deal.performerName}</div>
+                    <div class="detail-value">${deal.performerName ? deal.performerName : 'Исполнитель будет назначен позже'}</div>
                 </div>
-                `;
-            }
-
-            html += `
                 <div class="detail-item">
                     <div class="detail-label">Дата создания</div>
                     <div class="detail-value">${createdDate}</div>

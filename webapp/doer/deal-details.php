@@ -163,7 +163,7 @@ $version = time();
                     // Ищем контакт текущего пользователя (исполнителя) по Telegram ID
                     const performerContact = await findPerformerByTgId(user.id);
                     if (performerContact && performerContact.ID == deal.performerId) {
-                        // Проверяем статус заявки
+                        // Проверяем статус заявки - показываем форму только для статуса "В работе"
                         if (deal.stageId === 'EXECUTING') {
                             // Показываем секцию завершения
                             document.getElementById('completion-section').style.display = 'block';
