@@ -76,6 +76,21 @@ $version = time();
                     throw new Error('Заявка не найдена');
                 }
 
+                // Загружаем данные об исполнителях
+                deal.performerNames = 'Исполнитель ещё не назначен';
+
+                if (deal.UF_CRM_1751128612 && deal.UF_CRM_1751128612.length > 0) {
+                    const performers = await BitrixCRM.getPerformersInfo(deal.UF_CRM_1751128612);
+
+                    if (performers && performers.length > 0) {
+                        deal.performerNames = performers.map(p => {
+                            const name = p.NAME || '';
+                            const lastName = p.LAST_NAME || '';
+                            return (name + ' ' + lastName).trim();
+                        }).join(', ');
+                    }
+                }
+
                 renderDealDetails(deal);
             } catch (error) {
                 console.error('Ошибка загрузки деталей:', error);
@@ -106,6 +121,10 @@ $version = time();
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
                     <div class="detail-value">${statusText}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Исполнитель</div>
+                    <div class="detail-value">${deal.performerNames}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Заказ</div>
@@ -185,7 +204,7 @@ $version = time();
                 dealContainer.innerHTML += `
                     <div class="detail-item">
                         <div class="detail-label">Фото работ</div>
-                        <div class="detail-value">Будут доступны после завершения заявки</div>
+                        <div class="detail-value">Доступны после завершения заявки</div>
                     </div>
                 `;
             }
