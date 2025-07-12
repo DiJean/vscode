@@ -185,7 +185,7 @@ $version = time();
                 dealContainer.innerHTML += `
                     <div class="detail-item">
                         <div class="detail-label">Фото работ</div>
-                        <div class="detail-value">Доступны после завершения заявки</div>
+                        <div class="detail-value">Будут доступны после завершения заявки</div>
                     </div>
                 `;
             }
