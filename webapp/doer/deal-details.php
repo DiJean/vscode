@@ -37,7 +37,7 @@ $version = time();
         </div>
 
         <!-- Секция завершения заявки -->
-        <div class="completion-section" id="completion-section" style="display: none;">
+        <div class="completion-section" id="completion-section">
             <h3>Завершение заявки</h3>
             <form id="complete-deal-form" enctype="multipart/form-data">
                 <input type="hidden" name="deal_id" id="deal-id-hidden">
@@ -69,7 +69,7 @@ $version = time();
                 <button type="submit" class="complete-btn" id="complete-btn">Завершить заявку</button>
             </form>
 
-            <div class="completed-photos" id="completed-photos" style="display: none;">
+            <div class="completed-photos" id="completed-photos">
                 <h4>Загруженные фото</h4>
                 <div class="row mt-3" id="uploaded-photos-container">
                     <!-- Здесь будут отображаться загруженные фото -->
@@ -147,8 +147,16 @@ $version = time();
                     return;
                 }
 
-                // Отображаем детали заявки
-                renderDealDetails(deal);
+                // Для клиента: загружаем данные об исполнителе
+                if (deal.performerId) {
+                    const performer = await getPerformerInfo(deal.performerId);
+                    if (performer) {
+                        deal.performerName = `${performer.NAME || ''} ${performer.LAST_NAME || ''}`.trim();
+                    }
+                }
+
+                // Отображаем детали заявки с цветными статусами
+                renderDealDetails(deal, user ? 'doer' : 'client');
 
                 // Проверяем, является ли текущий пользователь исполнителем
                 if (user) {
@@ -169,6 +177,7 @@ $version = time();
 
                         // Если заявка завершена, показываем загруженные фото
                         if (deal.stageId === 'WON') {
+                            document.getElementById('completed-photos').style.display = 'block';
                             showUploadedPhotos(deal);
                         }
                     }
@@ -254,7 +263,27 @@ $version = time();
             }
         }
 
-        function renderDealDetails(deal) {
+        async function getPerformerInfo(performerId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: performerId
+                    })
+                });
+
+                const data = await response.json();
+                return data.result || null;
+            } catch (error) {
+                console.error('Ошибка получения информации об исполнителе:', error);
+                return null;
+            }
+        }
+
+        function renderDealDetails(deal, userType = 'client') {
             const dealContainer = document.getElementById('deal-container');
             // Форматируем дату
             const createdDate = new Date(deal.dateCreate).toLocaleDateString();
@@ -281,16 +310,41 @@ $version = time();
                 }).join(', ');
             }
 
+            // Определяем класс для статуса
+            let statusClass = '';
+            if (deal.stageId === 'WON') {
+                statusClass = 'status-success';
+            } else if (['NEW', 'PREPARATION', 'PREPAYMENT_INVOICE', 'EXECUTING'].includes(deal.stageId)) {
+                statusClass = 'status-info';
+            } else if (['LOSE', 'APOLOGY'].includes(deal.stageId)) {
+                statusClass = 'status-danger';
+            } else {
+                statusClass = 'status-warning';
+            }
+
             // Создаем HTML
-            dealContainer.innerHTML = `
+            let html = `
                 <div class="detail-item">
                     <div class="detail-label">Номер заявки</div>
                     <div class="detail-value">${deal.id}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
-                    <div class="detail-value">${stageNames[deal.stageId] || deal.stageId}</div>
+                    <div class="detail-value ${statusClass}">${stageNames[deal.stageId] || deal.stageId}</div>
                 </div>
+            `;
+
+            // Добавляем исполнителя для клиента
+            if (userType === 'client' && deal.performerName) {
+                html += `
+                <div class="detail-item">
+                    <div class="detail-label">Исполнитель</div>
+                    <div class="detail-value">${deal.performerName}</div>
+                </div>
+                `;
+            }
+
+            html += `
                 <div class="detail-item">
                     <div class="detail-label">Дата создания</div>
                     <div class="detail-value">${createdDate}</div>
@@ -328,6 +382,52 @@ $version = time();
                     <div class="detail-value">${deal.comments || 'нет'}</div>
                 </div>
             `;
+
+            dealContainer.innerHTML = html;
+
+            // Добавляем фото для завершенных заявок
+            if (deal.stageId === 'WON') {
+                let photosHtml = '';
+
+                if (deal.beforePhoto && deal.beforePhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.beforePhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото до работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото до работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                    `;
+                }
+
+                if (deal.afterPhoto && deal.afterPhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.afterPhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото после работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото после работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                    `;
+                }
+
+                if (photosHtml) {
+                    dealContainer.innerHTML += photosHtml;
+                }
+            }
+        }
+
+        function getFileUrl(fileId) {
+            const baseUrl = BITRIX_WEBHOOK.replace('/rest/', '');
+            return `${baseUrl}download.php?auth=1&fileId=${fileId}`;
         }
 
         function initPhotoUpload() {
@@ -415,20 +515,12 @@ $version = time();
         }
 
         function showUploadedPhotos(deal) {
-            // Показываем секцию с загруженными фото
-            document.getElementById('completed-photos').style.display = 'block';
             const container = document.getElementById('uploaded-photos-container');
-
-            // Формируем URL для фото
-            const baseUrl = BITRIX_WEBHOOK.replace('/rest/', '');
-
             let photosHTML = '';
 
             // Фото "до"
             if (deal.beforePhoto && deal.beforePhoto.length > 0) {
-                const photoId = deal.beforePhoto[0];
-                const photoUrl = `${baseUrl}download.php?auth=1&fileId=${photoId}`;
-
+                const photoUrl = getFileUrl(deal.beforePhoto[0]);
                 photosHTML += `
                     <div class="col-md-6 mb-4">
                         <div class="detail-label">Фото до работы</div>
@@ -444,9 +536,7 @@ $version = time();
 
             // Фото "после"
             if (deal.afterPhoto && deal.afterPhoto.length > 0) {
-                const photoId = deal.afterPhoto[0];
-                const photoUrl = `${baseUrl}download.php?auth=1&fileId=${photoId}`;
-
+                const photoUrl = getFileUrl(deal.afterPhoto[0]);
                 photosHTML += `
                     <div class="col-md-6 mb-4">
                         <div class="detail-label">Фото после работы</div>

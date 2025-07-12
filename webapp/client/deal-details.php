@@ -14,12 +14,16 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <script>
+        window.BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>';
+    </script>
 </head>
 
 <body class="theme-beige">
     <div class="container py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="my-services.php" class="btn btn-outline-primary">← Назад к списку заявок</a>
+            <a href="/webapp/client/my-services.php" class="btn btn-outline-primary">← Назад к списку заявок</a>
         </div>
 
         <h1 class="text-center mb-4">Детали заявки</h1>
@@ -55,180 +59,286 @@ $version = time();
     <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
     <script>
+        const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK;
         const version = '<?= $version ?>';
         const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
 
-        function getUrlParameter(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
+        // Словарь статусов заявок
+        const stageNames = {
+            'NEW': 'Новый заказ',
+            'PREPARATION': 'Подготовка',
+            'PREPAYMENT_INVOICE': 'Оплата',
+            'EXECUTING': 'В работе',
+            'FINAL_INVOICE': 'Выставлен счет',
+            'WON': 'Успешно завершена',
+            'LOSE': 'Не нашли участок',
+            'APOLOGY': 'Анализ неудачи'
+        };
 
-        async function loadDealDetails() {
-            const dealId = getUrlParameter('id');
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Инициализация Telegram WebApp
+            let tg = null;
+            let user = null;
+            try {
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    tg = Telegram.WebApp;
+                    tg.ready();
+                    user = tg.initDataUnsafe.user;
+                }
+            } catch (e) {
+                console.error('Telegram WebApp init error', e);
+            }
+
+            // Получаем ID заявки из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const dealId = urlParams.get('id');
             if (!dealId) {
-                showError('ID заявки не указан');
+                showError('Не указан ID заявки');
                 return;
             }
 
+            // Загружаем детали заявки
+            const dealContainer = document.getElementById('deal-container');
             try {
-                const deal = await BitrixCRM.getDealDetails(dealId);
+                const deal = await getDealDetails(dealId);
                 if (!deal) {
-                    throw new Error('Заявка не найдена');
+                    showError('Заявка не найдена');
+                    return;
                 }
 
-                // Загружаем данные об исполнителях
-                deal.performerNames = 'Исполнитель ещё не назначен';
-
-                if (deal.UF_CRM_1751128612 && deal.UF_CRM_1751128612.length > 0) {
-                    const performers = await BitrixCRM.getPerformersInfo(deal.UF_CRM_1751128612);
-
-                    if (performers && performers.length > 0) {
-                        deal.performerNames = performers.map(p => {
-                            const name = p.NAME || '';
-                            const lastName = p.LAST_NAME || '';
-                            return (name + ' ' + lastName).trim();
-                        }).join(', ');
+                // Загружаем данные об исполнителе
+                if (deal.performerId) {
+                    const performer = await getPerformerInfo(deal.performerId);
+                    if (performer) {
+                        deal.performerName = `${performer.NAME || ''} ${performer.LAST_NAME || ''}`.trim();
                     }
                 }
 
+                // Отображаем детали заявки с цветными статусами
                 renderDealDetails(deal);
             } catch (error) {
-                console.error('Ошибка загрузки деталей:', error);
-                showError(error.message || 'Ошибка загрузки данных');
+                console.error('Ошибка загрузки заявки', error);
+                showError('Ошибка загрузки данных заявки');
+            }
+        });
+
+        async function getDealDetails(dealId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: dealId,
+                        select: [
+                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
+                            'UF_CRM_685D295664A8A', // Желаемая дата услуги
+                            'UF_CRM_685D2956BF4C8', // Город
+                            'UF_CRM_685D2956C64E0', // Услуги
+                            'UF_CRM_685D2956D0916', // Кладбище
+                            'UF_CRM_1751022940', // Сектор
+                            'UF_CRM_685D2956D7C70', // Ряд
+                            'UF_CRM_685D2956DF40F', // Участок
+                            'UF_CRM_1751128612', // Исполнитель (ID контакта)
+                            'UF_CRM_1751200529', // Фото до
+                            'UF_CRM_1751200549' // Фото после
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.result) {
+                    return {
+                        id: data.result.ID,
+                        title: data.result.TITLE,
+                        dateCreate: data.result.DATE_CREATE,
+                        stageId: data.result.STAGE_ID,
+                        comments: data.result.COMMENTS,
+                        serviceDate: data.result.UF_CRM_685D295664A8A,
+                        city: data.result.UF_CRM_685D2956BF4C8,
+                        services: data.result.UF_CRM_685D2956C64E0,
+                        cemetery: data.result.UF_CRM_685D2956D0916,
+                        sector: data.result.UF_CRM_1751022940,
+                        row: data.result.UF_CRM_685D2956D7C70,
+                        plot: data.result.UF_CRM_685D2956DF40F,
+                        performerId: data.result.UF_CRM_1751128612,
+                        beforePhoto: data.result.UF_CRM_1751200529,
+                        afterPhoto: data.result.UF_CRM_1751200549
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Ошибка получения деталей заявки:', error);
+                return null;
+            }
+        }
+
+        async function getPerformerInfo(performerId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: performerId
+                    })
+                });
+
+                const data = await response.json();
+                return data.result || null;
+            } catch (error) {
+                console.error('Ошибка получения информации об исполнителе:', error);
+                return null;
             }
         }
 
         function renderDealDetails(deal) {
-            const createdDate = new Date(deal.DATE_CREATE).toLocaleDateString('ru-RU');
-            const serviceDate = deal.UF_CRM_685D295664A8A ?
-                new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString('ru-RU') : '-';
+            const dealContainer = document.getElementById('deal-container');
+            // Форматируем дату
+            const createdDate = new Date(deal.dateCreate).toLocaleDateString();
+            const serviceDate = deal.serviceDate ? new Date(deal.serviceDate).toLocaleDateString() : 'не указана';
 
-            let statusText = deal.STAGE_ID || 'Неизвестно';
-            let statusClass = '';
+            // Преобразуем ID услуг в названия
+            let services = 'не указаны';
+            if (deal.services) {
+                let serviceIds = [];
+                if (Array.isArray(deal.services)) {
+                    serviceIds = deal.services;
+                } else if (typeof deal.services === 'string') {
+                    serviceIds = deal.services.split(',');
+                } else {
+                    serviceIds = [String(deal.services)];
+                }
+
+                services = serviceIds.map(id => {
+                    if (id === '69') return 'Уход';
+                    if (id === '71') return 'Цветы';
+                    if (id === '73') return 'Ремонт';
+                    if (id === '75') return 'Церковная служба';
+                    return `Услуга #${id}`;
+                }).join(', ');
+            }
 
             // Определяем класс для статуса
-            if (statusText === 'WON') {
-                statusText = 'Успешно завершена';
+            let statusClass = '';
+            if (deal.stageId === 'WON') {
                 statusClass = 'status-success';
-            } else if (statusText === 'NEW') {
-                statusText = 'Новый заказ';
+            } else if (['NEW', 'PREPARATION', 'PREPAYMENT_INVOICE', 'EXECUTING'].includes(deal.stageId)) {
                 statusClass = 'status-info';
-            } else if (statusText === 'PREPARATION') {
-                statusText = 'Подготовка';
-                statusClass = 'status-info';
-            } else if (statusText === 'PREPAYMENT_INVOICE') {
-                statusText = 'Оплата';
-                statusClass = 'status-info';
-            } else if (statusText === 'EXECUTING') {
-                statusText = 'В работе';
-                statusClass = 'status-info';
-            } else if (statusText === 'LOSE') {
-                statusText = 'Не нашли участок';
-                statusClass = 'status-danger';
-            } else if (statusText === 'APOLOGY') {
-                statusText = 'Анализ неудачи';
+            } else if (['LOSE', 'APOLOGY'].includes(deal.stageId)) {
                 statusClass = 'status-danger';
             } else {
-                statusText = 'Неизвестный статус';
                 statusClass = 'status-warning';
             }
 
-            const dealContainer = document.getElementById('deal-container');
-            dealContainer.innerHTML = `
+            // Создаем HTML
+            let html = `
                 <div class="detail-item">
                     <div class="detail-label">Номер заявки</div>
-                    <div class="detail-value">#${deal.ID}</div>
+                    <div class="detail-value">${deal.id}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
-                    <div class="detail-value ${statusClass}">${statusText}</div>
+                    <div class="detail-value ${statusClass}">${stageNames[deal.stageId] || deal.stageId}</div>
                 </div>
+            `;
+
+            // Добавляем исполнителя
+            if (deal.performerName) {
+                html += `
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
-                    <div class="detail-value">${deal.performerNames}</div>
+                    <div class="detail-value">${deal.performerName}</div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-label">Заказ</div>
-                    <div class="detail-value">${deal.TITLE.replace('Заявка от ', '')}</div>
-                </div>
+                `;
+            }
+
+            html += `
                 <div class="detail-item">
                     <div class="detail-label">Дата создания</div>
                     <div class="detail-value">${createdDate}</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-label">Желаемая дата услуги</div>
+                    <div class="detail-label">Желаемая дата исполнения</div>
                     <div class="detail-value">${serviceDate}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Услуги</div>
-                    <div class="detail-value">${deal.services}</div>
+                    <div class="detail-value">${services}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Город</div>
-                    <div class="detail-value">${deal.UF_CRM_685D2956BF4C8 || '-'}</div>
+                    <div class="detail-value">${deal.city || 'не указан'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Кладбище</div>
-                    <div class="detail-value">${deal.UF_CRM_685D2956D0916 || '-'}</div>
+                    <div class="detail-value">${deal.cemetery || 'не указано'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Сектор</div>
-                    <div class="detail-value">${deal.UF_CRM_1751022940 || '-'}</div>
+                    <div class="detail-value">${deal.sector || 'не указан'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Ряд</div>
-                    <div class="detail-value">${deal.UF_CRM_685D2956D7C70 || '-'}</div>
+                    <div class="detail-value">${deal.row || 'не указан'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Участок</div>
-                    <div class="detail-value">${deal.UF_CRM_685D2956DF40F || '-'}</div>
+                    <div class="detail-value">${deal.plot || 'не указан'}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Комментарий</div>
-                    <div class="detail-value">${deal.COMMENTS || '-'}</div>
+                    <div class="detail-value">${deal.comments || 'нет'}</div>
                 </div>
             `;
 
-            // Фото отображаем только для статуса WON
-            if (deal.STAGE_ID === 'WON') {
-                if (deal.beforePhotoUrl) {
-                    dealContainer.innerHTML += `
-                        <div class="detail-item">
-                            <div class="detail-label">Фото "До"</div>
-                            <div class="detail-value">
-                                <img src="${deal.beforePhotoUrl}" 
-                                     alt="Фото до" 
-                                     class="photo-thumbnail"
-                                     data-full="${deal.beforePhotoUrl}"
-                                     onclick="openPhotoModal('${deal.beforePhotoUrl}')">
-                            </div>
+            dealContainer.innerHTML = html;
+
+            // Добавляем фото для завершенных заявок
+            if (deal.stageId === 'WON') {
+                let photosHtml = '';
+
+                if (deal.beforePhoto && deal.beforePhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.beforePhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото до работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото до работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
                         </div>
+                    </div>
                     `;
                 }
 
-                if (deal.afterPhotoUrl) {
-                    dealContainer.innerHTML += `
-                        <div class="detail-item">
-                            <div class="detail-label">Фото "После"</div>
-                            <div class="detail-value">
-                                <img src="${deal.afterPhotoUrl}" 
-                                     alt="Фото после" 
-                                     class="photo-thumbnail"
-                                     data-full="${deal.afterPhotoUrl}"
-                                     onclick="openPhotoModal('${deal.afterPhotoUrl}')">
-                            </div>
+                if (deal.afterPhoto && deal.afterPhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.afterPhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото после работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото после работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
                         </div>
+                    </div>
                     `;
                 }
-            } else {
-                // Для других статусов показываем сообщение
-                dealContainer.innerHTML += `
-                    <div class="detail-item">
-                        <div class="detail-label">Фото работ</div>
-                        <div class="detail-value">Будут доступны после завершения заявки</div>
-                    </div>
-                `;
+
+                if (photosHtml) {
+                    dealContainer.innerHTML += photosHtml;
+                }
             }
+        }
+
+        function getFileUrl(fileId) {
+            const baseUrl = BITRIX_WEBHOOK.replace('/rest/', '');
+            return `${baseUrl}download.php?auth=1&fileId=${fileId}`;
         }
 
         function openPhotoModal(photoUrl) {
@@ -237,25 +347,9 @@ $version = time();
         }
 
         function showError(message) {
-            document.getElementById('deal-container').innerHTML = `
-                <div class="alert alert-danger">
-                    ${message || 'Ошибка загрузки данных'}
-                </div>
-            `;
+            const dealContainer = document.getElementById('deal-container');
+            dealContainer.innerHTML = `<div class="alert alert-danger">${message}</div>`;
         }
-
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof BitrixCRM !== 'undefined') {
-                loadDealDetails();
-            } else {
-                const script = document.createElement('script');
-                script.src = '/webapp/js/bitrix-integration.js?' + version;
-                script.onload = loadDealDetails;
-                script.onerror = () => showError('Ошибка загрузки модуля');
-                document.body.appendChild(script);
-            }
-        });
     </script>
 </body>
 

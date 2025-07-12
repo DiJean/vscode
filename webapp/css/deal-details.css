@@ -191,29 +191,23 @@
     background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Добавляем в конец файла */
-
 /* Стили для статусов заявок */
 .status-success {
     color: #28a745 !important;
-    /* Зеленый для успешных статусов */
     font-weight: bold;
 }
 
 .status-info {
     color: #17a2b8 !important;
-    /* Синий для рабочих статусов */
     font-weight: bold;
 }
 
 .status-warning {
     color: #ffc107 !important;
-    /* Желтый для промежуточных статусов */
     font-weight: bold;
 }
 
 .status-danger {
     color: #dc3545 !important;
-    /* Красный для негативных статусов */
     font-weight: bold;
 }
