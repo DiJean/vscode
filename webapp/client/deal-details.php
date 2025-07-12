@@ -104,13 +104,34 @@ $version = time();
                 new Date(deal.UF_CRM_685D295664A8A).toLocaleDateString('ru-RU') : '-';
 
             let statusText = deal.STAGE_ID || 'Неизвестно';
-            if (statusText === 'NEW') statusText = 'Новый заказ';
-            else if (statusText === 'PREPARATION') statusText = 'Подготовка';
-            else if (statusText === 'PREPAYMENT_INVOICE') statusText = 'Оплата';
-            else if (statusText === 'EXECUTING') statusText = 'В работе';
-            else if (statusText === 'WON') statusText = 'Успешно завершена';
-            else if (statusText === 'LOSE') statusText = 'Не нашли участок';
-            else if (statusText === 'APOLOGY') statusText = 'Анализ неудачи';
+            let statusClass = '';
+
+            // Определяем класс для статуса
+            if (statusText === 'WON') {
+                statusText = 'Успешно завершена';
+                statusClass = 'status-success';
+            } else if (statusText === 'NEW') {
+                statusText = 'Новый заказ';
+                statusClass = 'status-info';
+            } else if (statusText === 'PREPARATION') {
+                statusText = 'Подготовка';
+                statusClass = 'status-info';
+            } else if (statusText === 'PREPAYMENT_INVOICE') {
+                statusText = 'Оплата';
+                statusClass = 'status-info';
+            } else if (statusText === 'EXECUTING') {
+                statusText = 'В работе';
+                statusClass = 'status-info';
+            } else if (statusText === 'LOSE') {
+                statusText = 'Не нашли участок';
+                statusClass = 'status-danger';
+            } else if (statusText === 'APOLOGY') {
+                statusText = 'Анализ неудачи';
+                statusClass = 'status-danger';
+            } else {
+                statusText = 'Неизвестный статус';
+                statusClass = 'status-warning';
+            }
 
             const dealContainer = document.getElementById('deal-container');
             dealContainer.innerHTML = `
@@ -120,7 +141,7 @@ $version = time();
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Статус</div>
-                    <div class="detail-value">${statusText}</div>
+                    <div class="detail-value ${statusClass}">${statusText}</div>
                 </div>
                 <div class="detail-item">
                     <div class="detail-label">Исполнитель</div>
