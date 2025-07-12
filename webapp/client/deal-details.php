@@ -149,33 +149,43 @@ $version = time();
                 </div>
             `;
 
-            // Всегда добавляем фото, если они есть
-            if (!deal.beforePhotoUrl) {
-                dealContainer.innerHTML += `
-                    <div class="detail-item">
-                        <div class="detail-label">Фото "До"</div>
-                        <div class="detail-value">
-                            <img src="${deal.beforePhotoUrl}" 
-                                 alt="Фото до" 
-                                 class="photo-thumbnail"
-                                 data-full="${deal.beforePhotoUrl}"
-                                 onclick="openPhotoModal('${deal.beforePhotoUrl}')">
+            // Фото отображаем только для статуса WON
+            if (deal.STAGE_ID === 'WON') {
+                if (deal.beforePhotoUrl) {
+                    dealContainer.innerHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Фото "До"</div>
+                            <div class="detail-value">
+                                <img src="${deal.beforePhotoUrl}" 
+                                     alt="Фото до" 
+                                     class="photo-thumbnail"
+                                     data-full="${deal.beforePhotoUrl}"
+                                     onclick="openPhotoModal('${deal.beforePhotoUrl}')">
+                            </div>
                         </div>
-                    </div>
-                `;
-            }
+                    `;
+                }
 
-            if (!deal.afterPhotoUrl) {
+                if (deal.afterPhotoUrl) {
+                    dealContainer.innerHTML += `
+                        <div class="detail-item">
+                            <div class="detail-label">Фото "После"</div>
+                            <div class="detail-value">
+                                <img src="${deal.afterPhotoUrl}" 
+                                     alt="Фото после" 
+                                     class="photo-thumbnail"
+                                     data-full="${deal.afterPhotoUrl}"
+                                     onclick="openPhotoModal('${deal.afterPhotoUrl}')">
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Для других статусов показываем сообщение
                 dealContainer.innerHTML += `
                     <div class="detail-item">
-                        <div class="detail-label">Фото "После"</div>
-                        <div class="detail-value">
-                            <img src="${deal.afterPhotoUrl}" 
-                                 alt="Фото после" 
-                                 class="photo-thumbnail"
-                                 data-full="${deal.afterPhotoUrl}"
-                                 onclick="openPhotoModal('${deal.afterPhotoUrl}')">
-                        </div>
+                        <div class="detail-label">Фото работ</div>
+                        <div class="detail-value">Доступны после завершения заявки</div>
                     </div>
                 `;
             }
