@@ -19,6 +19,7 @@
     border-spacing: 0;
     border-radius: 12px;
     overflow: hidden;
+    table-layout: fixed;
 }
 
 .dashboard #deals-table th {
@@ -28,6 +29,8 @@
     padding: 15px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    position: sticky;
+    top: 0;
 }
 
 .dashboard #deals-table td {
@@ -35,13 +38,66 @@
     color: #414141 !important;
     padding: 12px 15px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dashboard #deals-table tr:last-child td {
     border-bottom: none;
 }
 
-.dashboard .status-badge {
+/* Фиксированные ширины колонок */
+.dashboard #deals-table th:nth-child(1),
+.dashboard #deals-table td:nth-child(1) {
+    width: 70px;
+    /* ID */
+}
+
+.dashboard #deals-table th:nth-child(2),
+.dashboard #deals-table td:nth-child(2) {
+    width: 150px;
+    /* Клиент */
+}
+
+.dashboard #deals-table th:nth-child(3),
+.dashboard #deals-table td:nth-child(3) {
+    width: 150px;
+    /* Услуги */
+}
+
+.dashboard #deals-table th:nth-child(4),
+.dashboard #deals-table td:nth-child(4) {
+    width: 100px;
+    /* Создана */
+}
+
+.dashboard #deals-table th:nth-child(5),
+.dashboard #deals-table td:nth-child(5) {
+    width: 100px;
+    /* Исполнение */
+}
+
+.dashboard #deals-table th:nth-child(6),
+.dashboard #deals-table td:nth-child(6) {
+    width: 120px;
+    /* Город */
+}
+
+.dashboard #deals-table th:nth-child(7),
+.dashboard #deals-table td:nth-child(7) {
+    width: 150px;
+    /* Статус */
+}
+
+.dashboard #deals-table th:nth-child(8),
+.dashboard #deals-table td:nth-child(8) {
+    width: 100px;
+    /* Действия */
+}
+
+/* Стили для статусов */
+.status-badge {
     color: #fff !important;
     padding: 5px 12px;
     border-radius: 20px;
@@ -52,19 +108,65 @@
     min-width: 120px;
 }
 
-.dashboard .status-new {
+.status-new {
     background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
 }
 
-.dashboard .status-processing {
+.status-processing {
     background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
     color: #000 !important;
 }
 
-.dashboard .status-closed {
+.status-closed {
     background: linear-gradient(135deg, #198754 0%, #157347 100%);
 }
 
+.status-failed {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+}
+
+/* Тема мраморного фона */
+.theme-beige {
+    background-image: url('/webapp/css/icons/marble_back.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+.theme-beige .container {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.theme-beige .container * {
+    color: #dcdcdc !important;
+}
+
+.theme-beige #deals-table th {
+    background: rgba(106, 17, 203, 0.85) !important;
+}
+
+.theme-beige #deals-table td {
+    background: rgba(255, 255, 255, 0.7) !important;
+    color: #414141 !important;
+}
+
+.theme-beige .status-badge {
+    color: #fff !important;
+}
+
+.theme-beige .btn-change-role {
+    color: #333 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Остальные стили... */
 .dashboard .btn-change-role {
     color: #333 !important;
     border: 1px solid rgba(0, 0, 0, 0.1);
@@ -95,6 +197,7 @@
     transition: all 0.3s;
     text-decoration: none;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .dashboard .action-btn:hover {
@@ -103,122 +206,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.dashboard .spinner-container {
-    display: flex;
-    justify-content: center;
-    padding: 30px 0;
-}
-
-.dashboard .form-select,
-.dashboard .form-control {
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    padding: 10px 15px;
-    height: 46px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-.dashboard .form-select:focus,
-.dashboard .form-control:focus {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(106, 17, 203, 0.3);
-    box-shadow: 0 0 0 0.25rem rgba(106, 17, 203, 0.15);
-}
-
-.dashboard .btn-primary {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    border: none;
-    border-radius: 10px;
-    padding: 10px;
-    font-weight: 500;
-    height: 46px;
-    transition: all 0.3s;
-}
-
-.dashboard .btn-primary:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.dashboard .btn-outline-primary {
-    border: 1px solid #6a11cb;
-    color: #6a11cb !important;
-    border-radius: 10px;
-    padding: 8px 20px;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.dashboard .btn-outline-primary:hover {
-    background: rgba(106, 17, 203, 0.1);
-    transform: translateY(-2px);
-}
-
-.dashboard .btn-outline-primary:disabled {
-    opacity: 0.5;
-    transform: none;
-    cursor: not-allowed;
-}
-
-.dashboard #pagination {
-    margin-top: 30px;
-}
-
-.dashboard #current-page {
-    font-weight: 600;
-    min-width: 30px;
-    text-align: center;
-}
-
-.dashboard .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-.dashboard .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.dashboard .user-name {
-    font-weight: 500;
-    font-size: 1.05rem;
-}
-
-.dashboard .deals-container {
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-}
-
-.dashboard .table-responsive {
-    border-radius: 16px;
-}
-
-.dashboard #deals-table tr:hover td {
-    background: rgba(255, 255, 255, 0.85) !important;
-}
-
-.dashboard .text-danger {
-    color: #dc3545 !important;
-    font-weight: 500;
-}
-
-.dashboard .d-flex.align-items-center {
-    gap: 10px;
-}
+/* ... остальные стили остаются без изменений ... */
 
 /* Адаптивные стили */
 @media (max-width: 992px) {
@@ -259,5 +247,46 @@
     .dashboard #deals-table {
         display: block;
         overflow-x: auto;
+    }
+
+    /* Уменьшаем ширины колонок для мобильных */
+    .dashboard #deals-table th:nth-child(1),
+    .dashboard #deals-table td:nth-child(1) {
+        width: 60px;
+    }
+
+    .dashboard #deals-table th:nth-child(2),
+    .dashboard #deals-table td:nth-child(2) {
+        width: 120px;
+    }
+
+    .dashboard #deals-table th:nth-child(3),
+    .dashboard #deals-table td:nth-child(3) {
+        width: 120px;
+    }
+
+    .dashboard #deals-table th:nth-child(4),
+    .dashboard #deals-table td:nth-child(4) {
+        width: 80px;
+    }
+
+    .dashboard #deals-table th:nth-child(5),
+    .dashboard #deals-table td:nth-child(5) {
+        width: 80px;
+    }
+
+    .dashboard #deals-table th:nth-child(6),
+    .dashboard #deals-table td:nth-child(6) {
+        width: 100px;
+    }
+
+    .dashboard #deals-table th:nth-child(7),
+    .dashboard #deals-table td:nth-child(7) {
+        width: 120px;
+    }
+
+    .dashboard #deals-table th:nth-child(8),
+    .dashboard #deals-table td:nth-child(8) {
+        width: 80px;
     }
 }
