@@ -1,4 +1,5 @@
 <?php
+//require_once('/var/www/config.php');
 header('Content-Type: text/html; charset=utf-8');
 $version = time();
 ?>
@@ -13,6 +14,48 @@ $version = time();
     <link rel="stylesheet" href="/webapp/css/dashboard.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        body.theme-beige {
+            background-image: url('/webapp/css/icons/marble_back.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .container {
+            #background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .container * {
+            color: #dcdcdc !important;
+        }
+
+        #deals-table th {
+            background: rgba(106, 17, 203, 0.85) !important;
+        }
+
+        #deals-table td {
+            background: rgba(255, 255, 255, 0.7) !important;
+            color: #414141 !important;
+        }
+
+        .status-badge {
+            color: #fff !important;
+        }
+
+        .btn-change-role {
+            color: #333 !important;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 
 <body class="theme-beige">
@@ -172,8 +215,8 @@ $version = time();
                     <div class="d-flex align-items-center">
                         <div class="avatar me-2">
                             ${user.photo_url ? 
-                                `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle">` : 
-                                `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold">${firstName.charAt(0) || 'И'}</div>`
+                                `<img src="${user.photo_url}" alt="${fullName}" class="img-fluid rounded-circle" style="width:40px;height:40px;object-fit:cover;">` : 
+                                `<div class="d-flex align-items-center justify-content-center rounded-circle bg-light text-dark fw-bold" style="width:40px;height:40px;">${firstName.charAt(0) || 'И'}</div>`
                             }
                         </div>
                         <div>
@@ -318,10 +361,10 @@ $version = time();
                     statusClass = 'status-closed';
                 } else if (statusText === 'LOSE') {
                     statusText = 'Не нашли участок';
-                    statusClass = 'status-failed';
+                    statusClass = 'status-closed';
                 } else if (statusText === 'APOLOGY') {
                     statusText = 'Анализ неудачи';
-                    statusClass = 'status-failed';
+                    statusClass = 'status-closed';
                 }
 
                 dealsList.innerHTML += `
