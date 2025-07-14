@@ -36,8 +36,8 @@ $version = time();
             </div>
         </div>
 
-        <!-- Секция завершения заявки -->
-        <div class="completion-section" id="completion-section">
+        <!-- Секция завершения заявки - СКРЫТА ПО УМОЛЧАНИЮ -->
+        <div class="completion-section" id="completion-section" style="display: none;">
             <h3>Завершение заявки</h3>
             <form id="complete-deal-form" enctype="multipart/form-data">
                 <input type="hidden" name="deal_id" id="deal-id-hidden">
@@ -162,24 +162,23 @@ $version = time();
                 if (user) {
                     // Ищем контакт текущего пользователя (исполнителя) по Telegram ID
                     const performerContact = await findPerformerByTgId(user.id);
-                    if (performerContact && performerContact.ID == deal.performerId) {
-                        // Проверяем статус заявки - показываем форму только для статуса "В работе"
-                        if (deal.stageId === 'EXECUTING') {
-                            // Показываем секцию завершения
-                            document.getElementById('completion-section').style.display = 'block';
-                            // Заполняем hidden поля формы
-                            document.getElementById('deal-id-hidden').value = dealId;
-                            document.getElementById('tg-user-id-hidden').value = user.id;
 
-                            // Инициализация загрузки фото
-                            initPhotoUpload();
-                        }
+                    // Показываем секцию завершения ТОЛЬКО для статуса "В работе"
+                    if (performerContact && performerContact.ID == deal.performerId && deal.stageId === 'EXECUTING') {
+                        // Показываем секцию завершения
+                        document.getElementById('completion-section').style.display = 'block';
+                        // Заполняем hidden поля формы
+                        document.getElementById('deal-id-hidden').value = dealId;
+                        document.getElementById('tg-user-id-hidden').value = user.id;
 
-                        // Если заявка завершена, показываем загруженные фото
-                        if (deal.stageId === 'WON') {
-                            document.getElementById('completed-photos').style.display = 'block';
-                            showUploadedPhotos(deal);
-                        }
+                        // Инициализация загрузки фото
+                        initPhotoUpload();
+                    }
+
+                    // Если заявка завершена, показываем загруженные фото
+                    if (deal.stageId === 'WON') {
+                        document.getElementById('completed-photos').style.display = 'block';
+                        showUploadedPhotos(deal);
                     }
                 }
             } catch (error) {
