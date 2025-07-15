@@ -18,69 +18,7 @@ $version = time();
     <script>
         window.BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>';
     </script>
-    <style>
-        /* Дополнительные стили для исправления проблем */
-        .photo-upload-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
 
-        .photo-upload {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .photo-preview {
-            width: 100%;
-            height: 150px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-bottom: 10px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px dashed rgba(255, 255, 255, 0.3);
-        }
-
-        .photo-preview img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
-        }
-
-        .upload-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px dashed rgba(255, 255, 255, 0.3);
-        }
-    </style>
 </head>
 
 <body class="theme-beige">
