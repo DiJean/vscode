@@ -11,7 +11,6 @@ $version = time();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Детали заявки</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/webapp/css/style.css?<?= $version ?>">
     <link rel="stylesheet" href="/webapp/css/deal-details.css?<?= $version ?>">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -50,14 +49,11 @@ $version = time();
                         <div class="photo-preview" id="before-preview">
                             <span class="photo-placeholder">Изображение не выбрано</span>
                         </div>
-                        <div class="camera-controls">
-                            <button type="button" class="btn btn-sm btn-outline-primary take-photo-btn" data-target="before">
-                                <i class="bi bi-camera"></i> Сделать фото
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary upload-photo-btn" data-target="before">
-                                <i class="bi bi-upload"></i> Выбрать файл
-                            </button>
-                            <input type="file" name="before_photo" accept="image/*" style="display:none" data-target="before">
+                        <div class="file-input-wrapper">
+                            <label class="upload-btn">
+                                📸 Загрузить фото
+                            </label>
+                            <input type="file" name="before_photo" accept="image/*" capture="camera" required>
                         </div>
                     </div>
                     <div class="photo-upload">
@@ -65,14 +61,11 @@ $version = time();
                         <div class="photo-preview" id="after-preview">
                             <span class="photo-placeholder">Изображение не выбрано</span>
                         </div>
-                        <div class="camera-controls">
-                            <button type="button" class="btn btn-sm btn-outline-primary take-photo-btn" data-target="after">
-                                <i class="bi bi-camera"></i> Сделать фото
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary upload-photo-btn" data-target="after">
-                                <i class="bi bi-upload"></i> Выбрать файл
-                            </button>
-                            <input type="file" name="after_photo" accept="image/*" style="display:none" data-target="after">
+                        <div class="file-input-wrapper">
+                            <label class="upload-btn">
+                                📸 Загрузить фото
+                            </label>
+                            <input type="file" name="after_photo" accept="image/*" capture="camera" required>
                         </div>
                     </div>
                 </div>
@@ -107,29 +100,6 @@ $version = time();
         </div>
     </div>
 
-    <!-- Модальное окно для камеры -->
-    <div class="modal fade" id="camera-modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Сделать фото</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="camera-container">
-                        <video id="camera-preview" autoplay playsinline></video>
-                        <canvas id="camera-canvas" style="display:none"></canvas>
-                    </div>
-                    <div class="text-center mt-3">
-                        <button id="capture-btn" class="btn btn-primary">
-                            <i class="bi bi-camera"></i> Сделать снимок
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/webapp/js/bitrix-integration.js?<?= $version ?>"></script>
 
@@ -137,7 +107,6 @@ $version = time();
         const BITRIX_WEBHOOK = window.BITRIX_WEBHOOK;
         const version = '<?= $version ?>';
         const photoModal = new bootstrap.Modal(document.getElementById('photoModal'));
-        const cameraModal = new bootstrap.Modal(document.getElementById('camera-modal'));
 
         // Словарь статусов заявок
         const stageNames = {
@@ -230,42 +199,251 @@ $version = time();
             }
         });
 
-        // Функции работы с камерой
-        function initCamera() {
-            let currentCameraTarget = null;
-            const cameraPreview = document.getElementById('camera-preview');
-            const cameraCanvas = document.getElementById('camera-canvas');
-            const captureBtn = document.getElementById('capture-btn');
-            let mediaStream = null;
-
-            // Обработчики кнопок съемки фото
-            document.querySelectorAll('.take-photo-btn').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    currentCameraTarget = this.dataset.target;
-                    try {
-                        await startCamera();
-                        cameraModal.show();
-                    } catch (error) {
-                        console.error('Camera error:', error);
-                        alert('Не удалось открыть камеру. Используйте загрузку файла.');
-                    }
+        async function getDealDetails(dealId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.deal.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: dealId,
+                        select: [
+                            'ID', 'TITLE', 'DATE_CREATE', 'STAGE_ID', 'COMMENTS',
+                            'UF_CRM_685D295664A8A', // Желаемая дата услуги
+                            'UF_CRM_685D2956BF4C8', // Город
+                            'UF_CRM_685D2956C64E0', // Услуги
+                            'UF_CRM_685D2956D0916', // Кладбище
+                            'UF_CRM_1751022940', // Сектор
+                            'UF_CRM_685D2956D7C70', // Ряд
+                            'UF_CRM_685D2956DF40F', // Участок
+                            'UF_CRM_1751128612', // Исполнитель (ID контакта)
+                            'UF_CRM_1751200529', // Фото до
+                            'UF_CRM_1751200549' // Фото после
+                        ]
+                    })
                 });
-            });
 
-            // Обработчики кнопок загрузки файла
-            document.querySelectorAll('.upload-photo-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const target = this.dataset.target;
-                    document.querySelector(`input[name="${target}_photo"]`).click();
+                const data = await response.json();
+                if (data.result) {
+                    return {
+                        id: data.result.ID,
+                        title: data.result.TITLE,
+                        dateCreate: data.result.DATE_CREATE,
+                        stageId: data.result.STAGE_ID,
+                        comments: data.result.COMMENTS,
+                        serviceDate: data.result.UF_CRM_685D295664A8A,
+                        city: data.result.UF_CRM_685D2956BF4C8,
+                        services: data.result.UF_CRM_685D2956C64E0,
+                        cemetery: data.result.UF_CRM_685D2956D0916,
+                        sector: data.result.UF_CRM_1751022940,
+                        row: data.result.UF_CRM_685D2956D7C70,
+                        plot: data.result.UF_CRM_685D2956DF40F,
+                        performerId: data.result.UF_CRM_1751128612,
+                        beforePhoto: data.result.UF_CRM_1751200529,
+                        afterPhoto: data.result.UF_CRM_1751200549
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Ошибка получения деталей заявки:', error);
+                return null;
+            }
+        }
+
+        async function findPerformerByTgId(tgId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.list.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filter: {
+                            'UF_CRM_1751128872': String(tgId)
+                        },
+                        select: ['ID']
+                    })
                 });
-            });
 
-            // Обработчики для стандартных input[type=file]
+                const data = await response.json();
+                return data.result && data.result.length > 0 ? data.result[0] : null;
+            } catch (error) {
+                console.error('Ошибка поиска исполнителя:', error);
+                return null;
+            }
+        }
+
+        async function getPerformerInfo(performerId) {
+            try {
+                const response = await fetch(`${BITRIX_WEBHOOK}crm.contact.get.json`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: performerId
+                    })
+                });
+
+                const data = await response.json();
+                return data.result || null;
+            } catch (error) {
+                console.error('Ошибка получения информации об исполнителе:', error);
+                return null;
+            }
+        }
+
+        function renderDealDetails(deal, userType = 'client') {
+            const dealContainer = document.getElementById('deal-container');
+            // Форматируем дату
+            const createdDate = new Date(deal.dateCreate).toLocaleDateString();
+            const serviceDate = deal.serviceDate ? new Date(deal.serviceDate).toLocaleDateString() : 'не указана';
+
+            // Преобразуем ID услуг в названия
+            let services = 'не указаны';
+            if (deal.services) {
+                let serviceIds = [];
+                if (Array.isArray(deal.services)) {
+                    serviceIds = deal.services;
+                } else if (typeof deal.services === 'string') {
+                    serviceIds = deal.services.split(',');
+                } else {
+                    serviceIds = [String(deal.services)];
+                }
+
+                services = serviceIds.map(id => {
+                    return serviceNames[id] || `Услуга #${id}`;
+                }).join(', ');
+            }
+
+            // Определяем класс для статуса
+            let statusClass = '';
+            if (deal.stageId === 'WON') {
+                statusClass = 'status-success';
+            } else if (['NEW', 'PREPARATION', 'PREPAYMENT_INVOICE', 'EXECUTING', 'FINAL_INVOICE'].includes(deal.stageId)) {
+                statusClass = 'status-info';
+            } else if (['LOSE', 'APOLOGY'].includes(deal.stageId)) {
+                statusClass = 'status-danger';
+            } else {
+                statusClass = 'status-warning';
+            }
+
+            // Создаем HTML
+            let html = `
+                <div class="detail-item">
+                    <div class="detail-label">Номер заявки</div>
+                    <div class="detail-value">${deal.id}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Статус</div>
+                    <div class="detail-value ${statusClass}">${stageNames[deal.stageId] || deal.stageId}</div>
+                </div>
+            `;
+
+            // Добавляем исполнителя для клиента
+            if (userType === 'client' && deal.performerName) {
+                html += `
+                <div class="detail-item">
+                    <div class="detail-label">Исполнитель</div>
+                    <div class="detail-value">${deal.performerName}</div>
+                </div>
+                `;
+            }
+
+            html += `
+                <div class="detail-item">
+                    <div class="detail-label">Дата создания</div>
+                    <div class="detail-value">${createdDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Желаемая дата исполнения</div>
+                    <div class="detail-value">${serviceDate}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Услуги</div>
+                    <div class="detail-value">${services}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Город</div>
+                    <div class="detail-value">${deal.city || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Кладбище</div>
+                    <div class="detail-value">${deal.cemetery || 'не указано'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Сектор</div>
+                    <div class="detail-value">${deal.sector || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Ряд</div>
+                    <div class="detail-value">${deal.row || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Участок</div>
+                    <div class="detail-value">${deal.plot || 'не указан'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Комментарий</div>
+                    <div class="detail-value">${deal.comments || 'нет'}</div>
+                </div>
+            `;
+
+            dealContainer.innerHTML = html;
+
+            // Добавляем фото для завершенных заявок
+            if (deal.stageId === 'WON') {
+                let photosHtml = '';
+
+                if (deal.beforePhoto && deal.beforePhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.beforePhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото до работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото до работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                    `;
+                }
+
+                if (deal.afterPhoto && deal.afterPhoto.length > 0) {
+                    const photoUrl = getFileUrl(deal.afterPhoto[0]);
+                    photosHtml += `
+                    <div class="detail-item">
+                        <div class="detail-label">Фото после работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото после работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                    `;
+                }
+
+                if (photosHtml) {
+                    dealContainer.innerHTML += photosHtml;
+                }
+            }
+        }
+
+        function getFileUrl(fileId) {
+            const baseUrl = BITRIX_WEBHOOK.replace('/rest/', '');
+            return `${baseUrl}download.php?auth=1&fileId=${fileId}`;
+        }
+
+        function initPhotoUpload() {
+            // Обработчики для загрузки фото и предпросмотра
             document.querySelectorAll('input[type="file"]').forEach(input => {
                 input.addEventListener('change', function(e) {
-                    const target = this.dataset.target;
-                    const preview = document.getElementById(`${target}-preview`);
                     const file = e.target.files[0];
+                    const previewId = this.name === 'before_photo' ? 'before-preview' : 'after-preview';
+                    const preview = document.getElementById(previewId);
 
                     if (file) {
                         const reader = new FileReader();
@@ -278,92 +456,6 @@ $version = time();
                     }
                 });
             });
-
-            // Сделать снимок
-            captureBtn.addEventListener('click', function() {
-                if (!cameraPreview.srcObject) return;
-
-                const context = cameraCanvas.getContext('2d');
-                cameraCanvas.width = cameraPreview.videoWidth;
-                cameraCanvas.height = cameraPreview.videoHeight;
-
-                context.drawImage(cameraPreview, 0, 0, cameraCanvas.width, cameraCanvas.height);
-
-                // Конвертируем в Blob
-                cameraCanvas.toBlob(blob => {
-                    if (blob) {
-                        // Создаем File объект
-                        const file = new File([blob], `photo_${Date.now()}.jpg`, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-
-                        // Обновляем превью
-                        const preview = document.getElementById(`${currentCameraTarget}-preview`);
-                        const url = URL.createObjectURL(blob);
-                        preview.innerHTML = `<img src="${url}" alt="Preview">`;
-
-                        // Обновляем input
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        const input = document.querySelector(`input[name="${currentCameraTarget}_photo"]`);
-                        input.files = dataTransfer.files;
-
-                        // Закрываем камеру
-                        stopCamera();
-                        cameraModal.hide();
-                    }
-                }, 'image/jpeg', 0.95);
-            });
-
-            // Очистка при закрытии модалки камеры
-            document.getElementById('camera-modal').addEventListener('hidden.bs.modal', stopCamera);
-        }
-
-        async function startCamera() {
-            stopCamera();
-
-            const constraints = {
-                video: {
-                    facingMode: 'environment',
-                    width: {
-                        ideal: 1920
-                    },
-                    height: {
-                        ideal: 1080
-                    }
-                },
-                audio: false
-            };
-
-            try {
-                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                cameraPreview.srcObject = mediaStream;
-                return true;
-            } catch (err) {
-                if (err.name === 'NotFoundError' || err.name === 'OverconstrainedError') {
-                    // Попробуем фронтальную камеру, если задняя недоступна
-                    constraints.video.facingMode = 'user';
-                    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    cameraPreview.srcObject = mediaStream;
-                    return true;
-                }
-                throw err;
-            }
-        }
-
-        function stopCamera() {
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
-            if (cameraPreview.srcObject) {
-                cameraPreview.srcObject = null;
-            }
-        }
-
-        function initPhotoUpload() {
-            initCamera();
 
             // Обработчик отправки формы
             document.getElementById('complete-deal-form').addEventListener('submit', async function(e) {
@@ -429,40 +521,53 @@ $version = time();
             });
         }
 
-        // Остальные функции (getDealDetails, findPerformerByTgId, getPerformerInfo, renderDealDetails, 
-        // getFileUrl, showUploadedPhotos, openPhotoModal, showError) остаются без изменений
-        // ... [код функций из предыдущей версии] ...
-
-        async function getDealDetails(dealId) {
-            // ... [код без изменений] ...
-        }
-
-        async function findPerformerByTgId(tgId) {
-            // ... [код без изменений] ...
-        }
-
-        async function getPerformerInfo(performerId) {
-            // ... [код без изменений] ...
-        }
-
-        function renderDealDetails(deal, userType = 'client') {
-            // ... [код без изменений] ...
-        }
-
-        function getFileUrl(fileId) {
-            // ... [код без изменений] ...
-        }
-
         function showUploadedPhotos(deal) {
-            // ... [код без изменений] ...
+            const container = document.getElementById('uploaded-photos-container');
+            let photosHTML = '';
+
+            // Фото "до"
+            if (deal.beforePhoto && deal.beforePhoto.length > 0) {
+                const photoUrl = getFileUrl(deal.beforePhoto[0]);
+                photosHTML += `
+                    <div class="col-md-6 mb-4">
+                        <div class="detail-label">Фото до работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото до работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Фото "после"
+            if (deal.afterPhoto && deal.afterPhoto.length > 0) {
+                const photoUrl = getFileUrl(deal.afterPhoto[0]);
+                photosHTML += `
+                    <div class="col-md-6 mb-4">
+                        <div class="detail-label">Фото после работы</div>
+                        <div class="detail-value">
+                            <img src="${photoUrl}" 
+                                 alt="Фото после работы" 
+                                 class="photo-thumbnail"
+                                 onclick="openPhotoModal('${photoUrl}')">
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = photosHTML || '<div class="col-12 text-center">Фото не загружены</div>';
         }
 
         function openPhotoModal(photoUrl) {
-            // ... [код без изменений] ...
+            document.getElementById('modalPhoto').src = photoUrl;
+            photoModal.show();
         }
 
         function showError(message) {
-            // ... [код без изменений] ...
+            const dealContainer = document.getElementById('deal-container');
+            dealContainer.innerHTML = `<div class="alert alert-danger">${message}</div>`;
         }
     </script>
 </body>
