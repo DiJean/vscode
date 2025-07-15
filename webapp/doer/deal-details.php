@@ -18,7 +18,6 @@ $version = time();
     <script>
         window.BITRIX_WEBHOOK = '<?= BITRIX_WEBHOOK ?>';
     </script>
-
 </head>
 
 <body class="theme-beige">
