@@ -116,6 +116,14 @@ $version = time();
             'APOLOGY': 'Анализ неудачи'
         };
 
+        // Словарь услуг
+        const serviceNames = {
+            '69': 'Уход',
+            '71': 'Цветы',
+            '73': 'Ремонт',
+            '75': 'Церковная служба'
+        };
+
         document.addEventListener('DOMContentLoaded', async function() {
             // Инициализация Telegram WebApp
             let tg = null;
@@ -301,11 +309,7 @@ $version = time();
                 }
 
                 services = serviceIds.map(id => {
-                    if (id === '69') return 'Уход';
-                    if (id === '71') return 'Цветы';
-                    if (id === '73') return 'Ремонт';
-                    if (id === '75') return 'Церковная служба';
-                    return `Услуга #${id}`;
+                    return serviceNames[id] || `Услуга #${id}`;
                 }).join(', ');
             }
 
@@ -313,7 +317,7 @@ $version = time();
             let statusClass = '';
             if (deal.stageId === 'WON') {
                 statusClass = 'status-success';
-            } else if (['NEW', 'PREPARATION', 'PREPAYMENT_INVOICE', 'EXECUTING'].includes(deal.stageId)) {
+            } else if (['NEW', 'PREPARATION', 'PREPAYMENT_INVOICE', 'EXECUTING', 'FINAL_INVOICE'].includes(deal.stageId)) {
                 statusClass = 'status-info';
             } else if (['LOSE', 'APOLOGY'].includes(deal.stageId)) {
                 statusClass = 'status-danger';
