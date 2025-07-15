@@ -43,8 +43,8 @@ $version = time();
         }
 
         #deals-table td {
-            background: rgba(255, 255, 255, 0.7) !important;
-            color: #414141 !important;
+            #background: rgba(255, 255, 255, 0.7) !important;
+            color: #ffffff !important;
         }
 
         .status-badge {
