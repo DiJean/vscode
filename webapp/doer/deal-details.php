@@ -53,7 +53,7 @@ $version = time();
                             <label class="upload-btn">
                                 📸 Загрузить фото
                             </label>
-                            <input type="file" name="before_photo" accept="image/*" capture="environment" required>
+                            <input type="file" name="before_photo" accept="image/*" capture="camera" required>
                         </div>
                     </div>
                     <div class="photo-upload">
@@ -65,7 +65,7 @@ $version = time();
                             <label class="upload-btn">
                                 📸 Загрузить фото
                             </label>
-                            <input type="file" name="after_photo" accept="image/*" capture="environment" required>
+                            <input type="file" name="after_photo" accept="image/*" capture="camera" required>
                         </div>
                     </div>
                 </div>
