@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
+// Увеличиваем лимиты для обработки фото
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 ini_set('max_execution_time', 300);
@@ -37,7 +38,7 @@ function logMessage($message)
 }
 
 $FOLDER_ID = 113; // ID папки в Битрикс24, куда загружать файлы
-$MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+$MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 $ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 try {
@@ -133,7 +134,7 @@ function validatePhoto($file)
     }
 
     if ($file['size'] > $MAX_FILE_SIZE) {
-        throw new Exception('Размер файла превышает 5MB. Фактический размер: ' .
+        throw new Exception('Размер файла превышает 10MB. Фактический размер: ' .
             round($file['size'] / 1024 / 1024, 2) . 'MB');
     }
 

@@ -29,31 +29,18 @@
     font-size: 1.1rem;
 }
 
-/* ФИКС СТИЛЕЙ ДЛЯ КНОПОК И ФОТО */
-.upload-btn,
+/* Стили для кнопок и фото */
 .complete-btn {
     display: block !important;
     width: 100% !important;
-    padding: 10px !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px dashed rgba(255, 255, 255, 0.3) !important;
+    padding: 12px !important;
+    background: var(--accent-color) !important;
+    border: none !important;
     border-radius: 12px !important;
     color: white !important;
     text-align: center !important;
-    cursor: pointer !important;
-    transition: all 0.3s !important;
-    margin-bottom: 10px !important;
-}
-
-.upload-btn:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.complete-btn {
-    background: var(--accent-color) !important;
-    padding: 12px !important;
-    border: none !important;
     font-weight: bold !important;
+    transition: all 0.3s !important;
 }
 
 .complete-btn:disabled {
@@ -84,23 +71,14 @@
 }
 
 /* Стили для кнопки "Назад" */
-.back-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    text-align: center;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s;
-    border: none;
-    cursor: pointer;
+.btn-outline-primary {
+    color: #6a11cb !important;
+    border-color: #6a11cb !important;
 }
 
-.back-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
+.btn-outline-primary:hover {
+    background-color: #6a11cb !important;
+    color: white !important;
 }
 
 /* Стили для модального окна с фото */
@@ -153,23 +131,6 @@
     min-width: 250px;
 }
 
-.file-input-wrapper {
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-    width: 100%;
-}
-
-.file-input-wrapper input[type="file"] {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-}
-
 .photo-preview {
     width: 100%;
     height: 150px;
@@ -199,4 +160,65 @@
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Камера */
+.camera-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 75%;
+    /* 4:3 aspect ratio */
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.camera-container video,
+.camera-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.camera-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.take-photo-btn,
+.upload-photo-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .photo-upload-container {
+        flex-direction: column;
+    }
+
+    .photo-upload {
+        min-width: 100%;
+    }
+
+    .camera-controls {
+        flex-direction: column;
+    }
+
+    .photo-preview {
+        height: 200px;
+    }
+
+    .take-photo-btn,
+    .upload-photo-btn {
+        padding: 10px;
+    }
 }
